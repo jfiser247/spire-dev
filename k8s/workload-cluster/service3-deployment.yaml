@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service3
+  namespace: workload
+  labels:
+    app: service3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service3
+  template:
+    metadata:
+      labels:
+        app: service3
+    spec:
+      containers:
+      - name: service3
+        image: python:3.9-slim
+        command: ["python", "-m", "http.server", "8080"]
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///run/spire/sockets/agent.sock"
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service3
+  namespace: workload
+spec:
+  selector:
+    app: service3
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP

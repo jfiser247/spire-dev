@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-registration-entries
+  namespace: spire
+data:
+  entries.sh: |
+    #!/bin/bash
+    set -e
+
+    # Wait for the SPIRE server to be ready
+    sleep 10
+
+    # Register the SPIRE agent
+    /opt/spire/bin/spire-server entry create \
+      -spiffeID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
+      -selector k8s_psat:cluster:cluster \
+      -selector k8s_psat:agent_ns:spire \
+      -selector k8s_psat:agent_sa:spire-agent \
+      -node
+
+    # Register service1
+    /opt/spire/bin/spire-server entry create \
+      -spiffeID spiffe://example.org/workload/service1 \
+      -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
+      -selector k8s:ns:workload \
+      -selector k8s:sa:default \
+      -selector k8s:pod-label:app:service1
+
+    # Register service2
+    /opt/spire/bin/spire-server entry create \
+      -spiffeID spiffe://example.org/workload/service2 \
+      -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
+      -selector k8s:ns:workload \
+      -selector k8s:sa:default \
+      -selector k8s:pod-label:app:service2
+
+    # Register service3
+    /opt/spire/bin/spire-server entry create \
+      -spiffeID spiffe://example.org/workload/service3 \
+      -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
+      -selector k8s:ns:workload \
+      -selector k8s:sa:default \
+      -selector k8s:pod-label:app:service3
+
+    # List all entries
+    /opt/spire/bin/spire-server entry show
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-registration
+  namespace: spire
+spec:
+  template:
+    spec:
+      serviceAccountName: spire-server
+      containers:
+      - name: spire-registration
+        image: ghcr.io/spiffe/spire-server:1.6.3
+        command: ["/bin/sh", "/config/entries.sh"]
+        volumeMounts:
+        - name: spire-registration-entries
+          mountPath: /config
+      volumes:
+      - name: spire-registration-entries
+        configMap:
+          name: spire-registration-entries
+          defaultMode: 0755
+      restartPolicy: Never
+  backoffLimit: 4
