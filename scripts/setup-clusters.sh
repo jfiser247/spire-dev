@@ -30,6 +30,59 @@ echo "Waiting for SPIRE server to be ready..."
 kubectl -n spire wait --for=condition=ready pod -l app=spire-server --timeout=120s
 kubectl -n spire wait --for=condition=ready pod -l app=spire-db --timeout=120s
 
+# Get the NodePort for the SPIRE server
+SERVER_NODEPORT=$(kubectl -n spire get svc spire-server -o jsonpath='{.spec.ports[?(@.name=="server")].nodePort}')
+# Get the IP address of the minikube node
+SERVER_IP=$(minikube -p spire-server-cluster ip)
+
+echo "SPIRE server is accessible at ${SERVER_IP}:${SERVER_NODEPORT}"
+
+# Create a service account token for the SPIRE server to access the workload cluster
+kubectl config use-context workload-cluster
+kubectl create serviceaccount spire-server-sa -n spire --dry-run=client -o yaml | kubectl apply -f -
+kubectl create clusterrolebinding spire-server-binding --clusterrole=system:auth-delegator --serviceaccount=spire:spire-server-sa --dry-run=client -o yaml | kubectl apply -f -
+
+# Get the service account token
+SA_SECRET_NAME=$(kubectl -n spire get serviceaccount spire-server-sa -o jsonpath='{.secrets[0].name}')
+SA_TOKEN=$(kubectl -n spire get secret $SA_SECRET_NAME -o jsonpath='{.data.token}' | base64 --decode)
+WORKLOAD_CLUSTER_CA=$(kubectl -n spire get secret $SA_SECRET_NAME -o jsonpath='{.data.ca\.crt}')
+WORKLOAD_CLUSTER_ENDPOINT=$(kubectl config view -o jsonpath='{.clusters[?(@.name=="workload-cluster")].cluster.server}')
+
+# Create a kubeconfig file for the SPIRE server
+cat > /tmp/workload-cluster-kubeconfig << EOF
+apiVersion: v1
+kind: Config
+clusters:
+- name: workload-cluster
+  cluster:
+    certificate-authority-data: ${WORKLOAD_CLUSTER_CA}
+    server: ${WORKLOAD_CLUSTER_ENDPOINT}
+contexts:
+- name: workload-cluster
+  context:
+    cluster: workload-cluster
+    user: spire-server
+current-context: workload-cluster
+users:
+- name: spire-server
+  user:
+    token: ${SA_TOKEN}
+EOF
+
+# Switch back to server cluster
+kubectl config use-context spire-server-cluster
+
+# Create a ConfigMap with the workload cluster kubeconfig
+kubectl -n spire create configmap workload-cluster-kubeconfig --from-file=kubeconfig=/tmp/workload-cluster-kubeconfig --dry-run=client -o yaml | kubectl apply -f -
+
+# Update the SPIRE server StatefulSet to mount the kubeconfig
+kubectl -n spire patch statefulset spire-server -p '{"spec":{"template":{"spec":{"volumes":[{"name":"workload-cluster-kubeconfig","configMap":{"name":"workload-cluster-kubeconfig"}}]}}}}'
+kubectl -n spire patch statefulset spire-server -p '{"spec":{"template":{"spec":{"containers":[{"name":"spire-server","volumeMounts":[{"name":"workload-cluster-kubeconfig","mountPath":"/run/spire/workload-cluster-kubeconfig","readOnly":true}]}]}}}}'
+
+# Restart the SPIRE server to apply the changes
+kubectl -n spire rollout restart statefulset spire-server
+kubectl -n spire rollout status statefulset spire-server --timeout=120s
+
 echo "SPIRE server and database deployed successfully!"
 
 # Switch to workload cluster
@@ -47,8 +100,55 @@ SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spir
 kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server bundle show -format pem > /tmp/bundle.pem
 kubectl -n spire create configmap spire-bundle --from-file=bundle.crt=/tmp/bundle.pem --dry-run=client -o yaml | kubectl apply -f -
 
+# Update agent configmap with the correct server address
+cat > /tmp/agent-configmap.yaml << EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-agent-config
+  namespace: spire
+data:
+  agent.conf: |
+    agent {
+      data_dir = "/run/spire"
+      log_level = "DEBUG"
+      server_address = "${SERVER_IP}"
+      server_port = "${SERVER_NODEPORT}"
+      socket_path = "/run/spire/sockets/agent.sock"
+      trust_bundle_path = "/run/spire/bundle/bundle.crt"
+      trust_domain = "example.org"
+    }
+
+    plugins {
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          cluster = "cluster"
+        }
+      }
+
+      KeyManager "memory" {
+        plugin_data {
+        }
+      }
+
+      WorkloadAttestor "k8s" {
+        plugin_data {
+          skip_kubelet_verification = true
+        }
+      }
+    }
+
+    health_checks {
+      listener_enabled = true
+      bind_address = "0.0.0.0"
+      bind_port = "8080"
+      live_path = "/live"
+      ready_path = "/ready"
+    }
+EOF
+
 # Apply agent and workload manifests
-kubectl apply -f k8s/workload-cluster/agent-configmap.yaml
+kubectl apply -f /tmp/agent-configmap.yaml
 kubectl apply -f k8s/workload-cluster/agent-rbac.yaml
 kubectl apply -f k8s/workload-cluster/agent-daemonset.yaml
 kubectl apply -f k8s/workload-cluster/service1-deployment.yaml

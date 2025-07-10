@@ -34,6 +34,9 @@ data:
           clusters = {
             "cluster" = {
               service_account_allow_list = ["spire:spire-agent"]
+              use_token_review_api_validation = true
+              skip_client_id_validation = true
+              kubeconfig_path = "/run/spire/workload-cluster-kubeconfig/kubeconfig"
             }
           }
         }
