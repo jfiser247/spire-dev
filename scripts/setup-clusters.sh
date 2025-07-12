@@ -76,8 +76,8 @@ kubectl config use-context spire-server-cluster
 kubectl -n spire create configmap workload-cluster-kubeconfig --from-file=kubeconfig=/tmp/workload-cluster-kubeconfig --dry-run=client -o yaml | kubectl apply -f -
 
 # Update the SPIRE server StatefulSet to mount the kubeconfig
-kubectl -n spire patch statefulset spire-server -p '{"spec":{"template":{"spec":{"volumes":[{"name":"workload-cluster-kubeconfig","configMap":{"name":"workload-cluster-kubeconfig"}}]}}}}'
-kubectl -n spire patch statefulset spire-server -p '{"spec":{"template":{"spec":{"containers":[{"name":"spire-server","volumeMounts":[{"name":"workload-cluster-kubeconfig","mountPath":"/run/spire/workload-cluster-kubeconfig","readOnly":true}]}]}}}}'
+kubectl -n spire patch statefulset spire-server --type=json -p '[{"op":"add","path":"/spec/template/spec/volumes/-","value":{"name":"workload-cluster-kubeconfig","configMap":{"name":"workload-cluster-kubeconfig"}}}]'
+kubectl -n spire patch statefulset spire-server --type=json -p '[{"op":"add","path":"/spec/template/spec/containers/0/volumeMounts/-","value":{"name":"workload-cluster-kubeconfig","mountPath":"/run/spire/workload-cluster-kubeconfig","readOnly":true}}]'
 
 # Restart the SPIRE server to apply the changes
 kubectl -n spire rollout restart statefulset spire-server

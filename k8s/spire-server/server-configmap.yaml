@@ -17,7 +17,7 @@ data:
       ca_subject = {
         country = ["US"],
         organization = ["SPIFFE"],
-        common_name = "",
+        common_name = ""
       }
     }
 
