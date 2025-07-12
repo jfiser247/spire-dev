@@ -34,6 +34,7 @@ The setup consists of two minikube clusters:
    ```
    chmod +x scripts/setup-clusters.sh
    chmod +x scripts/verify-setup.sh
+   chmod +x scripts/push-changes.sh
    ```
 
 3. Run the setup script:
@@ -115,6 +116,15 @@ SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spir
 kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server entry show
 ```
 
+### Push Git Changes
+```
+./scripts/push-changes.sh
+```
+This script will:
+- Check for uncommitted changes
+- Verify if there are commits to push
+- Push the changes to the remote repository
+
 ## Cleanup
 
 To delete the minikube clusters:
@@ -150,5 +160,6 @@ minikube delete -p workload-cluster
 │       └── service3-deployment.yaml
 └── scripts
     ├── setup-clusters.sh
-    └── verify-setup.sh
+    ├── verify-setup.sh
+    └── push-changes.sh
 ```
