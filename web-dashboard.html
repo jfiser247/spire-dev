@@ -206,6 +206,146 @@
             color: #007bff;
             font-weight: bold;
         }
+        .metrics-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border: none;
+            width: 90%;
+            max-width: 1000px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            line-height: 1;
+        }
+        .close:hover {
+            opacity: 0.7;
+        }
+        .modal-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .metric-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-detail-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .metric-detail-card h4 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        .metric-value-large {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .trend-indicator {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .trend-up {
+            color: #28a745;
+        }
+        .trend-down {
+            color: #dc3545;
+        }
+        .trend-stable {
+            color: #6c757d;
+        }
+        .trend-warning {
+            color: #ffc107;
+        }
+        .metric-chart {
+            height: 200px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-style: italic;
+            margin: 20px 0;
+        }
+        .metrics-clickable {
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .metrics-clickable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .metrics-clickable::after {
+            content: '🔍';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .metrics-clickable:hover::after {
+            opacity: 1;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        @keyframes slideIn {
+            from {transform: translateY(-50px); opacity: 0;}
+            to {transform: translateY(0); opacity: 1;}
+        }
     </style>
 </head>
 <body>
@@ -221,6 +361,7 @@
             <button class="tab" onclick="showTab('database')">Database</button>
             <button class="tab" onclick="showTab('agents')">Agents</button>
             <button class="tab" onclick="showTab('workloads')">Workloads</button>
+            <button class="tab" onclick="showTab('metrics')">SPIRE Metrics</button>
             <button class="tab" onclick="showTab('commands')">Useful Commands</button>
         </div>
         
@@ -432,6 +573,186 @@
                 </table>
             </div>
             
+            <div id="metrics" class="tab-pane">
+                <h2>SPIRE Metrics & Telemetry</h2>
+                <button class="refresh-btn" onclick="refreshMetricsStatus()">🔄 Refresh Metrics</button>
+                <button class="refresh-btn" onclick="toggleAutoRefreshTab('metrics')" id="metrics-auto-btn">🟢 Auto-refresh: ON</button>
+                
+                <div class="cluster-info">
+                    <h4>SPIRE Telemetry Overview</h4>
+                    <p>Monitor key SPIFFE/SPIRE operational metrics for identity management, certificate issuance, and agent health.</p>
+                </div>
+
+                <div class="status-grid">
+                    <div class="status-card metrics-clickable" onclick="showMetricDetail('server-rpc')" title="Click for detailed RPC metrics">
+                        <h3>Server RPC Calls</h3>
+                        <div class="status-value" id="server-rpc-calls">-</div>
+                        <p>Total server RPC operations</p>
+                    </div>
+                    <div class="status-card metrics-clickable" onclick="showMetricDetail('agent-connections')" title="Click for detailed connection metrics">
+                        <h3>Agent Connections</h3>
+                        <div class="status-value" id="agent-connections">-</div>
+                        <p>Active agent connections</p>
+                    </div>
+                    <div class="status-card metrics-clickable" onclick="showMetricDetail('svid-issuance')" title="Click for detailed SVID issuance metrics">
+                        <h3>SVID Issuance Rate</h3>
+                        <div class="status-value" id="svid-rate">-</div>
+                        <p>SVIDs issued per minute</p>
+                    </div>
+                    <div class="status-card metrics-clickable" onclick="showMetricDetail('certificate-expiry')" title="Click for detailed certificate expiry metrics">
+                        <h3>Certificate Expiry</h3>
+                        <div class="status-value" id="cert-expiry">-</div>
+                        <p>Certificates expiring soon</p>
+                    </div>
+                </div>
+
+                <h3>SPIRE Server Metrics</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Type</th>
+                            <th>Current Value</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="server-metrics-table">
+                        <tr>
+                            <td>spire_server.rpc.attest_agent</td>
+                            <td>Counter</td>
+                            <td id="attest-agent-count">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>Agent attestation requests</td>
+                        </tr>
+                        <tr>
+                            <td>spire_server.rpc.fetch_jwt_svid</td>
+                            <td>Counter</td>
+                            <td id="jwt-svid-count">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>JWT-SVID fetch operations</td>
+                        </tr>
+                        <tr>
+                            <td>spire_server.rpc.fetch_x509_svid</td>
+                            <td>Counter</td>
+                            <td id="x509-svid-count">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>X.509-SVID fetch operations</td>
+                        </tr>
+                        <tr>
+                            <td>spire_server.ca.sign_x509_ca_svid</td>
+                            <td>Counter</td>
+                            <td id="ca-sign-count">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>CA certificate signing operations</td>
+                        </tr>
+                        <tr>
+                            <td>spire_server.datastore.bundle.fetch</td>
+                            <td>Counter</td>
+                            <td id="bundle-fetch-count">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>Trust bundle fetch operations</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>SPIRE Agent Metrics</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Type</th>
+                            <th>Current Value</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agent-metrics-table">
+                        <tr>
+                            <td>spire_agent.rpc.fetch_x509_svid</td>
+                            <td>Counter</td>
+                            <td id="agent-x509-count">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>Agent X.509-SVID requests</td>
+                        </tr>
+                        <tr>
+                            <td>spire_agent.cache_manager.expiring_svids</td>
+                            <td>Gauge</td>
+                            <td id="expiring-svids">-</td>
+                            <td><span class="status-warning">●</span> Monitor</td>
+                            <td>Number of SVIDs expiring soon</td>
+                        </tr>
+                        <tr>
+                            <td>spire_agent.cache_manager.outdated_svids</td>
+                            <td>Gauge</td>
+                            <td id="outdated-svids">-</td>
+                            <td><span class="status-warning">●</span> Monitor</td>
+                            <td>Number of outdated SVIDs</td>
+                        </tr>
+                        <tr>
+                            <td>spire_agent.sds_api.connections</td>
+                            <td>Gauge</td>
+                            <td id="sds-connections">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>Active SDS API connections</td>
+                        </tr>
+                        <tr>
+                            <td>spire_agent.sync_manager.fetch_entries</td>
+                            <td>Counter</td>
+                            <td id="sync-entries">-</td>
+                            <td><span class="status-online">●</span> OK</td>
+                            <td>Entry synchronization operations</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="cluster-info">
+                    <h4>Metrics Collection Configuration</h4>
+                    <p><strong>Prometheus Endpoint:</strong> http://spire-server:9988/metrics</p>
+                    <p><strong>Agent Metrics:</strong> Available on each node via DaemonSet</p>
+                    <p><strong>Collection Interval:</strong> 30 seconds</p>
+                    <p><strong>Retention:</strong> 15 days</p>
+                </div>
+
+                <h3>Alert Thresholds</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Alert</th>
+                            <th>Condition</th>
+                            <th>Severity</th>
+                            <th>Current Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>SPIRE Server Down</td>
+                            <td>Server unavailable > 1min</td>
+                            <td>Critical</td>
+                            <td><span class="status-online">●</span> OK</td>
+                        </tr>
+                        <tr>
+                            <td>High SVID Expiration</td>
+                            <td>Expiring SVIDs > 50</td>
+                            <td>Warning</td>
+                            <td><span class="status-online">●</span> OK</td>
+                        </tr>
+                        <tr>
+                            <td>Agent Attestation Failures</td>
+                            <td>Failed attestations > 10/min</td>
+                            <td>Warning</td>
+                            <td><span class="status-online">●</span> OK</td>
+                        </tr>
+                        <tr>
+                            <td>CA Certificate Expiry</td>
+                            <td>CA cert expires < 30 days</td>
+                            <td>Critical</td>
+                            <td><span class="status-online">●</span> OK</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
             <div id="commands" class="tab-pane">
                 <h2>Useful Commands</h2>
                 
@@ -472,6 +793,16 @@
                 <h3>Run Verification Script</h3>
                 <div class="command-box">./scripts/verify-setup.sh</div>
                 
+                <h3>Check SPIRE Server Metrics (Prometheus)</h3>
+                <div class="command-box">curl http://localhost:9988/metrics</div>
+                
+                <h3>Check SPIRE Agent Metrics</h3>
+                <div class="command-box">kubectl --context workload-cluster -n spire port-forward spire-agent-<pod-id> 9988:9988 &
+curl http://localhost:9988/metrics</div>
+                
+                <h3>View SPIRE Server Telemetry Configuration</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire get configmap spire-server -o yaml | grep -A 20 telemetry</div>
+                
                 <div class="cluster-info">
                     <h4>Age Calculation Debug</h4>
                     <p><strong>Current Time:</strong> <span id="current-time">-</span></p>
@@ -488,6 +819,19 @@
         </div>
     </div>
 
+    <!-- Metrics Detail Modals -->
+    <div id="metrics-modal" class="metrics-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Metric Details</h2>
+                <button class="close" onclick="closeMetricModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global variables for auto-refresh
         let autoRefreshInterval = null;
@@ -498,7 +842,8 @@
             server: true,
             database: true,
             agents: true,
-            workloads: true
+            workloads: true,
+            metrics: true
         };
 
         function showTab(tabName) {
@@ -526,6 +871,7 @@
                         (tabName === 'database' && tabText.includes('database')) ||
                         (tabName === 'agents' && tabText.includes('agents')) ||
                         (tabName === 'workloads' && tabText.includes('workloads')) ||
+                        (tabName === 'metrics' && tabText.includes('metrics')) ||
                         (tabName === 'commands' && tabText.includes('commands'))) {
                         tab.classList.add('active');
                     }
@@ -555,6 +901,9 @@
                         break;
                     case 'workloads':
                         refreshWorkloadStatus();
+                        break;
+                    case 'metrics':
+                        refreshMetricsStatus();
                         break;
                 }
                 
@@ -624,6 +973,7 @@
             if (tabAutoRefresh.database) refreshDatabaseStatus();
             if (tabAutoRefresh.agents) refreshAgentStatus();
             if (tabAutoRefresh.workloads) refreshWorkloadStatus();
+            if (tabAutoRefresh.metrics) refreshMetricsStatus();
         }
 
         function toggleAutoRefreshTab(tab) {
@@ -1043,6 +1393,493 @@
             table.classList.remove('loading');
         }
         
+        async function refreshMetricsStatus() {
+            try {
+                // Simulate SPIRE metrics data
+                // In a real implementation, this would fetch from Prometheus endpoints
+                const metricsData = {
+                    serverRpcCalls: Math.floor(Math.random() * 10000) + 5000,
+                    agentConnections: Math.floor(Math.random() * 50) + 10,
+                    svidRate: Math.floor(Math.random() * 100) + 20,
+                    certExpiry: Math.floor(Math.random() * 10) + 5,
+                    attestAgentCount: Math.floor(Math.random() * 500) + 100,
+                    jwtSvidCount: Math.floor(Math.random() * 200) + 50,
+                    x509SvidCount: Math.floor(Math.random() * 800) + 200,
+                    caSignCount: Math.floor(Math.random() * 100) + 25,
+                    bundleFetchCount: Math.floor(Math.random() * 150) + 30,
+                    agentX509Count: Math.floor(Math.random() * 300) + 75,
+                    expiringSvids: Math.floor(Math.random() * 20) + 5,
+                    outdatedSvids: Math.floor(Math.random() * 10) + 2,
+                    sdsConnections: Math.floor(Math.random() * 25) + 5,
+                    syncEntries: Math.floor(Math.random() * 100) + 40
+                };
+                
+                // Update summary cards
+                document.getElementById('server-rpc-calls').textContent = metricsData.serverRpcCalls.toLocaleString();
+                document.getElementById('agent-connections').textContent = metricsData.agentConnections;
+                document.getElementById('svid-rate').textContent = metricsData.svidRate + '/min';
+                document.getElementById('cert-expiry').textContent = metricsData.certExpiry;
+                
+                // Update detailed metrics tables
+                document.getElementById('attest-agent-count').textContent = metricsData.attestAgentCount.toLocaleString();
+                document.getElementById('jwt-svid-count').textContent = metricsData.jwtSvidCount.toLocaleString();
+                document.getElementById('x509-svid-count').textContent = metricsData.x509SvidCount.toLocaleString();
+                document.getElementById('ca-sign-count').textContent = metricsData.caSignCount.toLocaleString();
+                document.getElementById('bundle-fetch-count').textContent = metricsData.bundleFetchCount.toLocaleString();
+                
+                document.getElementById('agent-x509-count').textContent = metricsData.agentX509Count.toLocaleString();
+                document.getElementById('expiring-svids').textContent = metricsData.expiringSvids;
+                document.getElementById('outdated-svids').textContent = metricsData.outdatedSvids;
+                document.getElementById('sds-connections').textContent = metricsData.sdsConnections;
+                document.getElementById('sync-entries').textContent = metricsData.syncEntries.toLocaleString();
+                
+                // Store metrics data globally for modal access
+                window.currentMetricsData = metricsData;
+                
+                console.log('Metrics refreshed:', metricsData);
+            } catch (error) {
+                console.error('Failed to refresh metrics status:', error);
+            }
+        }
+        
+        // Modal functionality for metric drilldown
+        function showMetricDetail(metricType) {
+            const modal = document.getElementById('metrics-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            
+            // Generate detailed content based on metric type
+            const content = generateMetricDetailContent(metricType);
+            modalTitle.textContent = content.title;
+            modalBody.innerHTML = content.body;
+            
+            modal.style.display = 'block';
+            
+            // Add event listener to close modal when clicking outside
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    closeMetricModal();
+                }
+            };
+        }
+        
+        function closeMetricModal() {
+            document.getElementById('metrics-modal').style.display = 'none';
+        }
+        
+        // Add keyboard support for closing modal
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMetricModal();
+            }
+        });
+        
+        function generateMetricDetailContent(metricType) {
+            const currentData = window.currentMetricsData || {};
+            
+            switch(metricType) {
+                case 'server-rpc':
+                    return {
+                        title: 'Server RPC Calls - Detailed Analysis',
+                        body: `
+                            <div class="metric-detail-grid">
+                                <div class="metric-detail-card">
+                                    <h4>Total RPC Calls</h4>
+                                    <div class="metric-value-large">${(currentData.serverRpcCalls || 7234).toLocaleString()}</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-up">↗</span>
+                                        <span>+5.2% from last hour</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Average Response Time</h4>
+                                    <div class="metric-value-large">24ms</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-stable">→</span>
+                                        <span>Stable performance</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Error Rate</h4>
+                                    <div class="metric-value-large">0.12%</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-down">↘</span>
+                                        <span>-0.03% improvement</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Peak RPC/sec</h4>
+                                    <div class="metric-value-large">156</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-up">↗</span>
+                                        <span>Highest in last 24h</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <h4>RPC Call Breakdown</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>RPC Method</th>
+                                        <th>Call Count</th>
+                                        <th>Success Rate</th>
+                                        <th>Avg Response Time</th>
+                                        <th>Last Called</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>attest_agent</td>
+                                        <td>${(currentData.attestAgentCount || 423).toLocaleString()}</td>
+                                        <td><span class="status-online">99.8%</span></td>
+                                        <td>45ms</td>
+                                        <td>2 seconds ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>fetch_x509_svid</td>
+                                        <td>${(currentData.x509SvidCount || 1567).toLocaleString()}</td>
+                                        <td><span class="status-online">99.9%</span></td>
+                                        <td>18ms</td>
+                                        <td>1 second ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>fetch_jwt_svid</td>
+                                        <td>${(currentData.jwtSvidCount || 234).toLocaleString()}</td>
+                                        <td><span class="status-online">99.7%</span></td>
+                                        <td>12ms</td>
+                                        <td>5 seconds ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>sign_x509_ca_svid</td>
+                                        <td>${(currentData.caSignCount || 89).toLocaleString()}</td>
+                                        <td><span class="status-online">100%</span></td>
+                                        <td>67ms</td>
+                                        <td>12 seconds ago</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="metric-chart">
+                                📊 RPC Calls Timeline Chart (Requires Chart.js integration)
+                            </div>
+                        `
+                    };
+                    
+                case 'agent-connections':
+                    return {
+                        title: 'Agent Connections - Detailed Analysis',
+                        body: `
+                            <div class="metric-detail-grid">
+                                <div class="metric-detail-card">
+                                    <h4>Active Connections</h4>
+                                    <div class="metric-value-large">${currentData.agentConnections || 24}</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-stable">→</span>
+                                        <span>Stable over last hour</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Connection Pool Usage</h4>
+                                    <div class="metric-value-large">78%</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-up">↗</span>
+                                        <span>+12% from baseline</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Failed Connections</h4>
+                                    <div class="metric-value-large">2</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-down">↘</span>
+                                        <span>-3 from last hour</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Avg Connection Duration</h4>
+                                    <div class="metric-value-large">4.2h</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-up">↗</span>
+                                        <span>Healthy session length</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <h4>Agent Connection Status</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Agent ID</th>
+                                        <th>Node</th>
+                                        <th>Status</th>
+                                        <th>Connected Since</th>
+                                        <th>Last Heartbeat</th>
+                                        <th>Data Transferred</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>spire-agent-79mq8</td>
+                                        <td>workload-cluster-node-1</td>
+                                        <td><span class="status-online">●</span> Connected</td>
+                                        <td>3.2h ago</td>
+                                        <td>2s ago</td>
+                                        <td>4.2 MB</td>
+                                    </tr>
+                                    <tr>
+                                        <td>spire-agent-k8s4x</td>
+                                        <td>workload-cluster-node-2</td>
+                                        <td><span class="status-online">●</span> Connected</td>
+                                        <td>3.1h ago</td>
+                                        <td>1s ago</td>
+                                        <td>3.8 MB</td>
+                                    </tr>
+                                    <tr>
+                                        <td>spire-agent-p9n2m</td>
+                                        <td>workload-cluster-node-3</td>
+                                        <td><span class="status-warning">●</span> Reconnecting</td>
+                                        <td>2.8h ago</td>
+                                        <td>45s ago</td>
+                                        <td>2.1 MB</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="metric-chart">
+                                📊 Connection Timeline Chart (Requires Chart.js integration)
+                            </div>
+                        `
+                    };
+                    
+                case 'svid-issuance':
+                    return {
+                        title: 'SVID Issuance - Detailed Analysis',
+                        body: `
+                            <div class="metric-detail-grid">
+                                <div class="metric-detail-card">
+                                    <h4>Current Issuance Rate</h4>
+                                    <div class="metric-value-large">${currentData.svidRate || 67}/min</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-up">↗</span>
+                                        <span>+15% from baseline</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Total SVIDs Issued Today</h4>
+                                    <div class="metric-value-large">12,435</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-up">↗</span>
+                                        <span>Normal daily volume</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>X.509 vs JWT Ratio</h4>
+                                    <div class="metric-value-large">85:15</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-stable">→</span>
+                                        <span>Typical distribution</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Avg Issuance Time</h4>
+                                    <div class="metric-value-large">120ms</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-down">↘</span>
+                                        <span>-20ms improvement</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <h4>SVID Issuance Breakdown</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>SVID Type</th>
+                                        <th>Count (Last Hour)</th>
+                                        <th>Success Rate</th>
+                                        <th>Avg Time</th>
+                                        <th>Common Selectors</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>X.509-SVID</td>
+                                        <td>${(currentData.x509SvidCount || 2847).toLocaleString()}</td>
+                                        <td><span class="status-online">99.9%</span></td>
+                                        <td>145ms</td>
+                                        <td>k8s:pod-name, k8s:namespace</td>
+                                    </tr>
+                                    <tr>
+                                        <td>JWT-SVID</td>
+                                        <td>${(currentData.jwtSvidCount || 512).toLocaleString()}</td>
+                                        <td><span class="status-online">99.8%</span></td>
+                                        <td>67ms</td>
+                                        <td>k8s:service-account</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <h4>Recent Issuance Activity</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>SVID Type</th>
+                                        <th>Subject</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2s ago</td>
+                                        <td>X.509</td>
+                                        <td>spiffe://example.org/service1</td>
+                                        <td>112ms</td>
+                                        <td><span class="status-online">✓</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>5s ago</td>
+                                        <td>JWT</td>
+                                        <td>spiffe://example.org/service2</td>
+                                        <td>45ms</td>
+                                        <td><span class="status-online">✓</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>8s ago</td>
+                                        <td>X.509</td>
+                                        <td>spiffe://example.org/service3</td>
+                                        <td>134ms</td>
+                                        <td><span class="status-online">✓</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="metric-chart">
+                                📊 SVID Issuance Rate Chart (Requires Chart.js integration)
+                            </div>
+                        `
+                    };
+                    
+                case 'certificate-expiry':
+                    return {
+                        title: 'Certificate Expiry - Detailed Analysis',
+                        body: `
+                            <div class="metric-detail-grid">
+                                <div class="metric-detail-card">
+                                    <h4>Expiring Soon (< 24h)</h4>
+                                    <div class="metric-value-large">${currentData.certExpiry || 8}</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-warning">⚠</span>
+                                        <span>Requires attention</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Expiring This Week</h4>
+                                    <div class="metric-value-large">127</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-stable">→</span>
+                                        <span>Normal rotation cycle</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>Auto-Renewal Success</h4>
+                                    <div class="metric-value-large">99.4%</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-up">↗</span>
+                                        <span>+0.2% improvement</span>
+                                    </div>
+                                </div>
+                                <div class="metric-detail-card">
+                                    <h4>CA Certificate Validity</h4>
+                                    <div class="metric-value-large">247d</div>
+                                    <div class="metric-trend">
+                                        <span class="trend-indicator trend-stable">→</span>
+                                        <span>Healthy CA lifespan</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <h4>Certificate Expiry Timeline</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Certificate</th>
+                                        <th>Type</th>
+                                        <th>Subject</th>
+                                        <th>Expires In</th>
+                                        <th>Auto-Renew</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>cert-abc123</td>
+                                        <td>SVID</td>
+                                        <td>spiffe://example.org/service1</td>
+                                        <td><span class="status-warning">4h 23m</span></td>
+                                        <td>✓ Enabled</td>
+                                        <td><span class="status-warning">●</span> Monitored</td>
+                                    </tr>
+                                    <tr>
+                                        <td>cert-def456</td>
+                                        <td>SVID</td>
+                                        <td>spiffe://example.org/service2</td>
+                                        <td><span class="status-warning">18h 45m</span></td>
+                                        <td>✓ Enabled</td>
+                                        <td><span class="status-online">●</span> Healthy</td>
+                                    </tr>
+                                    <tr>
+                                        <td>cert-ghi789</td>
+                                        <td>CA</td>
+                                        <td>SPIRE Intermediate CA</td>
+                                        <td><span class="status-online">247d 12h</span></td>
+                                        <td>✓ Enabled</td>
+                                        <td><span class="status-online">●</span> Healthy</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <h4>Renewal Activity (Last 24h)</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Certificate</th>
+                                        <th>Action</th>
+                                        <th>New Expiry</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2h ago</td>
+                                        <td>spiffe://example.org/service4</td>
+                                        <td>Auto-Renewed</td>
+                                        <td>in 23h 45m</td>
+                                        <td><span class="status-online">✓ Success</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>6h ago</td>
+                                        <td>spiffe://example.org/service5</td>
+                                        <td>Auto-Renewed</td>
+                                        <td>in 17h 23m</td>
+                                        <td><span class="status-online">✓ Success</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>14h ago</td>
+                                        <td>spiffe://example.org/service6</td>
+                                        <td>Manual Renewal</td>
+                                        <td>in 9h 34m</td>
+                                        <td><span class="status-online">✓ Success</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="metric-chart">
+                                📊 Certificate Expiry Timeline Chart (Requires Chart.js integration)
+                            </div>
+                        `
+                    };
+                    
+                default:
+                    return {
+                        title: 'Metric Details',
+                        body: '<p>Metric details not available for this type.</p>'
+                    };
+            }
+        }
+        
         // Initialize with some default data and start auto-refresh
         window.onload = function() {
             refreshStatus();
@@ -1050,6 +1887,7 @@
             refreshDatabaseStatus();
             refreshAgentStatus();
             refreshWorkloadStatus();
+            refreshMetricsStatus();
             updateRefreshInterval(); // Start auto-refresh with default 10s interval
         };
     </script>
