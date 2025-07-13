@@ -13,12 +13,6 @@ data:
       data_dir = "/run/spire/data"
       log_level = "DEBUG"
       log_file = "/run/spire/data/server.log"
-      default_svid_ttl = "1h"
-      ca_subject = {
-        country = ["US"],
-        organization = ["SPIFFE"],
-        common_name = ""
-      }
     }
 
     plugins {
@@ -29,29 +23,9 @@ data:
         }
       }
 
-      NodeAttestor "k8s_psat" {
-        plugin_data {
-          clusters = {
-            "cluster" = {
-              service_account_allow_list = ["spire:spire-agent"]
-              use_token_review_api_validation = true
-              skip_client_id_validation = true
-              kubeconfig_path = "/run/spire/workload-cluster-kubeconfig/kubeconfig"
-            }
-          }
-        }
-      }
-
       KeyManager "disk" {
         plugin_data {
           keys_path = "/run/spire/data/keys.json"
-        }
-      }
-
-      Notifier "k8sbundle" {
-        plugin_data {
-          namespace = "spire"
-          config_map = "spire-bundle"
         }
       }
     }
