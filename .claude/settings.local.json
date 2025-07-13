@@ -20,7 +20,9 @@
       "Bash(open /Users/jfiser/Documents/projects/intellij-projects/spiffe/spire-dev/web-dashboard.html)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(./scripts/push-changes.sh:*)"
     ],
     "deny": []
   }

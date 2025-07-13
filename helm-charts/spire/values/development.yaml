@@ -72,23 +72,26 @@ registrationEntries:
         - "k8s_psat:cluster:dev-cluster"
       ttl: 3600
       
-    - spiffeId: "spiffe://dev.example.org/workload/service1"
+    - spiffeId: "spiffe://dev.example.org/workload/user-service"
       parentId: "spiffe://dev.example.org/spire/agent/k8s_psat/dev-cluster"
       selectors:
         - "k8s:ns:workload"
-        - "k8s:sa:service1"
-      ttl: 1800
+        - "k8s:sa:user-service"
+        - "k8s:pod-label:app:user-service"
+      ttl: 3600  # Longer TTL for development
       
-    - spiffeId: "spiffe://dev.example.org/workload/service2"
+    - spiffeId: "spiffe://dev.example.org/workload/payment-api"
       parentId: "spiffe://dev.example.org/spire/agent/k8s_psat/dev-cluster"
       selectors:
         - "k8s:ns:workload"
-        - "k8s:sa:service2"
-      ttl: 1800
+        - "k8s:sa:payment-api"
+        - "k8s:pod-label:app:payment-api"
+      ttl: 3600  # Longer TTL for development
       
-    - spiffeId: "spiffe://dev.example.org/workload/service3"
+    - spiffeId: "spiffe://dev.example.org/workload/inventory-service"
       parentId: "spiffe://dev.example.org/spire/agent/k8s_psat/dev-cluster"
       selectors:
         - "k8s:ns:workload"
-        - "k8s:sa:service3"
-      ttl: 1800
+        - "k8s:sa:inventory-service"
+        - "k8s:pod-label:app:inventory-service"
+      ttl: 3600  # Longer TTL for development

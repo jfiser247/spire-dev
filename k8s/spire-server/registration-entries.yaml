@@ -19,29 +19,29 @@ data:
       -selector k8s_psat:agent_sa:spire-agent \
       -node
 
-    # Register service1
+    # Register user management service
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/workload/service1 \
+      -spiffeID spiffe://example.org/workload/user-service \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
       -selector k8s:ns:workload \
-      -selector k8s:sa:default \
-      -selector k8s:pod-label:app:service1
+      -selector k8s:sa:user-service \
+      -selector k8s:pod-label:app:user-service
 
-    # Register service2
+    # Register payment processing API
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/workload/service2 \
+      -spiffeID spiffe://example.org/workload/payment-api \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
       -selector k8s:ns:workload \
-      -selector k8s:sa:default \
-      -selector k8s:pod-label:app:service2
+      -selector k8s:sa:payment-api \
+      -selector k8s:pod-label:app:payment-api
 
-    # Register service3
+    # Register inventory management service
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/workload/service3 \
+      -spiffeID spiffe://example.org/workload/inventory-service \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
       -selector k8s:ns:workload \
-      -selector k8s:sa:default \
-      -selector k8s:pod-label:app:service3
+      -selector k8s:sa:inventory-service \
+      -selector k8s:pod-label:app:inventory-service
 
     # List all entries
     /opt/spire/bin/spire-server entry show

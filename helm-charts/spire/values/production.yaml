@@ -164,26 +164,29 @@ registrationEntries:
         - "k8s_psat:cluster:production-cluster"
       ttl: 3600
       
-    - spiffeId: "spiffe://example.org/workload/service1"
+    - spiffeId: "spiffe://example.org/workload/user-service"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/production-cluster"
       selectors:
         - "k8s:ns:production"
-        - "k8s:sa:service1"
-        - "k8s:pod-label:app:service1"
-      ttl: 900  # 15 minutes for production security
+        - "k8s:sa:user-service"
+        - "k8s:pod-label:app:user-service"
+        - "k8s:pod-label:service:user-management"
+      ttl: 1200  # 20 minutes for user service
       
-    - spiffeId: "spiffe://example.org/workload/service2"
+    - spiffeId: "spiffe://example.org/workload/payment-api"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/production-cluster"
       selectors:
         - "k8s:ns:production"
-        - "k8s:sa:service2"
-        - "k8s:pod-label:app:service2"
-      ttl: 900
+        - "k8s:sa:payment-api"
+        - "k8s:pod-label:app:payment-api"
+        - "k8s:pod-label:service:payment-processing"
+      ttl: 600  # 10 minutes for payment API security
       
-    - spiffeId: "spiffe://example.org/workload/service3"
+    - spiffeId: "spiffe://example.org/workload/inventory-service"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/production-cluster"
       selectors:
         - "k8s:ns:production"
-        - "k8s:sa:service3"
-        - "k8s:pod-label:app:service3"
-      ttl: 900
+        - "k8s:sa:inventory-service"
+        - "k8s:pod-label:app:inventory-service"
+        - "k8s:pod-label:service:inventory-management"
+      ttl: 1800  # 30 minutes for inventory service

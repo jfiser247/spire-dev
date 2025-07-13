@@ -32,7 +32,7 @@ SPIFFE provides a secure identity framework for services in dynamic and heteroge
 - **Industry Standard**: CNCF graduated project with broad ecosystem support
 
 ### Core Concepts
-- **SPIFFE ID**: Unique identity URI (e.g., `spiffe://example.org/workload/my-service`)
+- **SPIFFE ID**: Unique identity URI (e.g., `spiffe://example.org/workload/user-service`)
 - **SVID**: SPIFFE Verifiable Identity Document (X.509 certificate or JWT token)
 - **Workload API**: API for retrieving SVIDs and trust bundles
 - **SPIRE**: Production-ready implementation of SPIFFE
@@ -71,9 +71,9 @@ spiffe://<trust-domain>/<workload-type>/<service-name>
 ```
 
 **Examples:**
-- `spiffe://example.org/workload/user-service`
-- `spiffe://example.org/workload/payment-api`
-- `spiffe://example.org/workload/notification-service`
+- `spiffe://example.org/workload/user-service` - User management and authentication
+- `spiffe://example.org/workload/payment-api` - Payment processing service
+- `spiffe://example.org/workload/inventory-service` - Inventory management system
 
 ### Step 2: Determine Your Selectors
 
@@ -82,14 +82,14 @@ Selectors identify your workload to SPIRE. Common Kubernetes selectors:
 ```yaml
 # Kubernetes namespace and service account
 k8s:ns:production
-k8s:sa:my-service
+k8s:sa:user-service
 
 # Pod labels
-k8s:pod-label:app:my-service
+k8s:pod-label:app:user-service
 k8s:pod-label:version:v1.2.0
 
 # Container image
-k8s:container-image:my-company/my-service:latest
+k8s:container-image:my-company/user-service:latest
 ```
 
 ### Step 3: Create Registration Entry
@@ -97,14 +97,15 @@ k8s:container-image:my-company/my-service:latest
 Submit a registration request to your SPIRE administrator with:
 
 ```yaml
-# Registration Request Template
-service_name: "my-service"
-spiffe_id: "spiffe://example.org/workload/my-service"
+# Registration Request Template for User Service
+service_name: "user-service"
+spiffe_id: "spiffe://example.org/workload/user-service"
 parent_id: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
 selectors:
   - "k8s:ns:production"
-  - "k8s:sa:my-service"
-  - "k8s:pod-label:app:my-service"
+  - "k8s:sa:user-service"
+  - "k8s:pod-label:app:user-service"
+  - "k8s:pod-label:service:user-management"
 ttl: 1800  # 30 minutes (adjust based on your needs)
 ```
 
@@ -113,11 +114,12 @@ ttl: 1800  # 30 minutes (adjust based on your needs)
 # SPIRE administrator will run:
 kubectl --context spire-server-cluster -n spire exec spire-server-0 -- \
   /opt/spire/bin/spire-server entry create \
-  -spiffeID spiffe://example.org/workload/my-service \
+  -spiffeID spiffe://example.org/workload/user-service \
   -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
   -selector k8s:ns:production \
-  -selector k8s:sa:my-service \
-  -selector k8s:pod-label:app:my-service \
+  -selector k8s:sa:user-service \
+  -selector k8s:pod-label:app:user-service \
+  -selector k8s:pod-label:service:user-management \
   -ttl 1800
 ```
 
@@ -159,23 +161,24 @@ Choose the appropriate library for your language:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-service
+  name: user-service
   namespace: production
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: my-service
+      app: user-service
   template:
     metadata:
       labels:
-        app: my-service
+        app: user-service
         version: v1.2.0
+        service: user-management
     spec:
-      serviceAccountName: my-service  # Important: Matches selector
+      serviceAccountName: user-service  # Important: Matches selector
       containers:
-      - name: my-service
-        image: my-company/my-service:v1.2.0
+      - name: user-service
+        image: my-company/user-service:v1.2.0
         ports:
         - containerPort: 8080
         env:
@@ -194,7 +197,7 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: my-service
+  name: user-service
   namespace: production
 ```
 
@@ -536,12 +539,12 @@ kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- \
 
 # Look for your SPIFFE ID in the output:
 # Entry ID         : <entry-id>
-# SPIFFE ID        : spiffe://example.org/workload/my-service
+# SPIFFE ID        : spiffe://example.org/workload/user-service
 # Parent ID        : spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster
 # Revision         : 0
 # TTL              : 1800
 # Selector         : k8s:ns:production
-# Selector         : k8s:sa:my-service
+# Selector         : k8s:sa:user-service
 ```
 
 ### Step 2: Test SVID Retrieval
@@ -554,12 +557,12 @@ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
-  name: spiffe-test-my-service
+  name: spiffe-test-user-service
   namespace: production
   labels:
-    app: my-service
+    app: user-service
 spec:
-  serviceAccountName: my-service
+  serviceAccountName: user-service
   containers:
   - name: spiffe-helper
     image: spiffe/spiffe-helper:latest
@@ -579,14 +582,14 @@ spec:
 EOF
 
 # Test SVID retrieval
-kubectl exec -it spiffe-test-my-service -- \
+kubectl exec -it spiffe-test-user-service -- \
   /opt/spiffe-helper/spiffe-helper api fetch x509
 ```
 
 **Expected Output:**
 ```
 SVID 0:
-  SPIFFE ID: spiffe://example.org/workload/my-service
+  SPIFFE ID: spiffe://example.org/workload/user-service
   Hint: internal
   TTL: 1795
   Trust Domain: example.org
@@ -598,7 +601,7 @@ Test your service endpoints:
 
 ```bash
 # Port forward to your service
-kubectl port-forward -n production deployment/my-service 8080:8080
+kubectl port-forward -n production deployment/user-service 8080:8080
 
 # Test health endpoint
 curl http://localhost:8080/health
@@ -610,7 +613,7 @@ curl http://localhost:8080/api/identity
 **Expected Response:**
 ```json
 {
-  "spiffe_id": "spiffe://example.org/workload/my-service",
+  "spiffe_id": "spiffe://example.org/workload/user-service",
   "serial_number": "123456789",
   "not_after": "2024-01-01T12:30:00Z"
 }
@@ -622,15 +625,15 @@ Test mutual TLS between services:
 
 ```bash
 # Create client certificate from SVID
-kubectl exec spiffe-test-my-service -- \
+kubectl exec spiffe-test-user-service -- \
   /opt/spiffe-helper/spiffe-helper api fetch x509 \
   -write /tmp/
 
 # Test mTLS connection
-kubectl exec spiffe-test-my-service -- \
+kubectl exec spiffe-test-user-service -- \
   curl --cert /tmp/svid.crt --key /tmp/key.pem \
        --cacert /tmp/bundle.crt \
-       https://my-service.production.svc.cluster.local:8443/api/identity
+       https://user-service.production.svc.cluster.local:8443/api/identity
 ```
 
 ### Step 5: Monitor SPIRE Logs
@@ -642,13 +645,13 @@ Check SPIRE agent logs for your workload:
 AGENT_POD=$(kubectl --context workload-cluster -n spire get pod -l app=spire-agent -o jsonpath='{.items[0].metadata.name}')
 
 # Watch logs for your service attestation
-kubectl --context workload-cluster -n spire logs -f $AGENT_POD | grep "my-service"
+kubectl --context workload-cluster -n spire logs -f $AGENT_POD | grep "user-service"
 ```
 
 **Look for logs like:**
 ```
-time="2024-01-01T10:00:00Z" level=info msg="Attestation completed" spiffe_id="spiffe://example.org/workload/my-service"
-time="2024-01-01T10:00:00Z" level=info msg="SVID updated" spiffe_id="spiffe://example.org/workload/my-service"
+time="2024-01-01T10:00:00Z" level=info msg="Attestation completed" spiffe_id="spiffe://example.org/workload/user-service"
+time="2024-01-01T10:00:00Z" level=info msg="SVID updated" spiffe_id="spiffe://example.org/workload/user-service"
 ```
 
 ---
@@ -677,7 +680,7 @@ kubectl get pod <your-pod> -o yaml | grep -A 10 -B 10 -E "(serviceAccount|labels
 
 # Compare with registered selectors
 kubectl --context spire-server-cluster -n spire exec spire-server-0 -- \
-  /opt/spire/bin/spire-server entry show -spiffeID spiffe://example.org/workload/my-service
+  /opt/spire/bin/spire-server entry show -spiffeID spiffe://example.org/workload/user-service
 ```
 
 #### Issue: "connection refused" to Workload API
@@ -719,10 +722,10 @@ ERROR: x509: certificate signed by unknown authority
 **Debug Commands:**
 ```bash
 # Fetch and examine certificates
-kubectl exec spiffe-test-my-service -- \
+kubectl exec spiffe-test-user-service -- \
   /opt/spiffe-helper/spiffe-helper api fetch x509 -write /tmp/
 
-kubectl exec spiffe-test-my-service -- \
+kubectl exec spiffe-test-user-service -- \
   openssl x509 -in /tmp/svid.crt -text -noout
 ```
 
@@ -741,7 +744,7 @@ kubectl exec spiffe-test-my-service -- \
 ```bash
 # Check TTL settings
 kubectl --context spire-server-cluster -n spire exec spire-server-0 -- \
-  /opt/spire/bin/spire-server entry show -spiffeID spiffe://example.org/workload/my-service
+  /opt/spire/bin/spire-server entry show -spiffeID spiffe://example.org/workload/user-service
 
 # Monitor rotation events
 kubectl --context workload-cluster -n spire logs -f -l app=spire-agent | grep rotation
@@ -788,7 +791,7 @@ metadata:
   name: spiffe-debug
   namespace: production
 spec:
-  serviceAccountName: my-service
+  serviceAccountName: user-service
   containers:
   - name: debug
     image: spiffe/spiffe-helper:latest
@@ -841,8 +844,8 @@ echo "=== Trust Bundle ==="
 # Use specific selectors
 selectors:
   - "k8s:ns:production"           # Specific namespace
-  - "k8s:sa:my-service"          # Specific service account
-  - "k8s:pod-label:app:my-service" # Specific application
+  - "k8s:sa:user-service"          # Specific service account
+  - "k8s:pod-label:app:user-service" # Specific application
   # Avoid overly broad selectors like just "k8s:ns:production"
 ```
 
@@ -947,11 +950,11 @@ func serviceHandler(w http.ResponseWriter, r *http.Request) {
 ```yaml
 # Use environment-specific SPIFFE IDs
 development:
-  spiffe_id: "spiffe://dev.example.org/workload/my-service"
+  spiffe_id: "spiffe://dev.example.org/workload/user-service"
 staging:
-  spiffe_id: "spiffe://staging.example.org/workload/my-service"
+  spiffe_id: "spiffe://staging.example.org/workload/user-service"
 production:
-  spiffe_id: "spiffe://example.org/workload/my-service"
+  spiffe_id: "spiffe://example.org/workload/user-service"
 ```
 
 #### 2. **Testing Strategy**
@@ -978,8 +981,8 @@ func TestWithRealSpiffe(t *testing.T) {
 # Document your service's SPIFFE requirements
 metadata:
   annotations:
-    spiffe.io/spiffe-id: "spiffe://example.org/workload/my-service"
-    spiffe.io/selectors: "k8s:ns:production,k8s:sa:my-service"
+    spiffe.io/spiffe-id: "spiffe://example.org/workload/user-service"
+    spiffe.io/selectors: "k8s:ns:production,k8s:sa:user-service"
     spiffe.io/ttl: "1800"
     spiffe.io/description: "User management service requiring database access"
 ```
@@ -1054,7 +1057,7 @@ For production issues:
 ```bash
 # Check if your service is registered
 kubectl --context spire-server-cluster -n spire exec spire-server-0 -- \
-  /opt/spire/bin/spire-server entry show | grep "my-service"
+  /opt/spire/bin/spire-server entry show | grep "user-service"
 
 # Test SVID retrieval
 kubectl exec -it <your-pod> -- \
@@ -1066,7 +1069,7 @@ kubectl --context workload-cluster -n spire logs -f -l app=spire-agent
 
 # Debug certificate expiry
 kubectl exec <your-pod> -- \
-  openssl s_client -connect localhost:8443 -servername my-service
+  openssl s_client -connect localhost:8443 -servername user-service
 ```
 
 ### Environment Variables
