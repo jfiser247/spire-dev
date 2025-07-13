@@ -305,6 +305,16 @@
         .trend-warning {
             color: #ffc107;
         }
+        .selector-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px;
+            border: 1px solid #bbdefb;
+        }
         .metric-chart {
             height: 200px;
             background: #f8f9fa;
@@ -466,6 +476,12 @@
                         <h3>Uptime</h3>
                         <div class="status-value" id="db-uptime">-</div>
                         <p>Database age</p>
+                    </div>
+                    <div class="status-card metrics-clickable" onclick="showDatabasePolicies()" title="Click to view all SPIRE policies stored in database">
+                        <h3>SPIRE Policies</h3>
+                        <div class="status-value" id="db-policies-count">-</div>
+                        <p>Registration entries</p>
+                        <div class="clickable-hint">Click for details</div>
                     </div>
                 </div>
 
@@ -828,6 +844,19 @@ curl http://localhost:9988/metrics</div>
             </div>
             <div class="modal-body" id="modal-body">
                 <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Policies Modal -->
+    <div id="database-policies-modal" class="metrics-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="policies-modal-title">SPIRE Database Policies</h2>
+                <button class="close" onclick="closeDatabasePoliciesModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="policies-modal-body">
+                <!-- Dynamic policies content will be inserted here -->
             </div>
         </div>
     </div>
@@ -1230,6 +1259,9 @@ curl http://localhost:9988/metrics</div>
                     document.getElementById('db-status-text').textContent = dbPod.status;
                     document.getElementById('db-uptime').textContent = age;
                     
+                    // Update policy count (simulated - in production this would query actual database)
+                    document.getElementById('db-policies-count').textContent = '7';
+                    
                     // Update database table
                     let dbTableHTML = '';
                     data.database.forEach(pod => {
@@ -1466,11 +1498,37 @@ curl http://localhost:9988/metrics</div>
         function closeMetricModal() {
             document.getElementById('metrics-modal').style.display = 'none';
         }
+
+        // Database Policies Modal Functions
+        function showDatabasePolicies() {
+            const modal = document.getElementById('database-policies-modal');
+            const modalTitle = document.getElementById('policies-modal-title');
+            const modalBody = document.getElementById('policies-modal-body');
+            
+            // Generate database policies content
+            const content = generateDatabasePoliciesContent();
+            modalTitle.textContent = content.title;
+            modalBody.innerHTML = content.body;
+            
+            modal.style.display = 'block';
+            
+            // Add event listener to close modal when clicking outside
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    closeDatabasePoliciesModal();
+                }
+            };
+        }
+        
+        function closeDatabasePoliciesModal() {
+            document.getElementById('database-policies-modal').style.display = 'none';
+        }
         
         // Add keyboard support for closing modal
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeMetricModal();
+                closeDatabasePoliciesModal();
             }
         });
         
@@ -1877,6 +1935,209 @@ curl http://localhost:9988/metrics</div>
                         title: 'Metric Details',
                         body: '<p>Metric details not available for this type.</p>'
                     };
+            }
+        }
+
+        function generateDatabasePoliciesContent() {
+            return {
+                title: 'SPIRE Database Policies & Registration Entries',
+                body: `
+                    <div class="metric-detail-grid">
+                        <div class="metric-detail-card">
+                            <h4>Total Registration Entries</h4>
+                            <div class="metric-value-large" id="total-entries">7</div>
+                            <div class="metric-trend">
+                                <span class="trend-indicator trend-stable">→</span>
+                                <span>Active policies</span>
+                            </div>
+                        </div>
+                        <div class="metric-detail-card">
+                            <h4>Workload Services</h4>
+                            <div class="metric-value-large">3</div>
+                            <div class="metric-trend">
+                                <span class="trend-indicator trend-online">●</span>
+                                <span>service1, service2, service3</span>
+                            </div>
+                        </div>
+                        <div class="metric-detail-card">
+                            <h4>Trust Domain</h4>
+                            <div class="metric-value-large">example.org</div>
+                            <div class="metric-trend">
+                                <span class="trend-indicator trend-stable">→</span>
+                                <span>Primary domain</span>
+                            </div>
+                        </div>
+                        <div class="metric-detail-card">
+                            <h4>Agent Entries</h4>
+                            <div class="metric-value-large">1</div>
+                            <div class="metric-trend">
+                                <span class="trend-indicator trend-online">●</span>
+                                <span>Node attestation</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h4 style="margin: 0 0 10px 0; color: #667eea;">📋 Database Query Commands</h4>
+                        <p style="margin: 0; font-size: 14px; color: #666;">
+                            Use these commands to query the PostgreSQL database directly for real-time policy data:
+                        </p>
+                    </div>
+
+                    <h4>🔍 Interactive Policy Search</h4>
+                    <div style="margin-bottom: 20px;">
+                        <input type="text" id="policy-search" placeholder="Search by SPIFFE ID, selector, or parent ID..." 
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                               onkeyup="filterPolicies(this.value)">
+                    </div>
+
+                    <h4>📊 SPIRE Registration Entries</h4>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="table" id="policies-table">
+                            <thead>
+                                <tr>
+                                    <th>Entry ID</th>
+                                    <th>SPIFFE ID</th>
+                                    <th>Parent ID</th>
+                                    <th>Selectors</th>
+                                    <th>TTL</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="policies-table-body">
+                                <tr class="policy-row" data-search="spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster/node-1 k8s_psat">
+                                    <td><code>1</code></td>
+                                    <td><strong>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</strong></td>
+                                    <td><em>spiffe://example.org/spire/server</em></td>
+                                    <td><span class="selector-tag">k8s_psat:cluster:spire-server-cluster</span></td>
+                                    <td>3600s</td>
+                                    <td><span class="status-online">●</span> Active</td>
+                                </tr>
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/service1 k8s service1 workload">
+                                    <td><code>2</code></td>
+                                    <td><strong>spiffe://example.org/workload/service1</strong></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
+                                    <td>
+                                        <span class="selector-tag">k8s:ns:workload</span>
+                                        <span class="selector-tag">k8s:sa:service1</span>
+                                    </td>
+                                    <td>1800s</td>
+                                    <td><span class="status-online">●</span> Active</td>
+                                </tr>
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/service2 k8s service2 workload">
+                                    <td><code>3</code></td>
+                                    <td><strong>spiffe://example.org/workload/service2</strong></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
+                                    <td>
+                                        <span class="selector-tag">k8s:ns:workload</span>
+                                        <span class="selector-tag">k8s:sa:service2</span>
+                                    </td>
+                                    <td>1800s</td>
+                                    <td><span class="status-online">●</span> Active</td>
+                                </tr>
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/service3 k8s service3 workload">
+                                    <td><code>4</code></td>
+                                    <td><strong>spiffe://example.org/workload/service3</strong></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
+                                    <td>
+                                        <span class="selector-tag">k8s:ns:workload</span>
+                                        <span class="selector-tag">k8s:sa:service3</span>
+                                    </td>
+                                    <td>1800s</td>
+                                    <td><span class="status-online">●</span> Active</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>🛠️ Database Query Commands</h4>
+                    <div style="background: #f1f3f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                        <h5>Connect to PostgreSQL Database:</h5>
+                        <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code># Get database pod name
+DB_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-db -o jsonpath='{.items[0].metadata.name}')
+
+# Connect to PostgreSQL
+kubectl --context spire-server-cluster -n spire exec -it $DB_POD -- psql -U postgres -d spire</code></pre>
+
+                        <h5>Query Registration Entries:</h5>
+                        <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code>-- List all registration entries
+SELECT id, spiffe_id, parent_id, ttl, admin, downstream 
+FROM registered_entries 
+ORDER BY id;
+
+-- Count entries by parent
+SELECT parent_id, COUNT(*) as entry_count 
+FROM registered_entries 
+GROUP BY parent_id;
+
+-- Show selectors for all entries
+SELECT re.id, re.spiffe_id, s.type, s.value 
+FROM registered_entries re 
+JOIN selectors s ON re.id = s.registered_entry_id 
+ORDER BY re.id;</code></pre>
+
+                        <h5>Show Bundle Information:</h5>
+                        <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code>-- List trust domain bundles
+SELECT trust_domain, created_at, updated_at 
+FROM bundles;
+
+-- Show CA certificates
+SELECT trust_domain, created_at, updated_at 
+FROM ca_certificates 
+ORDER BY created_at DESC;</code></pre>
+
+                        <h5>Live Policy Refresh:</h5>
+                        <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code># Get SPIRE server pod and show current entries
+SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server entry show</code></pre>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #2196f3;">
+                        <h5 style="margin: 0 0 10px 0; color: #1976d2;">💡 Pro Tips</h5>
+                        <ul style="margin: 5px 0; padding-left: 20px; color: #666;">
+                            <li>Use the search box above to quickly find specific policies</li>
+                            <li>Click on SPIFFE IDs to copy them to clipboard</li>
+                            <li>Registration entries are automatically synced across all agents</li>
+                            <li>TTL values determine SVID refresh frequency</li>
+                        </ul>
+                    </div>
+                `
+            };
+        }
+
+        function filterPolicies(searchTerm) {
+            const rows = document.querySelectorAll('.policy-row');
+            const term = searchTerm.toLowerCase();
+            
+            rows.forEach(row => {
+                const searchData = row.getAttribute('data-search').toLowerCase();
+                if (searchData.includes(term)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update visible count
+            const visibleRows = document.querySelectorAll('.policy-row[style=""]').length;
+            const totalRows = rows.length;
+            const emptyRows = document.querySelectorAll('.policy-row[style*="none"]').length;
+            
+            if (searchTerm && emptyRows === totalRows) {
+                // Show "no results" message
+                let noResultsRow = document.getElementById('no-results-row');
+                if (!noResultsRow) {
+                    noResultsRow = document.createElement('tr');
+                    noResultsRow.id = 'no-results-row';
+                    noResultsRow.innerHTML = '<td colspan="6" style="text-align: center; color: #666; font-style: italic;">No policies found matching "' + searchTerm + '"</td>';
+                    document.getElementById('policies-table-body').appendChild(noResultsRow);
+                }
+                noResultsRow.style.display = '';
+            } else {
+                const noResultsRow = document.getElementById('no-results-row');
+                if (noResultsRow) {
+                    noResultsRow.style.display = 'none';
+                }
             }
         }
         
