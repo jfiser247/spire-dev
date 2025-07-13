@@ -1,0 +1,94 @@
+# Development environment values
+# Override default values for development deployment
+
+global:
+  trustDomain: "dev.example.org"
+  clusterName: "dev-cluster"
+
+spireServer:
+  # Reduced resources for development
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # Debug logging
+  config:
+    logLevel: "DEBUG"
+  
+  # Smaller storage for dev
+  persistence:
+    size: 500Mi
+
+spireAgent:
+  # Reduced resources for development
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  
+  # Debug logging
+  config:
+    logLevel: "DEBUG"
+
+postgresql:
+  # Reduced resources for development
+  primary:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    
+    persistence:
+      size: 500Mi
+
+# Enable monitoring in development
+monitoring:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Relaxed security for development
+security:
+  podSecurityStandards:
+    enforce: "baseline"
+
+# Development-specific registration entries
+registrationEntries:
+  entries:
+    - spiffeId: "spiffe://dev.example.org/spire/agent/k8s_psat/dev-cluster"
+      parentId: "spiffe://dev.example.org/spire/server"
+      selectors:
+        - "k8s_psat:cluster:dev-cluster"
+      ttl: 3600
+      
+    - spiffeId: "spiffe://dev.example.org/workload/service1"
+      parentId: "spiffe://dev.example.org/spire/agent/k8s_psat/dev-cluster"
+      selectors:
+        - "k8s:ns:workload"
+        - "k8s:sa:service1"
+      ttl: 1800
+      
+    - spiffeId: "spiffe://dev.example.org/workload/service2"
+      parentId: "spiffe://dev.example.org/spire/agent/k8s_psat/dev-cluster"
+      selectors:
+        - "k8s:ns:workload"
+        - "k8s:sa:service2"
+      ttl: 1800
+      
+    - spiffeId: "spiffe://dev.example.org/workload/service3"
+      parentId: "spiffe://dev.example.org/spire/agent/k8s_psat/dev-cluster"
+      selectors:
+        - "k8s:ns:workload"
+        - "k8s:sa:service3"
+      ttl: 1800

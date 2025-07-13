@@ -1,0 +1,35 @@
+apiVersion: v2
+name: spire
+description: A comprehensive Helm chart for deploying SPIRE (SPIFFE Runtime Environment) with PostgreSQL database
+version: 1.0.0
+appVersion: "1.6.3"
+type: application
+
+keywords:
+  - spiffe
+  - spire
+  - identity
+  - security
+  - zero-trust
+  - mTLS
+
+home: https://spiffe.io/
+sources:
+  - https://github.com/spiffe/spire
+  - https://github.com/spiffe/spiffe
+
+maintainers:
+  - name: Platform Team
+    email: platform-team@company.com
+
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+    tags:
+      - database
+
+annotations:
+  category: Security
+  licenses: Apache-2.0

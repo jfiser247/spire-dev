@@ -1,0 +1,67 @@
+{{- if .Values.spireAgent.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "spire.fullname" . }}-agent-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spire.agent.labels" . | nindent 4 }}
+data:
+  agent.conf: |
+    agent {
+      data_dir = "{{ .Values.spireAgent.config.dataDir }}"
+      log_level = "{{ .Values.spireAgent.config.logLevel }}"
+      log_file = "{{ .Values.spireAgent.config.logFile }}"
+      socket_path = "{{ .Values.spireAgent.config.socketPath }}"
+      trust_domain = "{{ include "spire.trustDomain" . }}"
+      server_address = "{{ include "spire.server.address" . }}"
+      server_port = "{{ .Values.spireAgent.config.serverPort }}"
+      
+      # Insecure bootstrap is needed for the first agent to join
+      insecure_bootstrap = true
+    }
+
+    plugins {
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          cluster = "{{ .Values.global.clusterName }}"
+        }
+      }
+
+      KeyManager "memory" {
+        plugin_data {
+        }
+      }
+
+      WorkloadAttestor "k8s" {
+        plugin_data {
+          skip_kubelet_verification = true
+        }
+      }
+
+      WorkloadAttestor "unix" {
+        plugin_data {
+        }
+      }
+    }
+
+    health_checks {
+      listener_enabled = {{ .Values.spireAgent.config.healthChecks.listenerEnabled }}
+      bind_address = "{{ .Values.spireAgent.config.healthChecks.bindAddress }}"
+      bind_port = "{{ .Values.spireAgent.config.healthChecks.bindPort }}"
+      live_path = "{{ .Values.spireAgent.config.healthChecks.livePath }}"
+      ready_path = "{{ .Values.spireAgent.config.healthChecks.readyPath }}"
+    }
+
+    {{- if .Values.spireAgent.config.telemetry.enabled }}
+    telemetry {
+      Prometheus {
+        plugin_data {
+          host = "0.0.0.0"
+          port = {{ .Values.spireAgent.config.telemetry.prometheusPort }}
+        }
+      }
+    }
+    {{- end }}
+{{- end }}

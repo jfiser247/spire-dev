@@ -1,0 +1,373 @@
+# Default values for SPIRE Helm chart
+# This is a YAML-formatted file that declares variables to be substituted into templates
+
+# Global configuration
+global:
+  # Trust domain for SPIFFE IDs
+  trustDomain: "example.org"
+  
+  # Image registry settings
+  imageRegistry: "ghcr.io"
+  imagePullSecrets: []
+  
+  # Storage class for persistent volumes
+  storageClass: ""
+  
+  # Cluster settings
+  clusterName: "spire-cluster"
+
+# SPIRE Server configuration
+spireServer:
+  # Enable SPIRE Server deployment
+  enabled: true
+  
+  # Image configuration
+  image:
+    registry: "ghcr.io"
+    repository: "spiffe/spire-server"
+    tag: "1.6.3"
+    pullPolicy: "IfNotPresent"
+  
+  # Replica count
+  replicaCount: 1
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8081
+    healthPort: 8080
+    annotations: {}
+  
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  
+  # Health check configuration
+  livenessProbe:
+    httpGet:
+      path: /live
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 60
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  # Persistent storage for SPIRE data
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+    annotations: {}
+  
+  # SPIRE Server configuration
+  config:
+    # Bind settings
+    bindAddress: "0.0.0.0"
+    bindPort: 8081
+    
+    # Log settings
+    logLevel: "INFO"
+    logFile: "/run/spire/data/server.log"
+    
+    # Data directory
+    dataDir: "/run/spire/data"
+    
+    # Socket path
+    socketPath: "/run/spire/sockets/server.sock"
+    
+    # Health check settings
+    healthChecks:
+      listenerEnabled: true
+      bindAddress: "0.0.0.0"
+      bindPort: 8080
+      livePath: "/live"
+      readyPath: "/ready"
+    
+    # Telemetry configuration
+    telemetry:
+      enabled: true
+      prometheusPort: 9988
+      
+  # Node selector and tolerations
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  # Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    capabilities:
+      drop:
+        - ALL
+
+# SPIRE Agent configuration
+spireAgent:
+  # Enable SPIRE Agent deployment
+  enabled: true
+  
+  # Image configuration
+  image:
+    registry: "ghcr.io"
+    repository: "spiffe/spire-agent"
+    tag: "1.6.3"
+    pullPolicy: "IfNotPresent"
+  
+  # Deploy as DaemonSet
+  daemonset:
+    enabled: true
+  
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # Health check configuration
+  livenessProbe:
+    httpGet:
+      path: /live
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 60
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  # SPIRE Agent configuration
+  config:
+    # Server address (will be templated)
+    serverAddress: ""
+    serverPort: 8081
+    
+    # Trust domain
+    trustDomain: ""  # Will use global.trustDomain
+    
+    # Data directory
+    dataDir: "/run/spire/data"
+    
+    # Socket path
+    socketPath: "/run/spire/sockets/agent.sock"
+    
+    # Log settings
+    logLevel: "INFO"
+    logFile: "/run/spire/data/agent.log"
+    
+    # Health check settings
+    healthChecks:
+      listenerEnabled: true
+      bindAddress: "0.0.0.0"
+      bindPort: 8080
+      livePath: "/live"
+      readyPath: "/ready"
+    
+    # Telemetry configuration
+    telemetry:
+      enabled: true
+      prometheusPort: 9988
+  
+  # Node selector and tolerations
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  # Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    capabilities:
+      drop:
+        - ALL
+
+# PostgreSQL database configuration
+postgresql:
+  # Enable PostgreSQL deployment (using Bitnami chart)
+  enabled: true
+  
+  # Authentication settings
+  auth:
+    postgresPassword: "postgres"
+    username: "postgres"
+    password: "postgres"
+    database: "spire"
+  
+  # Primary configuration
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 1Gi
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+  
+  # Service configuration
+  service:
+    ports:
+      postgresql: 5432
+
+# Example workload services
+workloadServices:
+  # Enable example workload deployments
+  enabled: true
+  
+  # Service 1 configuration
+  service1:
+    enabled: true
+    image: "nginx:1.21"
+    replicas: 1
+    spiffeId: "spiffe://example.org/workload/service1"
+    
+  # Service 2 configuration  
+  service2:
+    enabled: true
+    image: "httpd:2.4"
+    replicas: 1
+    spiffeId: "spiffe://example.org/workload/service2"
+    
+  # Service 3 configuration
+  service3:
+    enabled: true
+    image: "python:3.9-slim"
+    replicas: 1
+    spiffeId: "spiffe://example.org/workload/service3"
+
+# Registration entries configuration
+registrationEntries:
+  # Enable automatic registration entries creation
+  enabled: true
+  
+  # Entries configuration
+  entries:
+    # Agent entry
+    - spiffeId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
+      parentId: "spiffe://example.org/spire/server"
+      selectors:
+        - "k8s_psat:cluster:spire-server-cluster"
+      ttl: 3600
+      
+    # Service entries
+    - spiffeId: "spiffe://example.org/workload/service1"
+      parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
+      selectors:
+        - "k8s:ns:workload"
+        - "k8s:sa:service1"
+      ttl: 1800
+      
+    - spiffeId: "spiffe://example.org/workload/service2"
+      parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
+      selectors:
+        - "k8s:ns:workload"
+        - "k8s:sa:service2"
+      ttl: 1800
+      
+    - spiffeId: "spiffe://example.org/workload/service3"
+      parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
+      selectors:
+        - "k8s:ns:workload"
+        - "k8s:sa:service3"
+      ttl: 1800
+
+# RBAC configuration
+rbac:
+  # Create RBAC resources
+  create: true
+  
+  # Service account configuration
+  serviceAccount:
+    # Create service accounts
+    create: true
+    
+    # Service account names (if not created, these must exist)
+    spireServer: "spire-server"
+    spireAgent: "spire-agent"
+    workloadServices: "workload-service"
+
+# Networking configuration
+networking:
+  # Create NetworkPolicies
+  networkPolicies:
+    enabled: false
+    
+  # Ingress configuration
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts: []
+    tls: []
+
+# Monitoring and observability
+monitoring:
+  # Enable Prometheus metrics
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+      
+  # Enable Grafana dashboards
+  grafana:
+    enabled: false
+    dashboards: {}
+
+# Security configuration
+security:
+  # Pod security standards
+  podSecurityStandards:
+    enabled: true
+    enforce: "restricted"
+    
+  # Security contexts
+  securityContexts:
+    runAsNonRoot: true
+    runAsUser: 1000
