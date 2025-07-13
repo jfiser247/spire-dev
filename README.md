@@ -67,18 +67,77 @@ Each service is configured to access the SPIRE agent socket and can obtain its S
 
 ## Monitoring Dashboard
 
-The project includes both a web-based and desktop monitoring dashboard that provides visibility into the SPIRE server and agent status, workload registrations, and other metrics.
+The project includes both a comprehensive web-based and desktop monitoring dashboard that provides deep visibility into SPIRE server and agent operations, workload registrations, and advanced telemetry metrics.
 
 ### Web Dashboard
 
-A modern web-based dashboard is automatically available after running the setup script.
+A modern, enterprise-grade web-based dashboard with interactive drilldown capabilities for comprehensive SPIFFE/SPIRE monitoring.
 
-#### Features
-- **Overview Tab**: Real-time cluster status and component health
-- **SPIRE Server Tab**: Server component status and monitoring
-- **Agents Tab**: SPIRE agent health and status tracking  
-- **Workloads Tab**: Service deployment status and metrics
-- **Commands Tab**: Useful kubectl commands for troubleshooting
+#### Dashboard Tabs
+
+- **Overview Tab**: Real-time cluster status with clickable component health cards
+- **SPIRE Server Tab**: Detailed server component status and pod monitoring
+- **Database Tab**: PostgreSQL database monitoring with storage and connection metrics
+- **Agents Tab**: SPIRE agent health tracking across all nodes
+- **Workloads Tab**: Service deployment status with detailed workload metrics
+- **SPIRE Metrics Tab**: ⭐ **NEW** - Advanced telemetry with interactive drilldown capabilities
+- **Commands Tab**: Comprehensive kubectl commands for troubleshooting and metrics collection
+
+#### 🔍 Interactive SPIRE Metrics & Telemetry
+
+The enhanced dashboard now includes industry-standard SPIFFE/SPIRE observability metrics with interactive drilldown capabilities:
+
+##### Clickable Metric Tiles
+Each metric tile is interactive and opens detailed analysis modals:
+
+1. **Server RPC Calls** 📊
+   - **Summary**: Total RPC operations across all SPIRE server endpoints
+   - **Drilldown Details**:
+     - Real-time RPC call volumes and response times
+     - Success rates and error analysis
+     - Breakdown by RPC method (attest_agent, fetch_x509_svid, fetch_jwt_svid, etc.)
+     - Performance trends and peak operation analysis
+     - Recent activity timeline with timing details
+
+2. **Agent Connections** 🔗
+   - **Summary**: Active SPIRE agent connections and health status
+   - **Drilldown Details**:
+     - Connection pool usage and session duration analysis
+     - Failed connection tracking and retry patterns
+     - Individual agent status with node mapping
+     - Heartbeat monitoring and data transfer metrics
+     - Connection timeline and health trends
+
+3. **SVID Issuance Rate** 🎫
+   - **Summary**: Real-time SVID (SPIFFE Verifiable Identity Document) issuance metrics
+   - **Drilldown Details**:
+     - Current issuance rates and daily volume analysis
+     - X.509 vs JWT SVID distribution breakdown
+     - Issuance performance metrics and timing analysis
+     - Common selectors and workload patterns
+     - Recent issuance activity with SPIFFE ID details
+
+4. **Certificate Expiry** ⏰
+   - **Summary**: Certificate lifecycle monitoring and expiry warnings
+   - **Drilldown Details**:
+     - Immediate expiry alerts (< 24 hours)
+     - Weekly expiry forecasting and planning
+     - Auto-renewal success rates and failure analysis
+     - CA certificate validity and rotation tracking
+     - Detailed expiry timeline and renewal history
+
+##### Advanced Metrics Tables
+- **SPIRE Server Metrics**: Comprehensive tracking of server-side operations
+- **SPIRE Agent Metrics**: Agent-specific performance and health indicators
+- **Alert Thresholds**: Production-ready monitoring with severity levels
+- **Telemetry Configuration**: Prometheus endpoints and collection settings
+
+##### Interactive Features
+- **Hover Effects**: Visual indicators showing clickable elements with magnifying glass icons
+- **Modal Dialogs**: Detailed metric analysis with smooth fade-in animations
+- **Trend Analysis**: Visual trend indicators (↗ up, ↘ down, → stable, ⚠ warning)
+- **Keyboard Navigation**: ESC key support for closing modals
+- **Responsive Design**: Mobile-friendly layout with touch support
 
 #### Accessing the Web Dashboard
 
@@ -96,12 +155,21 @@ Look for this output:
 
 Simply copy and paste the file path into your browser address bar to access the dashboard.
 
-#### Dashboard Features
-- **Responsive Design**: Works on desktop and mobile browsers
-- **Real-time Status**: Color-coded status indicators for all components
-- **Tabbed Interface**: Organized sections for different aspects of monitoring
-- **Refresh Controls**: Manual refresh buttons for real-time updates
-- **Command Reference**: Built-in kubectl command examples
+#### Production-Ready Features
+- **Real-time Data**: Auto-refresh capabilities with configurable intervals (5s-60s)
+- **Prometheus Integration**: Ready for production metrics collection (port 9988)
+- **Alert Management**: Industry-standard thresholds for operational monitoring
+- **Performance Monitoring**: Response time tracking and error rate analysis
+- **Security Compliance**: Certificate lifecycle and expiry management
+- **Operational Insights**: Historical trends and capacity planning data
+
+#### Dashboard Capabilities
+- **Responsive Design**: Optimized for desktop and mobile browsers
+- **Live Updates**: Real-time status with color-coded health indicators
+- **Tabbed Interface**: Organized monitoring sections with smooth transitions
+- **Interactive Elements**: Clickable tiles and detailed drilldown modals
+- **Command Integration**: Built-in kubectl and metrics collection commands
+- **Export Ready**: Structured for integration with monitoring platforms
 
 ### Desktop Dashboard (JavaFX)
 
@@ -122,24 +190,64 @@ mvn clean javafx:run
 ## Useful Commands
 
 ### Check SPIRE Server Status
-```
+```bash
 kubectl --context spire-server-cluster -n spire get pods
 ```
 
 ### Check SPIRE Agent Status
-```
+```bash
 kubectl --context workload-cluster -n spire get pods
 ```
 
 ### Check Workload Services
-```
+```bash
 kubectl --context workload-cluster -n workload get pods
 ```
 
 ### List SPIRE Registration Entries
-```
+```bash
 SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
 kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server entry show
+```
+
+### SPIRE Metrics and Telemetry Commands
+
+#### Access SPIRE Server Metrics (Prometheus Format)
+```bash
+# Port-forward to access metrics endpoint
+kubectl --context spire-server-cluster -n spire port-forward spire-server-0 9988:9988 &
+
+# Fetch metrics
+curl http://localhost:9988/metrics
+```
+
+#### Access SPIRE Agent Metrics
+```bash
+# Get agent pod name
+AGENT_POD=$(kubectl --context workload-cluster -n spire get pod -l app=spire-agent -o jsonpath='{.items[0].metadata.name}')
+
+# Port-forward to agent metrics
+kubectl --context workload-cluster -n spire port-forward $AGENT_POD 9988:9988 &
+
+# Fetch agent metrics
+curl http://localhost:9988/metrics
+```
+
+#### View SPIRE Server Telemetry Configuration
+```bash
+kubectl --context spire-server-cluster -n spire get configmap spire-server -o yaml | grep -A 20 telemetry
+```
+
+#### Monitor Real-time SPIRE Operations
+```bash
+# Watch SPIRE server logs
+kubectl --context spire-server-cluster -n spire logs -f spire-server-0
+
+# Watch agent logs
+kubectl --context workload-cluster -n spire logs -f -l app=spire-agent
+
+# Monitor certificate operations
+kubectl --context spire-server-cluster -n spire logs spire-server-0 | grep -i "certificate\|svid\|attest"
 ```
 
 ### Push Git Changes
@@ -195,4 +303,62 @@ minikube delete -p workload-cluster
 ├── web-dashboard.html            # Web-based monitoring dashboard
 ├── pom.xml                       # Maven build configuration
 └── README.md                     # This file
+```
+
+## Technical Architecture
+
+### SPIRE Metrics & Telemetry Implementation
+
+The enhanced dashboard implements industry-standard SPIFFE/SPIRE observability following the official telemetry specifications:
+
+#### Metrics Collection Architecture
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   SPIRE Server  │    │   SPIRE Agent   │    │  Web Dashboard  │
+│                 │    │                 │    │                 │
+│ Port 9988       │    │ Port 9988       │    │ Interactive UI  │
+│ /metrics        │◄──►│ /metrics        │◄──►│ Drilldown       │
+│ (Prometheus)    │    │ (Prometheus)    │    │ Modals          │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+        │                       │                       │
+        └───────────────────────┼───────────────────────┘
+                                │
+                    ┌─────────────────┐
+                    │   Prometheus    │
+                    │   (Optional)    │
+                    │   Production    │
+                    │   Integration   │
+                    └─────────────────┘
+```
+
+#### Key Metrics Categories
+
+1. **SPIRE Server Metrics**
+   - `spire_server.rpc.*` - RPC operation counters and timing
+   - `spire_server.ca.*` - Certificate authority operations
+   - `spire_server.datastore.*` - Database operation metrics
+
+2. **SPIRE Agent Metrics**
+   - `spire_agent.cache_manager.*` - SVID cache performance
+   - `spire_agent.sds_api.*` - Service Discovery Service metrics
+   - `spire_agent.sync_manager.*` - Entry synchronization tracking
+
+3. **Operational Metrics**
+   - Connection health and session management
+   - Certificate lifecycle and expiry monitoring
+   - Performance trends and capacity planning
+
+#### Dashboard Technology Stack
+- **Frontend**: Modern HTML5/CSS3/JavaScript
+- **UI Framework**: CSS Grid and Flexbox for responsive design
+- **Animations**: CSS3 transitions and keyframe animations
+- **Data Handling**: Asynchronous JavaScript with Promise-based architecture
+- **Modal System**: Custom modal implementation with keyboard navigation
+- **Real-time Updates**: Configurable auto-refresh with background data fetching
+
+#### Production Integration
+- **Prometheus Compatible**: Standard `/metrics` endpoints on port 9988
+- **Grafana Ready**: Metrics structured for dashboard import
+- **Alert Manager**: Pre-configured thresholds for operational alerts
+- **Kubernetes Native**: Integrated with kubectl and cluster operations
 ```
