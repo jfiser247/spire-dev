@@ -362,3 +362,564 @@ The enhanced dashboard implements industry-standard SPIFFE/SPIRE observability f
 - **Alert Manager**: Pre-configured thresholds for operational alerts
 - **Kubernetes Native**: Integrated with kubectl and cluster operations
 ```
+
+## 🎯 **Production Helm Charts Template**
+
+This repository includes **production-ready Helm charts** that serve as a comprehensive template for implementing SPIRE in production Kubernetes environments. The charts replace manual Kubernetes manifests with a templated, configurable, and maintainable solution.
+
+### 📦 **Helm Chart Architecture**
+
+```
+helm-charts/spire/
+├── Chart.yaml                    # Chart metadata with PostgreSQL dependency
+├── values.yaml                   # Default configuration values
+├── values/
+│   ├── development.yaml          # Development environment overrides
+│   └── production.yaml           # Production environment overrides
+├── templates/
+│   ├── _helpers.tpl              # Template functions and helpers
+│   ├── namespace.yaml            # Namespace management
+│   ├── server-*.yaml             # SPIRE Server components
+│   ├── agent-*.yaml              # SPIRE Agent components
+│   └── workload-*.yaml           # Example workload services
+└── README.md                     # Detailed chart documentation
+```
+
+### 🚀 **Key Advantages Over Manual Manifests**
+
+| Feature | Manual K8s Manifests | Helm Charts Template |
+|---------|----------------------|----------------------|
+| **Deployment** | Multiple `kubectl apply` commands | Single `helm install` command |
+| **Environment Management** | Separate manifest sets per environment | Single chart + environment values |
+| **Configuration** | Hard-coded values in YAML | Templated with environment variables |
+| **Updates** | Manual file editing and reapplication | `helm upgrade` with value overrides |
+| **Rollbacks** | Manual backup and restore | `helm rollback` to previous version |
+| **Dependencies** | Manual PostgreSQL setup | Automatic dependency management |
+| **Validation** | No built-in validation | Template validation and dry-run |
+| **Versioning** | Git-based file tracking | Helm release versioning |
+
+### 🏭 **Production Implementation Guide**
+
+#### **1. Template Customization for Your Environment**
+
+**Step 1: Clone and Customize Values**
+```bash
+# Copy the chart template to your infrastructure repository
+cp -r helm-charts/spire /path/to/your/infrastructure/charts/
+
+# Create organization-specific values
+cat > /path/to/your/infrastructure/charts/spire/values/company-production.yaml <<EOF
+global:
+  trustDomain: "company.internal"
+  clusterName: "prod-k8s-cluster"
+  imageRegistry: "your-registry.company.com"
+
+spireServer:
+  replicaCount: 3  # High availability
+  image:
+    repository: "spiffe/spire-server"
+    tag: "1.6.3"
+  
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  
+  persistence:
+    size: 20Gi
+    storageClass: "fast-ssd"
+  
+  config:
+    logLevel: "WARN"
+
+postgresql:
+  auth:
+    existingSecret: "postgresql-credentials"
+  primary:
+    persistence:
+      size: 100Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 8Gi
+
+# Production security settings
+security:
+  podSecurityStandards:
+    enabled: true
+    enforce: "restricted"
+
+# Enable monitoring
+monitoring:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+EOF
+```
+
+**Step 2: Customize Registration Entries**
+```yaml
+# Add your organization's SPIFFE ID structure
+registrationEntries:
+  enabled: true
+  entries:
+    # Node attestation entry
+    - spiffeId: "spiffe://company.internal/spire/agent/k8s_psat/prod-cluster"
+      parentId: "spiffe://company.internal/spire/server"
+      selectors:
+        - "k8s_psat:cluster:prod-cluster"
+      ttl: 3600
+    
+    # Application-specific entries
+    - spiffeId: "spiffe://company.internal/workload/user-service"
+      parentId: "spiffe://company.internal/spire/agent/k8s_psat/prod-cluster"
+      selectors:
+        - "k8s:ns:production"
+        - "k8s:sa:user-service"
+        - "k8s:pod-label:app:user-service"
+      ttl: 900  # 15 minutes for production security
+    
+    - spiffeId: "spiffe://company.internal/workload/payment-api"
+      parentId: "spiffe://company.internal/spire/agent/k8s_psat/prod-cluster"
+      selectors:
+        - "k8s:ns:production"
+        - "k8s:sa:payment-api"
+        - "k8s:pod-label:app:payment-api"
+      ttl: 900
+```
+
+#### **2. Multi-Environment Deployment Strategy**
+
+**Environment Structure:**
+```bash
+# Recommended directory structure
+infrastructure/
+├── charts/
+│   └── spire/                    # Customized chart from this template
+└── environments/
+    ├── development/
+    │   ├── values.yaml          # Dev-specific values
+    │   └── secrets.yaml         # Dev secrets (encrypted)
+    ├── staging/
+    │   ├── values.yaml          # Staging-specific values
+    │   └── secrets.yaml         # Staging secrets (encrypted)
+    └── production/
+        ├── values.yaml          # Production-specific values
+        └── secrets.yaml         # Production secrets (encrypted)
+```
+
+**Deployment Automation:**
+```bash
+#!/bin/bash
+# deploy-spire.sh - Production deployment script
+
+ENVIRONMENT=${1:-production}
+CHART_PATH="./charts/spire"
+VALUES_PATH="./environments/$ENVIRONMENT"
+
+echo "🚀 Deploying SPIRE to $ENVIRONMENT environment..."
+
+# Validate configuration
+helm lint $CHART_PATH --values $VALUES_PATH/values.yaml
+if [ $? -ne 0 ]; then
+    echo "❌ Chart validation failed"
+    exit 1
+fi
+
+# Deploy with production settings
+helm upgrade --install spire-$ENVIRONMENT $CHART_PATH \
+  --namespace spire-$ENVIRONMENT \
+  --create-namespace \
+  --values $VALUES_PATH/values.yaml \
+  --wait \
+  --timeout 15m \
+  --atomic  # Rollback on failure
+
+# Verify deployment
+if helm status spire-$ENVIRONMENT -n spire-$ENVIRONMENT; then
+    echo "✅ SPIRE deployment successful"
+    
+    # Run post-deployment tests
+    helm test spire-$ENVIRONMENT -n spire-$ENVIRONMENT
+    
+    # Verify SPIRE server health
+    kubectl exec -n spire-$ENVIRONMENT deployment/spire-$ENVIRONMENT-server -- \
+      /opt/spire/bin/spire-server healthcheck
+else
+    echo "❌ SPIRE deployment failed"
+    exit 1
+fi
+```
+
+#### **3. Security Hardening for Production**
+
+**Network Security:**
+```yaml
+# values/security-hardened.yaml
+networking:
+  networkPolicies:
+    enabled: true
+    
+  # Restrict ingress to SPIRE server
+  ingress:
+    spireServer:
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: spire-production
+        ports:
+        - protocol: TCP
+          port: 8081
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        ports:
+        - protocol: TCP
+          port: 9988  # Metrics port
+
+# Pod security contexts
+spireServer:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    capabilities:
+      drop:
+        - ALL
+
+spireAgent:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - NET_ADMIN  # Required for agent operations
+```
+
+**Secret Management:**
+```bash
+# Create production secrets
+kubectl create secret generic postgresql-credentials \
+  --from-literal=postgres-password="$(openssl rand -base64 32)" \
+  --namespace spire-production
+
+kubectl create secret generic spire-server-ca \
+  --from-file=ca.crt=/path/to/your/ca.crt \
+  --from-file=ca.key=/path/to/your/ca.key \
+  --namespace spire-production
+```
+
+#### **4. High Availability Configuration**
+
+**Multi-Zone Deployment:**
+```yaml
+# Production HA configuration
+spireServer:
+  replicaCount: 3
+  
+  # Anti-affinity for zone distribution
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: spire-server
+        topologyKey: topology.kubernetes.io/zone
+    
+    # Prefer different nodes
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: node-role.kubernetes.io/spire
+            operator: In
+            values:
+            - "true"
+
+# Database HA with read replicas
+postgresql:
+  architecture: replication
+  readReplicas:
+    replicaCount: 2
+  primary:
+    persistence:
+      size: 100Gi
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+```
+
+#### **5. Monitoring and Observability Integration**
+
+**Prometheus Integration:**
+```yaml
+# Production monitoring configuration
+monitoring:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: prometheus-operator
+    
+    # Custom alerting rules
+    prometheusRule:
+      enabled: true
+      rules:
+        - alert: SPIREServerDown
+          expr: up{job="spire-server"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "SPIRE Server instance is down"
+            description: "SPIRE Server {{ $labels.instance }} has been down for more than 5 minutes"
+        
+        - alert: SPIREAgentDown
+          expr: up{job="spire-agent"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "SPIRE Agent instance is down"
+
+  # Grafana dashboards
+  grafana:
+    enabled: true
+    dashboards:
+      spire:
+        enabled: true
+        datasource: prometheus
+```
+
+### 🔄 **Operational Procedures**
+
+#### **Upgrade Strategy**
+
+```bash
+#!/bin/bash
+# upgrade-spire.sh - Safe production upgrade procedure
+
+ENVIRONMENT="production"
+NAMESPACE="spire-$ENVIRONMENT"
+
+echo "🔄 Starting SPIRE upgrade process..."
+
+# 1. Backup current state
+echo "📦 Creating backup..."
+helm get all spire-$ENVIRONMENT -n $NAMESPACE > "backup-$(date +%Y%m%d-%H%M%S).yaml"
+
+# 2. Database backup
+kubectl exec -n $NAMESPACE spire-$ENVIRONMENT-postgresql-0 -- \
+  pg_dumpall -U postgres | gzip > "db-backup-$(date +%Y%m%d-%H%M%S).sql.gz"
+
+# 3. Validate new configuration
+echo "✅ Validating new configuration..."
+helm template spire ./charts/spire \
+  --values ./environments/$ENVIRONMENT/values.yaml \
+  --validate
+
+# 4. Perform rolling upgrade
+echo "🚀 Performing rolling upgrade..."
+helm upgrade spire-$ENVIRONMENT ./charts/spire \
+  --namespace $NAMESPACE \
+  --values ./environments/$ENVIRONMENT/values.yaml \
+  --wait \
+  --timeout 20m
+
+# 5. Verify upgrade
+echo "🔍 Verifying upgrade..."
+kubectl rollout status statefulset/spire-$ENVIRONMENT-server -n $NAMESPACE
+kubectl rollout status daemonset/spire-$ENVIRONMENT-agent -n $NAMESPACE
+
+# 6. Health check
+kubectl exec -n $NAMESPACE deployment/spire-$ENVIRONMENT-server -- \
+  /opt/spire/bin/spire-server healthcheck
+
+echo "✅ SPIRE upgrade completed successfully"
+```
+
+#### **Disaster Recovery**
+
+```bash
+#!/bin/bash
+# disaster-recovery.sh - SPIRE disaster recovery procedure
+
+BACKUP_DIR=$1
+TARGET_ENVIRONMENT=${2:-production}
+
+if [ -z "$BACKUP_DIR" ]; then
+    echo "Usage: $0 <backup-directory> [environment]"
+    exit 1
+fi
+
+echo "🚨 Starting SPIRE disaster recovery..."
+
+# 1. Deploy fresh SPIRE instance
+helm install spire-$TARGET_ENVIRONMENT ./charts/spire \
+  --namespace spire-$TARGET_ENVIRONMENT \
+  --create-namespace \
+  --values ./environments/$TARGET_ENVIRONMENT/values.yaml \
+  --wait
+
+# 2. Restore database
+echo "📥 Restoring database..."
+gunzip -c $BACKUP_DIR/db-backup-*.sql.gz | \
+kubectl exec -n spire-$TARGET_ENVIRONMENT spire-$TARGET_ENVIRONMENT-postgresql-0 -i -- \
+  psql -U postgres
+
+# 3. Restart SPIRE server to reload data
+kubectl rollout restart statefulset/spire-$TARGET_ENVIRONMENT-server -n spire-$TARGET_ENVIRONMENT
+
+echo "✅ Disaster recovery completed"
+```
+
+### 📊 **Production Readiness Checklist**
+
+Before deploying SPIRE using this template in production:
+
+#### **Infrastructure Requirements**
+- [ ] **Kubernetes cluster** version 1.20+ with RBAC enabled
+- [ ] **Storage class** configured for persistent volumes (preferably SSD)
+- [ ] **Load balancer** or ingress controller for external access
+- [ ] **Monitoring stack** (Prometheus, Grafana) deployed
+- [ ] **Backup solution** for persistent data
+
+#### **Security Configuration**
+- [ ] **Pod Security Standards** enforced (restricted level)
+- [ ] **Network policies** configured for traffic isolation
+- [ ] **Secrets management** using Kubernetes secrets or external systems
+- [ ] **Image scanning** enabled for container vulnerabilities
+- [ ] **RBAC policies** following principle of least privilege
+
+#### **Operational Readiness**
+- [ ] **Monitoring and alerting** configured for SPIRE components
+- [ ] **Log aggregation** setup for centralized logging
+- [ ] **Backup procedures** tested and documented
+- [ ] **Disaster recovery** plan created and validated
+- [ ] **Upgrade procedures** documented and tested
+- [ ] **Runbooks** created for common operational tasks
+
+#### **Application Integration**
+- [ ] **Service registration** strategy defined
+- [ ] **SPIFFE ID naming** convention established
+- [ ] **TTL values** configured based on security requirements
+- [ ] **Workload attestation** selectors defined
+- [ ] **mTLS implementation** validated across services
+
+### 📚 **Template Customization Examples**
+
+#### **Multi-Cluster Federation**
+
+```yaml
+# values/multi-cluster.yaml
+spireServer:
+  config:
+    # Enable federation
+    federation:
+      enabled: true
+      bundleEndpoint:
+        address: "0.0.0.0"
+        port: 8443
+      
+  # Federation service
+  federationService:
+    enabled: true
+    type: LoadBalancer
+    port: 8443
+
+# Cross-cluster trust configuration
+federatedTrustDomains:
+  - trustDomain: "cluster-east.company.internal"
+    bundleEndpointURL: "https://spire-east.company.internal:8443"
+  - trustDomain: "cluster-west.company.internal"
+    bundleEndpointURL: "https://spire-west.company.internal:8443"
+```
+
+#### **Custom Node Attestation**
+
+```yaml
+# values/custom-attestation.yaml
+spireServer:
+  config:
+    plugins:
+      nodeAttestors:
+        k8s_psat:
+          enabled: true
+          config:
+            clusters:
+              production-cluster:
+                service_account_allow_list:
+                  - "spire:spire-agent"
+        
+        # Add custom attestation plugin
+        custom_attestor:
+          enabled: true
+          plugin_cmd: "/opt/custom-attestor"
+          plugin_data:
+            config_path: "/etc/custom-attestor/config.yaml"
+```
+
+### 🎯 **Getting Started with the Template**
+
+#### **Quick Start for Production**
+
+1. **Copy the template:**
+```bash
+git clone <this-repository>
+cp -r helm-charts/spire /path/to/your/infrastructure/
+```
+
+2. **Customize for your organization:**
+```bash
+# Edit chart values for your environment
+vi /path/to/your/infrastructure/spire/values/production.yaml
+
+# Add your trust domain and cluster configuration
+# Configure your image registry and versions
+# Set up your storage classes and resource requirements
+```
+
+3. **Deploy to production:**
+```bash
+helm install spire-prod /path/to/your/infrastructure/spire \
+  --namespace spire-production \
+  --create-namespace \
+  --values /path/to/your/infrastructure/spire/values/production.yaml
+```
+
+4. **Verify and integrate:**
+```bash
+# Verify deployment
+helm status spire-prod -n spire-production
+
+# Test SPIRE functionality
+kubectl exec -n spire-production deployment/spire-prod-server -- \
+  /opt/spire/bin/spire-server entry show
+```
+
+This Helm chart template provides a **production-ready foundation** for implementing SPIRE in enterprise Kubernetes environments, with comprehensive security, monitoring, and operational capabilities built-in.
+
+For detailed implementation guidance, see:
+- [Helm Deployment Guide](HELM_DEPLOYMENT_GUIDE.md) - Complete deployment procedures
+- [SPIFFE Service Integration Guide](SPIFFE_SERVICE_INTEGRATION_GUIDE.md) - Service onboarding
+- [Chart Documentation](helm-charts/spire/README.md) - Detailed chart reference

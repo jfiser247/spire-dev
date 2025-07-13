@@ -1,0 +1,15 @@
+{{- if and .Values.rbac.create .Values.workloadServices.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "spire.workload.serviceAccountName" . }}
+  namespace: workload
+  labels:
+    {{- include "spire.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workload
+  {{- with .Values.serviceAccountAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

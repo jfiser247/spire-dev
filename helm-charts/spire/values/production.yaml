@@ -1,0 +1,189 @@
+# Production environment values
+# Override default values for production deployment
+
+global:
+  trustDomain: "example.org"
+  clusterName: "production-cluster"
+
+spireServer:
+  # Production resources
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  # Production logging
+  config:
+    logLevel: "WARN"
+  
+  # Larger storage for production
+  persistence:
+    size: 5Gi
+    storageClass: "fast-ssd"
+  
+  # Production-grade health checks
+  livenessProbe:
+    httpGet:
+      path: /live
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 60
+    timeoutSeconds: 5
+    failureThreshold: 5
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+spireAgent:
+  # Production resources
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  
+  # Production logging
+  config:
+    logLevel: "WARN"
+  
+  # Production-grade health checks
+  livenessProbe:
+    httpGet:
+      path: /live
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 60
+    timeoutSeconds: 5
+    failureThreshold: 5
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+postgresql:
+  # Production database configuration
+  primary:
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+    
+    persistence:
+      size: 20Gi
+      storageClass: "fast-ssd"
+  
+  # Enable backup in production
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    
+  # Production database settings
+  auth:
+    postgresPassword: "{{ .Values.postgresql.auth.existingSecret }}"
+    existingSecret: "postgresql-credentials"
+
+# Enable comprehensive monitoring in production
+monitoring:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      
+  grafana:
+    enabled: true
+    dashboards:
+      spire: true
+
+# Production security settings
+security:
+  podSecurityStandards:
+    enabled: true
+    enforce: "restricted"
+
+# Network policies for production
+networking:
+  networkPolicies:
+    enabled: true
+
+# Production affinity rules
+spireServer:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/component
+            operator: In
+            values:
+            - spire-server
+        topologyKey: kubernetes.io/hostname
+
+# Node selectors for dedicated nodes
+spireServer:
+  nodeSelector:
+    node-role.kubernetes.io/spire: "true"
+
+spireAgent:
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 300
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 300
+
+# Production registration entries with shorter TTLs
+registrationEntries:
+  entries:
+    - spiffeId: "spiffe://example.org/spire/agent/k8s_psat/production-cluster"
+      parentId: "spiffe://example.org/spire/server"
+      selectors:
+        - "k8s_psat:cluster:production-cluster"
+      ttl: 3600
+      
+    - spiffeId: "spiffe://example.org/workload/service1"
+      parentId: "spiffe://example.org/spire/agent/k8s_psat/production-cluster"
+      selectors:
+        - "k8s:ns:production"
+        - "k8s:sa:service1"
+        - "k8s:pod-label:app:service1"
+      ttl: 900  # 15 minutes for production security
+      
+    - spiffeId: "spiffe://example.org/workload/service2"
+      parentId: "spiffe://example.org/spire/agent/k8s_psat/production-cluster"
+      selectors:
+        - "k8s:ns:production"
+        - "k8s:sa:service2"
+        - "k8s:pod-label:app:service2"
+      ttl: 900
+      
+    - spiffeId: "spiffe://example.org/workload/service3"
+      parentId: "spiffe://example.org/spire/agent/k8s_psat/production-cluster"
+      selectors:
+        - "k8s:ns:production"
+        - "k8s:sa:service3"
+        - "k8s:pod-label:app:service3"
+      ttl: 900

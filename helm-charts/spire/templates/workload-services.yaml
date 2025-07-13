@@ -1,0 +1,146 @@
+{{- if .Values.workloadServices.enabled }}
+{{- if .Values.workloadServices.service1.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service1
+  namespace: workload
+  labels:
+    {{- include "spire.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workload
+    app: service1
+spec:
+  replicas: {{ .Values.workloadServices.service1.replicas }}
+  selector:
+    matchLabels:
+      app: service1
+  template:
+    metadata:
+      labels:
+        app: service1
+        spiffe.io/spiffe-id: {{ .Values.workloadServices.service1.spiffeId | quote }}
+    spec:
+      serviceAccountName: service1
+      containers:
+      - name: service1
+        image: {{ .Values.workloadServices.service1.image }}
+        ports:
+        - containerPort: 80
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///run/spire/sockets/agent.sock"
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service1
+  namespace: workload
+{{- end }}
+
+{{- if .Values.workloadServices.service2.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service2
+  namespace: workload
+  labels:
+    {{- include "spire.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workload
+    app: service2
+spec:
+  replicas: {{ .Values.workloadServices.service2.replicas }}
+  selector:
+    matchLabels:
+      app: service2
+  template:
+    metadata:
+      labels:
+        app: service2
+        spiffe.io/spiffe-id: {{ .Values.workloadServices.service2.spiffeId | quote }}
+    spec:
+      serviceAccountName: service2
+      containers:
+      - name: service2
+        image: {{ .Values.workloadServices.service2.image }}
+        ports:
+        - containerPort: 80
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///run/spire/sockets/agent.sock"
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service2
+  namespace: workload
+{{- end }}
+
+{{- if .Values.workloadServices.service3.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service3
+  namespace: workload
+  labels:
+    {{- include "spire.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workload
+    app: service3
+spec:
+  replicas: {{ .Values.workloadServices.service3.replicas }}
+  selector:
+    matchLabels:
+      app: service3
+  template:
+    metadata:
+      labels:
+        app: service3
+        spiffe.io/spiffe-id: {{ .Values.workloadServices.service3.spiffeId | quote }}
+    spec:
+      serviceAccountName: service3
+      containers:
+      - name: service3
+        image: {{ .Values.workloadServices.service3.image }}
+        command: ["python3", "-m", "http.server", "8080"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///run/spire/sockets/agent.sock"
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service3
+  namespace: workload
+{{- end }}
+{{- end }}

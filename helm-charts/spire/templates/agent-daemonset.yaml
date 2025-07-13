@@ -1,0 +1,120 @@
+{{- if .Values.spireAgent.enabled }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "spire.fullname" . }}-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spire.agent.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "spire.agent.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "spire.agent.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/agent-configmap.yaml") . | sha256sum }}
+        {{- with .Values.spireAgent.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "spire.agent.serviceAccountName" . }}
+      {{- with .Values.spireAgent.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: spire-agent
+          {{- with .Values.spireAgent.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "spire.image" (dict "registry" .Values.spireAgent.image.registry "repository" .Values.spireAgent.image.repository "tag" .Values.spireAgent.image.tag "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.spireAgent.image.pullPolicy }}
+          args:
+            - -config
+            - /run/spire/config/agent.conf
+          ports:
+            - name: health
+              containerPort: {{ .Values.spireAgent.config.healthChecks.bindPort }}
+              protocol: TCP
+            {{- if .Values.spireAgent.config.telemetry.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.spireAgent.config.telemetry.prometheusPort }}
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.spireAgent.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.spireAgent.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.spireAgent.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-bundle
+              mountPath: /run/spire/bundle
+            - name: spire-sockets
+              mountPath: /run/spire/sockets
+            - name: spire-data
+              mountPath: {{ .Values.spireAgent.config.dataDir }}
+          env:
+            - name: PATH
+              value: "/opt/spire/bin:/bin"
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      volumes:
+        - name: spire-config
+          configMap:
+            name: {{ include "spire.fullname" . }}-agent-config
+        - name: spire-bundle
+          configMap:
+            name: spire-bundle
+        - name: spire-sockets
+          hostPath:
+            path: /run/spire/sockets
+            type: DirectoryOrCreate
+        - name: spire-data
+          hostPath:
+            path: /opt/spire
+            type: DirectoryOrCreate
+      {{- with .Values.spireAgent.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.spireAgent.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.spireAgent.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

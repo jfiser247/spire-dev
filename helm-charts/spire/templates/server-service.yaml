@@ -1,0 +1,33 @@
+{{- if .Values.spireServer.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "spire.fullname" . }}-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spire.server.labels" . | nindent 4 }}
+  {{- with .Values.spireServer.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.spireServer.service.type }}
+  ports:
+    - port: {{ .Values.spireServer.service.port }}
+      targetPort: server
+      protocol: TCP
+      name: server
+    - port: {{ .Values.spireServer.service.healthPort }}
+      targetPort: health
+      protocol: TCP
+      name: health
+    {{- if .Values.spireServer.config.telemetry.enabled }}
+    - port: {{ .Values.spireServer.config.telemetry.prometheusPort }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- end }}
+  selector:
+    {{- include "spire.server.selectorLabels" . | nindent 4 }}
+{{- end }}

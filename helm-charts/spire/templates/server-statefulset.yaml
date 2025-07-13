@@ -1,0 +1,129 @@
+{{- if .Values.spireServer.enabled }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "spire.fullname" . }}-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spire.server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.spireServer.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "spire.server.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "spire.fullname" . }}-server
+  template:
+    metadata:
+      labels:
+        {{- include "spire.server.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/server-configmap.yaml") . | sha256sum }}
+        {{- with .Values.spireServer.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "spire.server.serviceAccountName" . }}
+      {{- with .Values.spireServer.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: spire-server
+          {{- with .Values.spireServer.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "spire.image" (dict "registry" .Values.spireServer.image.registry "repository" .Values.spireServer.image.repository "tag" .Values.spireServer.image.tag "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.spireServer.image.pullPolicy }}
+          args:
+            - -config
+            - /run/spire/config/server.conf
+          ports:
+            - name: server
+              containerPort: {{ .Values.spireServer.config.bindPort }}
+              protocol: TCP
+            - name: health
+              containerPort: {{ .Values.spireServer.config.healthChecks.bindPort }}
+              protocol: TCP
+            {{- if .Values.spireServer.config.telemetry.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.spireServer.config.telemetry.prometheusPort }}
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.spireServer.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.spireServer.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.spireServer.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-data
+              mountPath: {{ .Values.spireServer.config.dataDir }}
+            - name: spire-sockets
+              mountPath: /run/spire/sockets
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      volumes:
+        - name: spire-config
+          configMap:
+            name: {{ include "spire.fullname" . }}-server-config
+        - name: spire-sockets
+          emptyDir: {}
+      {{- with .Values.spireServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.spireServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.spireServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.spireServer.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: spire-data
+        {{- with .Values.spireServer.persistence.annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          {{- range .Values.spireServer.persistence.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- if .Values.spireServer.persistence.storageClass }}
+        {{- if (eq "-" .Values.spireServer.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: {{ .Values.spireServer.persistence.storageClass | quote }}
+        {{- end }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.spireServer.persistence.size | quote }}
+  {{- end }}
+{{- end }}
