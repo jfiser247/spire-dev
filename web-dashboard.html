@@ -1087,11 +1087,13 @@ curl http://localhost:9988/metrics</div>
             // Simulate the kubectl call by executing the script
             // In a real implementation, this would be an HTTP API call
             
-            // Use actual timestamps from your current environment
-            // Based on kubectl output: spire-server created at 2025-07-12T23:34:16Z
-            const serverCreated = "2025-07-12T23:34:16Z";
-            const dbCreated = "2025-07-12T23:32:51Z";
-            const workloadCreated = "2025-07-12T23:35:07Z";
+            // Generate realistic timestamps for demo purposes
+            // Simulate pods that were created at different realistic intervals
+            const now = new Date();
+            const serverCreated = new Date(now.getTime() - (4 * 60 * 60 * 1000)).toISOString(); // 4 hours ago
+            const dbCreated = new Date(now.getTime() - (4 * 60 * 60 * 1000) - (2 * 60 * 1000)).toISOString(); // 4h 2m ago
+            const workloadCreated = new Date(now.getTime() - (3 * 60 * 60 * 1000) - (30 * 60 * 1000)).toISOString(); // 3h 30m ago
+            const agentCreated = new Date(now.getTime() - (3 * 60 * 60 * 1000) - (45 * 60 * 1000)).toISOString(); // 3h 45m ago
             
             return {
                 server: [
@@ -1141,7 +1143,7 @@ curl http://localhost:9988/metrics</div>
                         node: "workload-cluster",
                         status: "Pending",
                         ready: false,
-                        age: workloadCreated
+                        age: agentCreated
                     }
                 ],
                 workloads: [
@@ -1167,7 +1169,7 @@ curl http://localhost:9988/metrics</div>
                         restarts: 0,
                         upToDate: 1,
                         available: 1,
-                        age: workloadCreated
+                        age: new Date(now.getTime() - (3 * 60 * 60 * 1000) - (25 * 60 * 1000)).toISOString()
                     },
                     {
                         name: "inventory-service-84f7b45d49-bw9v2",
@@ -1179,7 +1181,7 @@ curl http://localhost:9988/metrics</div>
                         restarts: 0,
                         upToDate: 1,
                         available: 1,
-                        age: workloadCreated
+                        age: new Date(now.getTime() - (2 * 60 * 60 * 1000) - (45 * 60 * 1000)).toISOString()
                     }
                 ]
             };
