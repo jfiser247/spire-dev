@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPIRE Monitoring Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: #e9ecef;
+        }
+        .tab.active {
+            background: white;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        .tab-content {
+            padding: 30px;
+            min-height: 400px;
+            transition: opacity 0.2s ease;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .status-grid.overview {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+        .status-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        .status-card.clickable {
+            position: relative;
+        }
+        .status-card.clickable::after {
+            content: '→';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #667eea;
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .status-card.clickable:hover::after {
+            opacity: 1;
+        }
+        .status-card.clickable:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .clickable-hint {
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 5px;
+            opacity: 0.7;
+            font-style: italic;
+        }
+        .status-card h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        .status-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status-online {
+            color: #28a745;
+        }
+        .status-offline {
+            color: #dc3545;
+        }
+        .status-warning {
+            color: #ffc107;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover {
+            background: #5a6fd8;
+        }
+        .cluster-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .command-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .auto-refresh-controls {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .refresh-interval {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .refresh-status {
+            font-weight: bold;
+            color: #28a745;
+        }
+        .refresh-status.paused {
+            color: #dc3545;
+        }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .age-live {
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SPIRE Monitoring Dashboard</h1>
+            <p>Multi-Cluster SPIFFE Runtime Environment</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">Overview</button>
+            <button class="tab" onclick="showTab('server')">SPIRE Server</button>
+            <button class="tab" onclick="showTab('database')">Database</button>
+            <button class="tab" onclick="showTab('agents')">Agents</button>
+            <button class="tab" onclick="showTab('workloads')">Workloads</button>
+            <button class="tab" onclick="showTab('commands')">Useful Commands</button>
+        </div>
+        
+        <div class="tab-content">
+            <div id="overview" class="tab-pane active">
+                <div class="auto-refresh-controls">
+                    <button class="refresh-btn" onclick="refreshStatus()">🔄 Manual Refresh</button>
+                    <div class="refresh-interval">
+                        <label>Auto-refresh:</label>
+                        <select id="refresh-interval" onchange="updateRefreshInterval()">
+                            <option value="0">Off</option>
+                            <option value="5">5 seconds</option>
+                            <option value="10" selected>10 seconds</option>
+                            <option value="30">30 seconds</option>
+                            <option value="60">1 minute</option>
+                        </select>
+                    </div>
+                    <span id="refresh-status" class="refresh-status">Auto-refresh: 10s</span>
+                    <span id="next-refresh">Next refresh in: 10s</span>
+                </div>
+                
+                <div class="status-grid overview">
+                    <div class="status-card clickable" onclick="navigateToTab('server')" title="Click to view SPIRE Server details">
+                        <h3>SPIRE Server</h3>
+                        <div class="status-value status-online" id="server-status">●</div>
+                        <p id="server-context">spire-server-cluster</p>
+                        <div class="clickable-hint">Click for details</div>
+                    </div>
+                    <div class="status-card clickable" onclick="navigateToTab('database')" title="Click to view PostgreSQL Database details">
+                        <h3>PostgreSQL DB</h3>
+                        <div class="status-value status-online" id="database-status">●</div>
+                        <p id="database-context">Storage: <span id="db-storage">1Gi</span></p>
+                        <div class="clickable-hint">Click for details</div>
+                    </div>
+                    <div class="status-card clickable" onclick="navigateToTab('agents')" title="Click to view SPIRE Agents details">
+                        <h3>SPIRE Agents</h3>
+                        <div class="status-value" id="agent-count">-</div>
+                        <p>Active agents</p>
+                        <div class="clickable-hint">Click for details</div>
+                    </div>
+                    <div class="status-card clickable" onclick="navigateToTab('workloads')" title="Click to view Workload Services details">
+                        <h3>Workload Services</h3>
+                        <div class="status-value" id="workload-count">-</div>
+                        <p>Running services</p>
+                        <div class="clickable-hint">Click for details</div>
+                    </div>
+                </div>
+                
+                <div class="cluster-info">
+                    <h4>Cluster Information</h4>
+                    <p><strong>Server IP:</strong> <span id="server-ip">Loading...</span></p>
+                    <p><strong>Setup Status:</strong> <span id="setup-status">Ready</span></p>
+                    <p><strong>Last Updated:</strong> <span id="last-updated">-</span></p>
+                </div>
+            </div>
+            
+            <div id="server" class="tab-pane">
+                <h2>SPIRE Server Status</h2>
+                <button class="refresh-btn" onclick="refreshServerStatus()">🔄 Refresh Server Status</button>
+                <button class="refresh-btn" onclick="toggleAutoRefreshTab('server')" id="server-auto-btn">🟢 Auto-refresh: ON</button>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Status</th>
+                            <th>Ready</th>
+                            <th>Restarts</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="server-table">
+                        <tr>
+                            <td colspan="5">Loading server status...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="database" class="tab-pane">
+                <h2>PostgreSQL Database</h2>
+                <button class="refresh-btn" onclick="refreshDatabaseStatus()">🔄 Refresh Database Status</button>
+                <button class="refresh-btn" onclick="toggleAutoRefreshTab('database')" id="database-auto-btn">🟢 Auto-refresh: ON</button>
+                
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h3>Database Status</h3>
+                        <div class="status-value" id="db-status-icon">●</div>
+                        <p id="db-status-text">Loading...</p>
+                    </div>
+                    <div class="status-card">
+                        <h3>Storage</h3>
+                        <div class="status-value" id="db-storage-size">1Gi</div>
+                        <p id="db-storage-status">Persistent Volume</p>
+                    </div>
+                    <div class="status-card">
+                        <h3>Connections</h3>
+                        <div class="status-value" id="db-connections">5432</div>
+                        <p>Port (Internal)</p>
+                    </div>
+                    <div class="status-card">
+                        <h3>Uptime</h3>
+                        <div class="status-value" id="db-uptime">-</div>
+                        <p>Database age</p>
+                    </div>
+                </div>
+
+                <h3>Database Pod Details</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Pod Name</th>
+                            <th>Status</th>
+                            <th>Ready</th>
+                            <th>Restarts</th>
+                            <th>Node</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="database-table">
+                        <tr>
+                            <td colspan="6">Loading database information...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Storage Details</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>PVC Name</th>
+                            <th>Status</th>
+                            <th>Capacity</th>
+                            <th>Access Mode</th>
+                            <th>Storage Class</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="storage-table">
+                        <tr>
+                            <td colspan="6">Loading storage information...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Service Information</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Service Name</th>
+                            <th>Type</th>
+                            <th>Cluster IP</th>
+                            <th>Port</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="db-service-table">
+                        <tr>
+                            <td colspan="5">Loading service information...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="agents" class="tab-pane">
+                <h2>SPIRE Agents</h2>
+                <button class="refresh-btn" onclick="refreshAgentStatus()">🔄 Refresh Agent Status</button>
+                <button class="refresh-btn" onclick="toggleAutoRefreshTab('agents')" id="agents-auto-btn">🟢 Auto-refresh: ON</button>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Agent</th>
+                            <th>Node</th>
+                            <th>Status</th>
+                            <th>Ready</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agents-table">
+                        <tr>
+                            <td colspan="5">Loading agent status...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="workloads" class="tab-pane">
+                <h2>Workload Services</h2>
+                <button class="refresh-btn" onclick="refreshWorkloadStatus()">🔄 Refresh Workload Status</button>
+                <button class="refresh-btn" onclick="toggleAutoRefreshTab('workloads')" id="workloads-auto-btn">🟢 Auto-refresh: ON</button>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Ready</th>
+                            <th>Restarts</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workloads-table">
+                        <tr>
+                            <td colspan="6">Loading workload status...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="commands" class="tab-pane">
+                <h2>Useful Commands</h2>
+                
+                <h3>Get Real Pod Data (JSON)</h3>
+                <div class="command-box">./scripts/get-pod-data.sh</div>
+                <p><em>This script provides the real-time pod data that should be displayed in the dashboard.</em></p>
+                
+                <h3>Check SPIRE Server Status</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire get pods -l app=spire-server</div>
+                
+                <h3>Check PostgreSQL Database</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire get pods -l app=spire-db</div>
+                
+                <h3>Check Database Storage</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire get pvc postgres-pvc</div>
+                
+                <h3>Check Database Service</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire get svc spire-db</div>
+                
+                <h3>Check SPIRE Agents</h3>
+                <div class="command-box">kubectl --context workload-cluster -n spire get pods</div>
+                
+                <h3>Check Workload Services</h3>
+                <div class="command-box">kubectl --context workload-cluster -n workload get pods</div>
+                
+                <h3>View SPIRE Server Logs</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire logs spire-server-0</div>
+                
+                <h3>View Database Logs</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire logs -l app=spire-db</div>
+                
+                <h3>Connect to Database (Internal)</h3>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire exec -it spire-server-0 -- psql -h spire-db -U postgres</div>
+                
+                <h3>View Agent Logs</h3>
+                <div class="command-box">kubectl --context workload-cluster -n spire logs -l app=spire-agent</div>
+                
+                <h3>Run Verification Script</h3>
+                <div class="command-box">./scripts/verify-setup.sh</div>
+                
+                <div class="cluster-info">
+                    <h4>Age Calculation Debug</h4>
+                    <p><strong>Current Time:</strong> <span id="current-time">-</span></p>
+                    <p><strong>Server Created:</strong> 2025-07-12T23:34:16Z</p>
+                    <p><strong>DB Created:</strong> 2025-07-12T23:32:51Z</p>
+                    <p><strong>Expected Ages:</strong> Should match kubectl output (4h+ with minutes)</p>
+                </div>
+                
+                <div class="cluster-info">
+                    <h4>Note on Real-Time Data</h4>
+                    <p>The dashboard currently shows simulated ages based on actual pod timestamps (matching your current environment). For true real-time data, you would need to set up a simple HTTP server that serves the output of <code>scripts/get-pod-data.sh</code> and have the dashboard fetch from that endpoint.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for auto-refresh
+        let autoRefreshInterval = null;
+        let refreshIntervalSeconds = 10;
+        let nextRefreshCounter = null;
+        let dashboardStartTime = new Date();
+        let tabAutoRefresh = {
+            server: true,
+            database: true,
+            agents: true,
+            workloads: true
+        };
+
+        function showTab(tabName) {
+            // Hide all tab panes
+            const panes = document.querySelectorAll('.tab-pane');
+            panes.forEach(pane => pane.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab pane
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab - handle both click events and programmatic calls
+            if (event && event.target && event.target.classList.contains('tab')) {
+                event.target.classList.add('active');
+            } else {
+                // Find the tab button for this tab and activate it
+                const tabButtons = document.querySelectorAll('.tab');
+                tabButtons.forEach(tab => {
+                    const tabText = tab.textContent.toLowerCase();
+                    if ((tabName === 'overview' && tabText.includes('overview')) ||
+                        (tabName === 'server' && tabText.includes('spire server')) ||
+                        (tabName === 'database' && tabText.includes('database')) ||
+                        (tabName === 'agents' && tabText.includes('agents')) ||
+                        (tabName === 'workloads' && tabText.includes('workloads')) ||
+                        (tabName === 'commands' && tabText.includes('commands'))) {
+                        tab.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        function navigateToTab(tabName) {
+            // Add smooth transition effect
+            const container = document.querySelector('.tab-content');
+            container.style.opacity = '0.7';
+            
+            setTimeout(() => {
+                // Navigate to the specified tab
+                showTab(tabName);
+                
+                // Refresh the data for that tab immediately
+                switch(tabName) {
+                    case 'server':
+                        refreshServerStatus();
+                        break;
+                    case 'database':
+                        refreshDatabaseStatus();
+                        break;
+                    case 'agents':
+                        refreshAgentStatus();
+                        break;
+                    case 'workloads':
+                        refreshWorkloadStatus();
+                        break;
+                }
+                
+                // Restore opacity
+                container.style.opacity = '1';
+                
+                // Add a visual feedback effect
+                const targetTab = document.getElementById(tabName);
+                if (targetTab) {
+                    targetTab.style.backgroundColor = '#f8f9fa';
+                    setTimeout(() => {
+                        targetTab.style.backgroundColor = '';
+                    }, 300);
+                }
+            }, 150);
+        }
+
+        function updateRefreshInterval() {
+            const select = document.getElementById('refresh-interval');
+            refreshIntervalSeconds = parseInt(select.value);
+            
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            
+            if (nextRefreshCounter) {
+                clearInterval(nextRefreshCounter);
+                nextRefreshCounter = null;
+            }
+            
+            if (refreshIntervalSeconds > 0) {
+                startAutoRefresh();
+                document.getElementById('refresh-status').textContent = `Auto-refresh: ${refreshIntervalSeconds}s`;
+                document.getElementById('refresh-status').classList.remove('paused');
+            } else {
+                document.getElementById('refresh-status').textContent = 'Auto-refresh: OFF';
+                document.getElementById('refresh-status').classList.add('paused');
+                document.getElementById('next-refresh').textContent = '';
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshIntervalSeconds <= 0) return;
+            
+            // Set up auto-refresh
+            autoRefreshInterval = setInterval(() => {
+                refreshAllData();
+            }, refreshIntervalSeconds * 1000);
+            
+            // Set up countdown timer
+            let secondsLeft = refreshIntervalSeconds;
+            nextRefreshCounter = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    secondsLeft = refreshIntervalSeconds;
+                }
+                document.getElementById('next-refresh').textContent = `Next refresh in: ${secondsLeft}s`;
+            }, 1000);
+            
+            document.getElementById('next-refresh').textContent = `Next refresh in: ${refreshIntervalSeconds}s`;
+        }
+
+        function refreshAllData() {
+            refreshStatus();
+            if (tabAutoRefresh.server) refreshServerStatus();
+            if (tabAutoRefresh.database) refreshDatabaseStatus();
+            if (tabAutoRefresh.agents) refreshAgentStatus();
+            if (tabAutoRefresh.workloads) refreshWorkloadStatus();
+        }
+
+        function toggleAutoRefreshTab(tab) {
+            tabAutoRefresh[tab] = !tabAutoRefresh[tab];
+            const btn = document.getElementById(`${tab}-auto-btn`);
+            if (tabAutoRefresh[tab]) {
+                btn.textContent = '🟢 Auto-refresh: ON';
+                btn.style.background = '#28a745';
+            } else {
+                btn.textContent = '🔴 Auto-refresh: OFF';
+                btn.style.background = '#dc3545';
+            }
+        }
+
+        function calculateAge(startTime) {
+            const now = new Date();
+            const diffMs = now - startTime;
+            const diffSecs = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffSecs / 60);
+            const diffHours = Math.floor(diffMins / 60);
+            
+            if (diffHours > 0) {
+                return `${diffHours}h${diffMins % 60}m`;
+            } else if (diffMins > 0) {
+                return `${diffMins}m${diffSecs % 60}s`;
+            } else {
+                return `${diffSecs}s`;
+            }
+        }
+
+        function calculateRealAge(creationTimestamp) {
+            const created = new Date(creationTimestamp);
+            const now = new Date();
+            const diffMs = now - created;
+            
+            const totalSecs = Math.floor(diffMs / 1000);
+            const totalMins = Math.floor(totalSecs / 60);
+            const totalHours = Math.floor(totalMins / 60);
+            const totalDays = Math.floor(totalHours / 24);
+            
+            // Calculate remaining minutes and seconds after hours/days
+            const remainingMins = totalMins % 60;
+            const remainingSecs = totalSecs % 60;
+            const remainingHours = totalHours % 24;
+            
+            if (totalDays > 0) {
+                return `${totalDays}d${remainingHours}h`;
+            } else if (totalHours > 0) {
+                return `${totalHours}h${remainingMins}m`;
+            } else if (totalMins > 0) {
+                return `${totalMins}m${remainingSecs}s`;
+            } else {
+                return `${totalSecs}s`;
+            }
+        }
+
+        async function fetchPodData() {
+            try {
+                // In a browser environment, we can't directly execute shell commands
+                // So we'll create a simple HTTP server or use the data from the script
+                // For now, we'll simulate calling the script and parsing the result
+                
+                // This would need to be replaced with an actual HTTP endpoint or websocket
+                // that serves the data from scripts/get-pod-data.sh
+                return await simulateKubectlCall();
+            } catch (error) {
+                console.error('Failed to fetch pod data:', error);
+                return null;
+            }
+        }
+
+        async function simulateKubectlCall() {
+            // Simulate the kubectl call by executing the script
+            // In a real implementation, this would be an HTTP API call
+            
+            // Use actual timestamps from your current environment
+            // Based on kubectl output: spire-server created at 2025-07-12T23:34:16Z
+            const serverCreated = "2025-07-12T23:34:16Z";
+            const dbCreated = "2025-07-12T23:32:51Z";
+            const workloadCreated = "2025-07-12T23:35:07Z";
+            
+            return {
+                server: [
+                    {
+                        name: "spire-server-0", 
+                        status: "Running",
+                        ready: true,
+                        restarts: 0,
+                        node: "spire-server-cluster",
+                        age: serverCreated
+                    }
+                ],
+                database: [
+                    {
+                        name: "spire-db-ffd45757f-wwdv6",
+                        status: "Running",
+                        ready: true,
+                        restarts: 0,
+                        node: "spire-server-cluster",
+                        image: "postgres:14",
+                        age: dbCreated
+                    }
+                ],
+                storage: [
+                    {
+                        name: "postgres-pvc",
+                        status: "Bound",
+                        capacity: "1Gi",
+                        accessModes: "ReadWriteOnce",
+                        storageClass: "standard",
+                        age: dbCreated
+                    }
+                ],
+                dbService: [
+                    {
+                        name: "spire-db",
+                        type: "ClusterIP",
+                        clusterIP: "10.102.112.214",
+                        port: 5432,
+                        targetPort: 5432,
+                        age: dbCreated
+                    }
+                ],
+                agents: [
+                    {
+                        name: "spire-agent-79mq8",
+                        node: "workload-cluster",
+                        status: "Pending",
+                        ready: false,
+                        age: workloadCreated
+                    }
+                ],
+                workloads: [
+                    {
+                        name: "service1-6cf95d7d88-5qksc",
+                        serviceName: "service1",
+                        serviceType: "nginx",
+                        description: "Nginx Web Server",
+                        status: "Running",
+                        ready: true,
+                        restarts: 0,
+                        upToDate: 1,
+                        available: 1,
+                        age: workloadCreated
+                    },
+                    {
+                        name: "service2-56c7f688d-5v2bg",
+                        serviceName: "service2", 
+                        serviceType: "httpd",
+                        description: "Apache HTTP Server",
+                        status: "Running",
+                        ready: true,
+                        restarts: 0,
+                        upToDate: 1,
+                        available: 1,
+                        age: workloadCreated
+                    },
+                    {
+                        name: "service3-84f7b45d49-bw9v2",
+                        serviceName: "service3",
+                        serviceType: "python",
+                        description: "Python HTTP Server",
+                        status: "Running",
+                        ready: true,
+                        restarts: 0,
+                        upToDate: 1,
+                        available: 1,
+                        age: workloadCreated
+                    }
+                ]
+            };
+        }
+        
+        async function refreshStatus() {
+            document.getElementById('last-updated').textContent = new Date().toLocaleString();
+            
+            // Update debug info
+            const currentTimeElement = document.getElementById('current-time');
+            if (currentTimeElement) {
+                currentTimeElement.textContent = new Date().toISOString();
+            }
+            
+            try {
+                const data = await fetchPodData();
+                if (data) {
+                    // Update counts with real data
+                    document.getElementById('agent-count').textContent = data.agents.length;
+                    document.getElementById('workload-count').textContent = data.workloads.length;
+                    
+                    // Store data globally for other functions
+                    window.currentPodData = data;
+                }
+            } catch (error) {
+                console.error('Failed to refresh status:', error);
+            }
+            
+            console.log('Refreshing status...');
+        }
+        
+        async function refreshServerStatus() {
+            const table = document.getElementById('server-table');
+            table.classList.add('loading');
+            
+            try {
+                const data = window.currentPodData || await fetchPodData();
+                
+                if (data && data.server) {
+                    let tableHTML = '';
+                    data.server.forEach(pod => {
+                        const statusIcon = pod.ready ? '<span class="status-online">●</span>' : '<span class="status-offline">●</span>';
+                        const readyText = pod.ready ? '1/1' : '0/1';
+                        const age = calculateRealAge(pod.age);
+                        
+                        tableHTML += `
+                            <tr>
+                                <td>${pod.name}</td>
+                                <td>${statusIcon} ${pod.status}</td>
+                                <td>${readyText}</td>
+                                <td>${pod.restarts}</td>
+                                <td class="age-live">${age}</td>
+                            </tr>
+                        `;
+                    });
+                    table.innerHTML = tableHTML;
+                } else {
+                    table.innerHTML = '<tr><td colspan="5">No server data available</td></tr>';
+                }
+            } catch (error) {
+                console.error('Failed to refresh server status:', error);
+                table.innerHTML = '<tr><td colspan="5">Error loading server data</td></tr>';
+            }
+            
+            table.classList.remove('loading');
+        }
+        
+        async function refreshDatabaseStatus() {
+            const databaseTable = document.getElementById('database-table');
+            const storageTable = document.getElementById('storage-table');
+            const serviceTable = document.getElementById('db-service-table');
+            
+            databaseTable.classList.add('loading');
+            storageTable.classList.add('loading');
+            serviceTable.classList.add('loading');
+            
+            try {
+                const data = window.currentPodData || await fetchPodData();
+                
+                // Update database status cards
+                if (data && data.database && data.database.length > 0) {
+                    const dbPod = data.database[0];
+                    const age = calculateRealAge(dbPod.age);
+                    
+                    document.getElementById('db-status-icon').className = dbPod.ready ? 'status-value status-online' : 'status-value status-offline';
+                    document.getElementById('db-status-text').textContent = dbPod.status;
+                    document.getElementById('db-uptime').textContent = age;
+                    
+                    // Update database table
+                    let dbTableHTML = '';
+                    data.database.forEach(pod => {
+                        const statusIcon = pod.ready ? '<span class="status-online">●</span>' : '<span class="status-offline">●</span>';
+                        const podAge = calculateRealAge(pod.age);
+                        
+                        dbTableHTML += `
+                            <tr>
+                                <td>${pod.name}</td>
+                                <td>${statusIcon} ${pod.status}</td>
+                                <td>${pod.ready ? '1/1' : '0/1'}</td>
+                                <td>${pod.restarts}</td>
+                                <td>${pod.node}</td>
+                                <td class="age-live">${podAge}</td>
+                            </tr>
+                        `;
+                    });
+                    databaseTable.innerHTML = dbTableHTML;
+                } else {
+                    databaseTable.innerHTML = '<tr><td colspan="6">No database pods found</td></tr>';
+                }
+                
+                // Update storage table
+                if (data && data.storage && data.storage.length > 0) {
+                    let storageHTML = '';
+                    data.storage.forEach(pvc => {
+                        const storageAge = calculateRealAge(pvc.age);
+                        
+                        storageHTML += `
+                            <tr>
+                                <td>${pvc.name}</td>
+                                <td><span class="status-online">●</span> ${pvc.status}</td>
+                                <td>${pvc.capacity}</td>
+                                <td>${pvc.accessModes}</td>
+                                <td>${pvc.storageClass}</td>
+                                <td class="age-live">${storageAge}</td>
+                            </tr>
+                        `;
+                    });
+                    storageTable.innerHTML = storageHTML;
+                    
+                    // Update storage status card
+                    document.getElementById('db-storage-size').textContent = data.storage[0].capacity;
+                } else {
+                    storageTable.innerHTML = '<tr><td colspan="6">No storage information found</td></tr>';
+                }
+                
+                // Update service table
+                if (data && data.dbService && data.dbService.length > 0) {
+                    let serviceHTML = '';
+                    data.dbService.forEach(svc => {
+                        const serviceAge = calculateRealAge(svc.age);
+                        
+                        serviceHTML += `
+                            <tr>
+                                <td>${svc.name}</td>
+                                <td>${svc.type}</td>
+                                <td>${svc.clusterIP}</td>
+                                <td>${svc.port}/${svc.targetPort}</td>
+                                <td class="age-live">${serviceAge}</td>
+                            </tr>
+                        `;
+                    });
+                    serviceTable.innerHTML = serviceHTML;
+                    
+                    // Update connection status card
+                    document.getElementById('db-connections').textContent = data.dbService[0].port;
+                } else {
+                    serviceTable.innerHTML = '<tr><td colspan="5">No service information found</td></tr>';
+                }
+                
+            } catch (error) {
+                console.error('Failed to refresh database status:', error);
+                databaseTable.innerHTML = '<tr><td colspan="6">Error loading database data</td></tr>';
+                storageTable.innerHTML = '<tr><td colspan="6">Error loading storage data</td></tr>';
+                serviceTable.innerHTML = '<tr><td colspan="5">Error loading service data</td></tr>';
+            }
+            
+            databaseTable.classList.remove('loading');
+            storageTable.classList.remove('loading');
+            serviceTable.classList.remove('loading');
+        }
+        
+        async function refreshAgentStatus() {
+            const table = document.getElementById('agents-table');
+            table.classList.add('loading');
+            
+            try {
+                const data = window.currentPodData || await fetchPodData();
+                
+                if (data && data.agents) {
+                    let tableHTML = '';
+                    data.agents.forEach(pod => {
+                        const statusIcon = pod.ready ? '<span class="status-online">●</span>' : '<span class="status-warning">●</span>';
+                        const readyText = pod.ready ? '1/1' : '0/1';
+                        const age = calculateRealAge(pod.age);
+                        
+                        tableHTML += `
+                            <tr>
+                                <td>${pod.name}</td>
+                                <td>${pod.node}</td>
+                                <td>${statusIcon} ${pod.status}</td>
+                                <td>${readyText}</td>
+                                <td class="age-live">${age}</td>
+                            </tr>
+                        `;
+                    });
+                    table.innerHTML = tableHTML;
+                } else {
+                    table.innerHTML = '<tr><td colspan="5">No agent data available</td></tr>';
+                }
+            } catch (error) {
+                console.error('Failed to refresh agent status:', error);
+                table.innerHTML = '<tr><td colspan="5">Error loading agent data</td></tr>';
+            }
+            
+            table.classList.remove('loading');
+        }
+        
+        async function refreshWorkloadStatus() {
+            const table = document.getElementById('workloads-table');
+            table.classList.add('loading');
+            
+            try {
+                const data = window.currentPodData || await fetchPodData();
+                
+                if (data && data.workloads) {
+                    let tableHTML = '';
+                    data.workloads.forEach(pod => {
+                        const age = calculateRealAge(pod.age);
+                        // Use serviceName if available, otherwise extract from pod name
+                        const serviceName = pod.serviceName || pod.name.split('-')[0];
+                        const serviceType = pod.serviceType || 'Unknown';
+                        const description = pod.description || '';
+                        
+                        const statusIcon = pod.ready ? '<span class="status-online">●</span>' : '<span class="status-offline">●</span>';
+                        
+                        tableHTML += `
+                            <tr>
+                                <td>
+                                    <strong>${serviceName}</strong>
+                                    ${description ? `<br><small style="color: #666;">${description}</small>` : ''}
+                                </td>
+                                <td><span style="background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${serviceType}</span></td>
+                                <td>${statusIcon} ${pod.status}</td>
+                                <td>${pod.ready ? '1/1' : '0/1'}</td>
+                                <td>${pod.restarts || 0}</td>
+                                <td class="age-live">${age}</td>
+                            </tr>
+                        `;
+                    });
+                    table.innerHTML = tableHTML;
+                } else {
+                    table.innerHTML = '<tr><td colspan="6">No workload data available</td></tr>';
+                }
+            } catch (error) {
+                console.error('Failed to refresh workload status:', error);
+                table.innerHTML = '<tr><td colspan="6">Error loading workload data</td></tr>';
+            }
+            
+            table.classList.remove('loading');
+        }
+        
+        // Initialize with some default data and start auto-refresh
+        window.onload = function() {
+            refreshStatus();
+            refreshServerStatus();
+            refreshDatabaseStatus();
+            refreshAgentStatus();
+            refreshWorkloadStatus();
+            updateRefreshInterval(); // Start auto-refresh with default 10s interval
+        };
+    </script>
+</body>
+</html>

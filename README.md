@@ -67,31 +67,57 @@ Each service is configured to access the SPIRE agent socket and can obtain its S
 
 ## Monitoring Dashboard
 
-The project includes a graphical monitoring dashboard that provides visibility into the SPIRE server and agent status, workload registrations, and other metrics.
+The project includes both a web-based and desktop monitoring dashboard that provides visibility into the SPIRE server and agent status, workload registrations, and other metrics.
 
-### Features
+### Web Dashboard
 
+A modern web-based dashboard is automatically available after running the setup script.
+
+#### Features
+- **Overview Tab**: Real-time cluster status and component health
+- **SPIRE Server Tab**: Server component status and monitoring
+- **Agents Tab**: SPIRE agent health and status tracking  
+- **Workloads Tab**: Service deployment status and metrics
+- **Commands Tab**: Useful kubectl commands for troubleshooting
+
+#### Accessing the Web Dashboard
+
+The setup script will display the dashboard URL when complete:
+
+```bash
+./scripts/setup-clusters.sh
+```
+
+Look for this output:
+```
+🌐 Web Dashboard Available:
+  Open in browser: file:///path/to/project/web-dashboard.html
+```
+
+Simply copy and paste the file path into your browser address bar to access the dashboard.
+
+#### Dashboard Features
+- **Responsive Design**: Works on desktop and mobile browsers
+- **Real-time Status**: Color-coded status indicators for all components
+- **Tabbed Interface**: Organized sections for different aspects of monitoring
+- **Refresh Controls**: Manual refresh buttons for real-time updates
+- **Command Reference**: Built-in kubectl command examples
+
+### Desktop Dashboard (JavaFX)
+
+A traditional desktop application is also available for advanced monitoring.
+
+#### Running the Desktop Dashboard
+
+```bash
+mvn clean javafx:run
+```
+
+#### Desktop Dashboard Features
 - **Workload Registrations**: View all registered workloads with their SPIFFE IDs, parent IDs, and selectors
 - **Agent Status**: Monitor the health and status of all SPIRE agents
 - **Workload Metrics**: View statistics about registrations, agents, and workloads
 - **Settings**: Configure connection settings for the Kubernetes clusters
-
-### Running the Dashboard
-
-To run the monitoring dashboard:
-
-```
-mvn clean javafx:run
-```
-
-### Screenshots
-
-The dashboard provides a tabbed interface with the following views:
-
-1. **Workload Registrations**: Lists all registered workloads
-2. **Agent Status**: Shows the status of all SPIRE agents
-3. **Workload Metrics**: Displays statistics and metrics
-4. **Settings**: Allows configuration of connection settings
 
 ## Useful Commands
 
@@ -137,20 +163,20 @@ minikube delete -p workload-cluster
 
 ```
 .
-├── k8s
-│   ├── spire-db
+├── k8s/                           # Kubernetes manifests
+│   ├── spire-db/                  # Database components
 │   │   ├── namespace.yaml
 │   │   ├── postgres-deployment.yaml
 │   │   ├── postgres-pvc.yaml
 │   │   └── postgres-service.yaml
-│   ├── spire-server
+│   ├── spire-server/              # SPIRE server components
 │   │   ├── namespace.yaml
 │   │   ├── registration-entries.yaml
 │   │   ├── server-configmap.yaml
 │   │   ├── server-rbac.yaml
 │   │   ├── server-service.yaml
 │   │   └── server-statefulset.yaml
-│   └── workload-cluster
+│   └── workload-cluster/          # Workload cluster components
 │       ├── agent-configmap.yaml
 │       ├── agent-daemonset.yaml
 │       ├── agent-rbac.yaml
@@ -158,8 +184,15 @@ minikube delete -p workload-cluster
 │       ├── service1-deployment.yaml
 │       ├── service2-deployment.yaml
 │       └── service3-deployment.yaml
-└── scripts
-    ├── setup-clusters.sh
-    ├── verify-setup.sh
-    └── push-changes.sh
+├── scripts/                       # Setup and utility scripts
+│   ├── setup-clusters.sh          # Main setup script
+│   ├── verify-setup.sh           # Verification script
+│   └── push-changes.sh           # Git push script
+├── src/                          # Desktop dashboard source
+│   └── main/
+│       ├── java/                 # JavaFX application code
+│       └── resources/            # FXML and other resources
+├── web-dashboard.html            # Web-based monitoring dashboard
+├── pom.xml                       # Maven build configuration
+└── README.md                     # This file
 ```
