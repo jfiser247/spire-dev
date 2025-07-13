@@ -249,15 +249,15 @@ public class HelloController {
 
         // In a real application, this would use the Kubernetes API to execute a command in the SPIRE server pod
         // For demonstration, we'll simulate some entries
-        entries.add(new RegistrationEntry("spiffe://example.org/workload/service1", 
+        entries.add(new RegistrationEntry("spiffe://example.org/workload/user-service", 
                                          "spiffe://example.org/agent/k8s_psat/cluster/spire-agent",
-                                         "k8s:ns:workload,k8s:sa:default,k8s:pod-label:app:service1"));
-        entries.add(new RegistrationEntry("spiffe://example.org/workload/service2", 
+                                         "k8s:ns:workload,k8s:sa:user-service,k8s:pod-label:app:user-service"));
+        entries.add(new RegistrationEntry("spiffe://example.org/workload/payment-api", 
                                          "spiffe://example.org/agent/k8s_psat/cluster/spire-agent",
-                                         "k8s:ns:workload,k8s:sa:default,k8s:pod-label:app:service2"));
-        entries.add(new RegistrationEntry("spiffe://example.org/workload/service3", 
+                                         "k8s:ns:workload,k8s:sa:payment-api,k8s:pod-label:app:payment-api"));
+        entries.add(new RegistrationEntry("spiffe://example.org/workload/inventory-service", 
                                          "spiffe://example.org/agent/k8s_psat/cluster/spire-agent",
-                                         "k8s:ns:workload,k8s:sa:default,k8s:pod-label:app:service3"));
+                                         "k8s:ns:workload,k8s:sa:inventory-service,k8s:pod-label:app:inventory-service"));
 
         return entries;
     }

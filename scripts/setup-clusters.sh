@@ -156,9 +156,9 @@ EOF
 kubectl apply -f /tmp/agent-configmap.yaml
 kubectl apply -f k8s/workload-cluster/agent-rbac.yaml
 kubectl apply -f k8s/workload-cluster/agent-daemonset.yaml
-kubectl apply -f k8s/workload-cluster/service1-deployment.yaml
-kubectl apply -f k8s/workload-cluster/service2-deployment.yaml
-kubectl apply -f k8s/workload-cluster/service3-deployment.yaml
+kubectl apply -f k8s/workload-cluster/user-service-deployment.yaml
+kubectl apply -f k8s/workload-cluster/payment-api-deployment.yaml
+kubectl apply -f k8s/workload-cluster/inventory-service-deployment.yaml
 
 echo "Waiting for SPIRE agent to be ready..."
 kubectl -n spire wait --for=condition=ready pod -l app=spire-agent --timeout=300s || echo "Warning: SPIRE agent timeout, continuing..."

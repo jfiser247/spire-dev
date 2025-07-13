@@ -1,30 +1,30 @@
 {{- if .Values.workloadServices.enabled }}
-{{- if .Values.workloadServices.service1.enabled }}
+{{- if .Values.workloadServices.userService.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service1
+  name: user-service
   namespace: workload
   labels:
     {{- include "spire.labels" . | nindent 4 }}
     app.kubernetes.io/component: workload
-    app: service1
+    app: user-service
 spec:
-  replicas: {{ .Values.workloadServices.service1.replicas }}
+  replicas: {{ .Values.workloadServices.userService.replicas }}
   selector:
     matchLabels:
-      app: service1
+      app: user-service
   template:
     metadata:
       labels:
-        app: service1
-        spiffe.io/spiffe-id: {{ .Values.workloadServices.service1.spiffeId | quote }}
+        app: user-service
+        spiffe.io/spiffe-id: {{ .Values.workloadServices.userService.spiffeId | quote }}
     spec:
-      serviceAccountName: service1
+      serviceAccountName: user-service
       containers:
-      - name: service1
-        image: {{ .Values.workloadServices.service1.image }}
+      - name: user-service
+        image: {{ .Values.workloadServices.userService.image }}
         ports:
         - containerPort: 80
         env:
@@ -43,36 +43,36 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: service1
+  name: user-service
   namespace: workload
 {{- end }}
 
-{{- if .Values.workloadServices.service2.enabled }}
+{{- if .Values.workloadServices.paymentApi.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service2
+  name: payment-api
   namespace: workload
   labels:
     {{- include "spire.labels" . | nindent 4 }}
     app.kubernetes.io/component: workload
-    app: service2
+    app: payment-api
 spec:
-  replicas: {{ .Values.workloadServices.service2.replicas }}
+  replicas: {{ .Values.workloadServices.paymentApi.replicas }}
   selector:
     matchLabels:
-      app: service2
+      app: payment-api
   template:
     metadata:
       labels:
-        app: service2
-        spiffe.io/spiffe-id: {{ .Values.workloadServices.service2.spiffeId | quote }}
+        app: payment-api
+        spiffe.io/spiffe-id: {{ .Values.workloadServices.paymentApi.spiffeId | quote }}
     spec:
-      serviceAccountName: service2
+      serviceAccountName: payment-api
       containers:
-      - name: service2
-        image: {{ .Values.workloadServices.service2.image }}
+      - name: payment-api
+        image: {{ .Values.workloadServices.paymentApi.image }}
         ports:
         - containerPort: 80
         env:
@@ -91,36 +91,36 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: service2
+  name: payment-api
   namespace: workload
 {{- end }}
 
-{{- if .Values.workloadServices.service3.enabled }}
+{{- if .Values.workloadServices.inventoryService.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service3
+  name: inventory-service
   namespace: workload
   labels:
     {{- include "spire.labels" . | nindent 4 }}
     app.kubernetes.io/component: workload
-    app: service3
+    app: inventory-service
 spec:
-  replicas: {{ .Values.workloadServices.service3.replicas }}
+  replicas: {{ .Values.workloadServices.inventoryService.replicas }}
   selector:
     matchLabels:
-      app: service3
+      app: inventory-service
   template:
     metadata:
       labels:
-        app: service3
-        spiffe.io/spiffe-id: {{ .Values.workloadServices.service3.spiffeId | quote }}
+        app: inventory-service
+        spiffe.io/spiffe-id: {{ .Values.workloadServices.inventoryService.spiffeId | quote }}
     spec:
-      serviceAccountName: service3
+      serviceAccountName: inventory-service
       containers:
-      - name: service3
-        image: {{ .Values.workloadServices.service3.image }}
+      - name: inventory-service
+        image: {{ .Values.workloadServices.inventoryService.image }}
         command: ["python3", "-m", "http.server", "8080"]
         ports:
         - containerPort: 8080
@@ -140,7 +140,7 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: service3
+  name: inventory-service
   namespace: workload
 {{- end }}
 {{- end }}
