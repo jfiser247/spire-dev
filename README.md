@@ -57,11 +57,11 @@ The setup consists of two minikube clusters:
 
 ## Workload Services
 
-The setup includes three example workload services:
+The setup includes three example enterprise workload services:
 
-1. **service1**: An nginx web server with SPIFFE ID `spiffe://example.org/workload/service1`
-2. **service2**: An Apache httpd web server with SPIFFE ID `spiffe://example.org/workload/service2`
-3. **service3**: A Python HTTP server with SPIFFE ID `spiffe://example.org/workload/service3`
+1. **user-service**: A user management API service with SPIFFE ID `spiffe://example.org/workload/user-service`
+2. **payment-api**: A payment processing API service with SPIFFE ID `spiffe://example.org/workload/payment-api`
+3. **inventory-service**: An inventory management API service with SPIFFE ID `spiffe://example.org/workload/inventory-service`
 
 Each service is configured to access the SPIRE agent socket and can obtain its SPIFFE ID using the Workload API.
 
@@ -311,9 +311,9 @@ minikube delete -p workload-cluster
 │       ├── agent-daemonset.yaml
 │       ├── agent-rbac.yaml
 │       ├── namespace.yaml
-│       ├── service1-deployment.yaml
-│       ├── service2-deployment.yaml
-│       └── service3-deployment.yaml
+│       ├── user-service-deployment.yaml
+│       ├── payment-api-deployment.yaml
+│       └── inventory-service-deployment.yaml
 ├── scripts/                       # Setup and utility scripts
 │   ├── setup-clusters.sh          # Main setup script
 │   ├── verify-setup.sh           # Verification script
@@ -500,14 +500,15 @@ registrationEntries:
         - "k8s_psat:cluster:prod-cluster"
       ttl: 3600
     
-    # Application-specific entries
+    # Enterprise application entries
     - spiffeId: "spiffe://company.internal/workload/user-service"
       parentId: "spiffe://company.internal/spire/agent/k8s_psat/prod-cluster"
       selectors:
         - "k8s:ns:production"
         - "k8s:sa:user-service"
         - "k8s:pod-label:app:user-service"
-      ttl: 900  # 15 minutes for production security
+        - "k8s:pod-label:service:user-management"
+      ttl: 1200  # 20 minutes for user management
     
     - spiffeId: "spiffe://company.internal/workload/payment-api"
       parentId: "spiffe://company.internal/spire/agent/k8s_psat/prod-cluster"
@@ -515,7 +516,17 @@ registrationEntries:
         - "k8s:ns:production"
         - "k8s:sa:payment-api"
         - "k8s:pod-label:app:payment-api"
-      ttl: 900
+        - "k8s:pod-label:service:payment-processing"
+      ttl: 600  # 10 minutes for payment security
+    
+    - spiffeId: "spiffe://company.internal/workload/inventory-service"
+      parentId: "spiffe://company.internal/spire/agent/k8s_psat/prod-cluster"
+      selectors:
+        - "k8s:ns:production"
+        - "k8s:sa:inventory-service"
+        - "k8s:pod-label:app:inventory-service"
+        - "k8s:pod-label:service:inventory-management"
+      ttl: 1800  # 30 minutes for inventory operations
 ```
 
 #### **2. Multi-Environment Deployment Strategy**

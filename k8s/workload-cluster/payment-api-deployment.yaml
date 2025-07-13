@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+  namespace: workload
+  labels:
+    app: payment-api
+    service: payment-processing
+    tier: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: payment-api
+  template:
+    metadata:
+      labels:
+        app: payment-api
+        service: payment-processing
+        tier: api
+    spec:
+      serviceAccountName: payment-api
+      containers:
+      - name: payment-api
+        image: alpine/curl:latest
+        command: ["sh", "-c", "while true; do echo 'Payment API running'; sleep 300; done"]
+        ports:
+        - containerPort: 9090
+          name: http
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: "unix:///run/spire/sockets/agent.sock"
+        - name: SERVICE_NAME
+          value: "payment-api"
+        - name: SERVICE_PORT
+          value: "9090"
+        - name: DATABASE_URL
+          value: "postgresql://payments:payments@payment-db:5432/payments"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-api
+  namespace: workload
+  labels:
+    app: payment-api
+    service: payment-processing
+spec:
+  selector:
+    app: payment-api
+  ports:
+  - port: 9090
+    targetPort: 9090
+    name: http
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: payment-api
+  namespace: workload
+  labels:
+    app: payment-api
+    service: payment-processing

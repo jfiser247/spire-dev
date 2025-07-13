@@ -1146,10 +1146,10 @@ curl http://localhost:9988/metrics</div>
                 ],
                 workloads: [
                     {
-                        name: "service1-6cf95d7d88-5qksc",
-                        serviceName: "service1",
-                        serviceType: "nginx",
-                        description: "Nginx Web Server",
+                        name: "user-service-6cf95d7d88-5qksc",
+                        serviceName: "user-service",
+                        serviceType: "api",
+                        description: "User Management API",
                         status: "Running",
                         ready: true,
                         restarts: 0,
@@ -1158,10 +1158,10 @@ curl http://localhost:9988/metrics</div>
                         age: workloadCreated
                     },
                     {
-                        name: "service2-56c7f688d-5v2bg",
-                        serviceName: "service2", 
-                        serviceType: "httpd",
-                        description: "Apache HTTP Server",
+                        name: "payment-api-56c7f688d-5v2bg",
+                        serviceName: "payment-api", 
+                        serviceType: "api",
+                        description: "Payment Processing API",
                         status: "Running",
                         ready: true,
                         restarts: 0,
@@ -1170,10 +1170,10 @@ curl http://localhost:9988/metrics</div>
                         age: workloadCreated
                     },
                     {
-                        name: "service3-84f7b45d49-bw9v2",
-                        serviceName: "service3",
-                        serviceType: "python",
-                        description: "Python HTTP Server",
+                        name: "inventory-service-84f7b45d49-bw9v2",
+                        serviceName: "inventory-service",
+                        serviceType: "api",
+                        description: "Inventory Management API",
                         status: "Running",
                         ready: true,
                         restarts: 0,
@@ -1909,7 +1909,7 @@ curl http://localhost:9988/metrics</div>
                                     <tr>
                                         <td>cert-abc123</td>
                                         <td>SVID</td>
-                                        <td>spiffe://example.org/service1</td>
+                                        <td>spiffe://example.org/workload/user-service</td>
                                         <td><span class="status-warning">4h 23m</span></td>
                                         <td>✓ Enabled</td>
                                         <td><span class="status-warning">●</span> Monitored</td>
@@ -1917,7 +1917,7 @@ curl http://localhost:9988/metrics</div>
                                     <tr>
                                         <td>cert-def456</td>
                                         <td>SVID</td>
-                                        <td>spiffe://example.org/service2</td>
+                                        <td>spiffe://example.org/workload/payment-api</td>
                                         <td><span class="status-warning">18h 45m</span></td>
                                         <td>✓ Enabled</td>
                                         <td><span class="status-online">●</span> Healthy</td>
@@ -1946,21 +1946,21 @@ curl http://localhost:9988/metrics</div>
                                 <tbody>
                                     <tr>
                                         <td>2h ago</td>
-                                        <td>spiffe://example.org/service4</td>
+                                        <td>spiffe://example.org/workload/inventory-service</td>
                                         <td>Auto-Renewed</td>
                                         <td>in 23h 45m</td>
                                         <td><span class="status-online">✓ Success</span></td>
                                     </tr>
                                     <tr>
                                         <td>6h ago</td>
-                                        <td>spiffe://example.org/service5</td>
+                                        <td>spiffe://example.org/workload/user-service</td>
                                         <td>Auto-Renewed</td>
                                         <td>in 17h 23m</td>
                                         <td><span class="status-online">✓ Success</span></td>
                                     </tr>
                                     <tr>
                                         <td>14h ago</td>
-                                        <td>spiffe://example.org/service6</td>
+                                        <td>spiffe://example.org/workload/payment-api</td>
                                         <td>Manual Renewal</td>
                                         <td>in 9h 34m</td>
                                         <td><span class="status-online">✓ Success</span></td>
@@ -1999,7 +1999,7 @@ curl http://localhost:9988/metrics</div>
                             <div class="metric-value-large">3</div>
                             <div class="metric-trend">
                                 <span class="trend-indicator trend-online">●</span>
-                                <span>service1, service2, service3</span>
+                                <span>user-service, payment-api, inventory-service</span>
                             </div>
                         </div>
                         <div class="metric-detail-card">
@@ -2056,35 +2056,38 @@ curl http://localhost:9988/metrics</div>
                                     <td>3600s</td>
                                     <td><span class="status-online">●</span> Active</td>
                                 </tr>
-                                <tr class="policy-row" data-search="spiffe://example.org/workload/service1 k8s service1 workload">
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/user-service k8s user-service workload user management">
                                     <td><code>2</code></td>
-                                    <td><strong>spiffe://example.org/workload/service1</strong></td>
+                                    <td><strong>spiffe://example.org/workload/user-service</strong></td>
                                     <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
                                     <td>
                                         <span class="selector-tag">k8s:ns:workload</span>
-                                        <span class="selector-tag">k8s:sa:service1</span>
+                                        <span class="selector-tag">k8s:sa:user-service</span>
+                                        <span class="selector-tag">k8s:pod-label:service:user-management</span>
                                     </td>
                                     <td>1800s</td>
                                     <td><span class="status-online">●</span> Active</td>
                                 </tr>
-                                <tr class="policy-row" data-search="spiffe://example.org/workload/service2 k8s service2 workload">
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/payment-api k8s payment-api workload payment processing">
                                     <td><code>3</code></td>
-                                    <td><strong>spiffe://example.org/workload/service2</strong></td>
+                                    <td><strong>spiffe://example.org/workload/payment-api</strong></td>
                                     <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
                                     <td>
                                         <span class="selector-tag">k8s:ns:workload</span>
-                                        <span class="selector-tag">k8s:sa:service2</span>
+                                        <span class="selector-tag">k8s:sa:payment-api</span>
+                                        <span class="selector-tag">k8s:pod-label:service:payment-processing</span>
                                     </td>
-                                    <td>1800s</td>
+                                    <td>900s</td>
                                     <td><span class="status-online">●</span> Active</td>
                                 </tr>
-                                <tr class="policy-row" data-search="spiffe://example.org/workload/service3 k8s service3 workload">
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/inventory-service k8s inventory-service workload inventory management">
                                     <td><code>4</code></td>
-                                    <td><strong>spiffe://example.org/workload/service3</strong></td>
+                                    <td><strong>spiffe://example.org/workload/inventory-service</strong></td>
                                     <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
                                     <td>
                                         <span class="selector-tag">k8s:ns:workload</span>
-                                        <span class="selector-tag">k8s:sa:service3</span>
+                                        <span class="selector-tag">k8s:sa:inventory-service</span>
+                                        <span class="selector-tag">k8s:pod-label:service:inventory-management</span>
                                     </td>
                                     <td>1800s</td>
                                     <td><span class="status-online">●</span> Active</td>

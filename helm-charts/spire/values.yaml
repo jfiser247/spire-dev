@@ -256,31 +256,66 @@ postgresql:
     ports:
       postgresql: 5432
 
-# Example workload services
+# Enterprise workload services
 workloadServices:
   # Enable example workload deployments
   enabled: true
   
-  # Service 1 configuration
-  service1:
+  # User management service configuration
+  userService:
     enabled: true
+    name: "user-service"
     image: "nginx:1.21"
-    replicas: 1
-    spiffeId: "spiffe://example.org/workload/service1"
+    replicas: 2
+    port: 8080
+    spiffeId: "spiffe://example.org/workload/user-service"
+    serviceAccount: "user-service"
+    labels:
+      service: "user-management"
+      tier: "backend"
+    env:
+      - name: SERVICE_NAME
+        value: "user-service"
+      - name: DATABASE_URL
+        value: "postgresql://users:users@user-db:5432/users"
     
-  # Service 2 configuration  
-  service2:
+  # Payment processing API configuration  
+  paymentApi:
     enabled: true
-    image: "httpd:2.4"
-    replicas: 1
-    spiffeId: "spiffe://example.org/workload/service2"
+    name: "payment-api"
+    image: "alpine/curl:latest"
+    replicas: 3
+    port: 9090
+    spiffeId: "spiffe://example.org/workload/payment-api"
+    serviceAccount: "payment-api"
+    labels:
+      service: "payment-processing"
+      tier: "api"
+    env:
+      - name: SERVICE_NAME
+        value: "payment-api"
+      - name: DATABASE_URL
+        value: "postgresql://payments:payments@payment-db:5432/payments"
     
-  # Service 3 configuration
-  service3:
+  # Inventory management service configuration
+  inventoryService:
     enabled: true
+    name: "inventory-service"
     image: "python:3.9-slim"
-    replicas: 1
-    spiffeId: "spiffe://example.org/workload/service3"
+    replicas: 2
+    port: 8082
+    spiffeId: "spiffe://example.org/workload/inventory-service"
+    serviceAccount: "inventory-service"
+    labels:
+      service: "inventory-management"
+      tier: "backend"
+    env:
+      - name: SERVICE_NAME
+        value: "inventory-service"
+      - name: REDIS_URL
+        value: "redis://inventory-cache:6379"
+      - name: DATABASE_URL
+        value: "postgresql://inventory:inventory@inventory-db:5432/inventory"
 
 # Registration entries configuration
 registrationEntries:
@@ -296,26 +331,32 @@ registrationEntries:
         - "k8s_psat:cluster:spire-server-cluster"
       ttl: 3600
       
-    # Service entries
-    - spiffeId: "spiffe://example.org/workload/service1"
+    # Enterprise service entries
+    - spiffeId: "spiffe://example.org/workload/user-service"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
       selectors:
         - "k8s:ns:workload"
-        - "k8s:sa:service1"
+        - "k8s:sa:user-service"
+        - "k8s:pod-label:app:user-service"
+        - "k8s:pod-label:service:user-management"
       ttl: 1800
       
-    - spiffeId: "spiffe://example.org/workload/service2"
+    - spiffeId: "spiffe://example.org/workload/payment-api"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
       selectors:
         - "k8s:ns:workload"
-        - "k8s:sa:service2"
-      ttl: 1800
+        - "k8s:sa:payment-api"
+        - "k8s:pod-label:app:payment-api"
+        - "k8s:pod-label:service:payment-processing"
+      ttl: 900  # Shorter TTL for payment processing security
       
-    - spiffeId: "spiffe://example.org/workload/service3"
+    - spiffeId: "spiffe://example.org/workload/inventory-service"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
       selectors:
         - "k8s:ns:workload"
-        - "k8s:sa:service3"
+        - "k8s:sa:inventory-service"
+        - "k8s:pod-label:app:inventory-service"
+        - "k8s:pod-label:service:inventory-management"
       ttl: 1800
 
 # RBAC configuration
