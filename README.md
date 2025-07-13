@@ -75,13 +75,34 @@ A modern, enterprise-grade web-based dashboard with interactive drilldown capabi
 
 #### Dashboard Tabs
 
-- **Overview Tab**: Real-time cluster status with clickable component health cards
+- **Overview Tab**: Real-time cluster status with clickable component health cards and SPIRE metrics summary
 - **SPIRE Server Tab**: Detailed server component status and pod monitoring
-- **Database Tab**: PostgreSQL database monitoring with storage and connection metrics
+- **Database Tab**: PostgreSQL database monitoring with storage and connection metrics and interactive policy viewer
 - **Agents Tab**: SPIRE agent health tracking across all nodes
 - **Workloads Tab**: Service deployment status with detailed workload metrics
-- **SPIRE Metrics Tab**: ⭐ **NEW** - Advanced telemetry with interactive drilldown capabilities
+- **SPIRE Metrics Tab**: ⭐ **Advanced telemetry with interactive drilldown capabilities**
 - **Commands Tab**: Comprehensive kubectl commands for troubleshooting and metrics collection
+
+#### 📊 **Enhanced Overview Tab**
+
+The Overview tab now provides comprehensive system monitoring with interactive component tiles:
+
+##### **Interactive Component Cards**
+- **SPIRE Server** - Server cluster status with click-through to detailed monitoring
+- **PostgreSQL DB** - Database health and storage status with policy access
+- **SPIRE Agents** - Active agent count with health overview
+- **Workload Services** - Running service count and status summary  
+- **SPIRE Metrics** ⭐ **NEW** - Real-time activity monitoring with dynamic status indicators:
+  - 🟢 **High Activity** - Active system with substantial RPC calls and agent connections
+  - 🟡 **Moderate Activity** - Normal operational load with regular traffic
+  - 🔵 **Low Activity** - Minimal system activity detected
+  - 📊 **Default State** - Interactive telemetry ready for detailed analysis
+
+Each card provides:
+- **Visual Status Indicators** - Color-coded health and activity levels
+- **Quick Metrics** - Key performance indicators at a glance  
+- **Direct Navigation** - One-click access to detailed monitoring tabs
+- **Real-time Updates** - Automatic refresh with configurable intervals
 
 #### 🔍 Interactive SPIRE Metrics & Telemetry
 
@@ -164,12 +185,13 @@ Simply copy and paste the file path into your browser address bar to access the 
 - **Operational Insights**: Historical trends and capacity planning data
 
 #### Dashboard Capabilities
-- **Responsive Design**: Optimized for desktop and mobile browsers
-- **Live Updates**: Real-time status with color-coded health indicators
-- **Tabbed Interface**: Organized monitoring sections with smooth transitions
-- **Interactive Elements**: Clickable tiles and detailed drilldown modals
-- **Command Integration**: Built-in kubectl and metrics collection commands
-- **Export Ready**: Structured for integration with monitoring platforms
+- **Responsive Design**: Optimized for desktop and mobile browsers with adaptive grid layouts
+- **Live Updates**: Real-time status with color-coded health indicators and activity monitoring
+- **Tabbed Interface**: Organized monitoring sections with smooth transitions and cross-tab navigation
+- **Interactive Elements**: Clickable tiles, detailed drilldown modals, and database policy viewers
+- **Enhanced Overview**: Five-tile dashboard with dynamic SPIRE metrics integration
+- **Command Integration**: Built-in kubectl and metrics collection commands with database queries
+- **Export Ready**: Structured for integration with monitoring platforms and enterprise systems
 
 ### Desktop Dashboard (JavaFX)
 

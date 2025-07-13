@@ -71,6 +71,9 @@
         .status-grid.overview {
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         }
+        .status-grid.overview .status-card {
+            min-height: 120px; /* Ensure consistent height across all overview tiles */
+        }
         .status-card {
             background: white;
             border: 1px solid #dee2e6;
@@ -416,6 +419,12 @@
                         <h3>Workload Services</h3>
                         <div class="status-value" id="workload-count">-</div>
                         <p>Running services</p>
+                        <div class="clickable-hint">Click for details</div>
+                    </div>
+                    <div class="status-card clickable" onclick="navigateToTab('metrics')" title="Click to view SPIRE Metrics & Telemetry">
+                        <h3>SPIRE Metrics</h3>
+                        <div class="status-value" id="metrics-summary">📊</div>
+                        <p id="metrics-context">Interactive telemetry</p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
                 </div>
@@ -1192,6 +1201,9 @@ curl http://localhost:9988/metrics</div>
                     document.getElementById('agent-count').textContent = data.agents.length;
                     document.getElementById('workload-count').textContent = data.workloads.length;
                     
+                    // Update metrics summary
+                    updateMetricsSummary();
+                    
                     // Store data globally for other functions
                     window.currentPodData = data;
                 }
@@ -1424,6 +1436,34 @@ curl http://localhost:9988/metrics</div>
             
             table.classList.remove('loading');
         }
+
+        function updateMetricsSummary() {
+            // Update metrics summary for overview tab
+            const metricsData = window.currentMetricsData || {};
+            
+            // Calculate a simple metrics health score
+            const rpcCalls = metricsData.serverRpcCalls || 0;
+            const agentConnections = metricsData.agentConnections || 0;
+            const svidRate = metricsData.svidRate || 0;
+            
+            // Determine metrics status based on activity
+            let metricsIcon = "📊";
+            let metricsText = "Interactive telemetry";
+            
+            if (rpcCalls > 5000 && agentConnections > 5 && svidRate > 50) {
+                metricsIcon = "🟢";
+                metricsText = "High activity";
+            } else if (rpcCalls > 1000 && agentConnections > 2 && svidRate > 20) {
+                metricsIcon = "🟡";
+                metricsText = "Moderate activity";
+            } else if (rpcCalls > 0 || agentConnections > 0 || svidRate > 0) {
+                metricsIcon = "🔵";
+                metricsText = "Low activity";
+            }
+            
+            document.getElementById('metrics-summary').textContent = metricsIcon;
+            document.getElementById('metrics-context').textContent = metricsText;
+        }
         
         async function refreshMetricsStatus() {
             try {
@@ -1467,6 +1507,9 @@ curl http://localhost:9988/metrics</div>
                 
                 // Store metrics data globally for modal access
                 window.currentMetricsData = metricsData;
+                
+                // Update overview metrics summary
+                updateMetricsSummary();
                 
                 console.log('Metrics refreshed:', metricsData);
             } catch (error) {
