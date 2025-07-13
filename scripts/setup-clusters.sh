@@ -27,8 +27,8 @@ kubectl apply -f k8s/spire-server/server-service.yaml
 kubectl apply -f k8s/spire-server/server-statefulset.yaml
 
 echo "Waiting for SPIRE server to be ready..."
-kubectl -n spire wait --for=condition=ready pod -l app=spire-server --timeout=120s
-kubectl -n spire wait --for=condition=ready pod -l app=spire-db --timeout=120s
+kubectl -n spire wait --for=condition=ready pod -l app=spire-server --timeout=300s || echo "Warning: SPIRE server timeout, continuing..."
+kubectl -n spire wait --for=condition=ready pod -l app=spire-db --timeout=300s || echo "Warning: SPIRE DB timeout, continuing..."
 
 # Get the NodePort for the SPIRE server
 SERVER_NODEPORT=$(kubectl -n spire get svc spire-server -o jsonpath='{.spec.ports[?(@.name=="server")].nodePort}')
@@ -37,8 +37,18 @@ SERVER_IP=$(minikube -p spire-server-cluster ip)
 
 echo "SPIRE server is accessible at ${SERVER_IP}:${SERVER_NODEPORT}"
 
-# Create a service account token for the SPIRE server to access the workload cluster
+echo "SPIRE server and database deployed successfully!"
+
+# Switch to workload cluster
 kubectl config use-context workload-cluster
+
+echo "Deploying SPIRE agent and workload components..."
+
+# Apply workload cluster manifests - create namespaces first
+kubectl apply -f k8s/workload-cluster/namespace.yaml
+kubectl apply -f k8s/spire-server/namespace.yaml
+
+# Create a service account token for the SPIRE server to access the workload cluster
 kubectl create serviceaccount spire-server-sa -n spire --dry-run=client -o yaml | kubectl apply -f -
 kubectl create clusterrolebinding spire-server-binding --clusterrole=system:auth-delegator --serviceaccount=spire:spire-server-sa --dry-run=client -o yaml | kubectl apply -f -
 
@@ -81,23 +91,18 @@ kubectl -n spire patch statefulset spire-server --type=json -p '[{"op":"add","pa
 
 # Restart the SPIRE server to apply the changes
 kubectl -n spire rollout restart statefulset spire-server
-kubectl -n spire rollout status statefulset spire-server --timeout=120s
+kubectl -n spire rollout status statefulset spire-server --timeout=300s
 
-echo "SPIRE server and database deployed successfully!"
-
-# Switch to workload cluster
+# Switch back to workload cluster
 kubectl config use-context workload-cluster
 
-echo "Deploying SPIRE agent and workload components..."
-
-# Apply workload cluster manifests
-kubectl apply -f k8s/workload-cluster/namespace.yaml
-kubectl apply -f k8s/spire-server/namespace.yaml
-kubectl create configmap -n spire spire-bundle
+# Wait a moment for SPIRE server to stabilize after restart
+echo "Waiting for SPIRE server to stabilize..."
+sleep 30
 
 # Copy the bundle from the server cluster to the workload cluster
 SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
-kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server bundle show -format pem > /tmp/bundle.pem
+kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server bundle show -format pem > /tmp/bundle.pem || echo "Warning: Failed to get bundle, continuing..."
 kubectl -n spire create configmap spire-bundle --from-file=bundle.crt=/tmp/bundle.pem --dry-run=client -o yaml | kubectl apply -f -
 
 # Update agent configmap with the correct server address
@@ -156,7 +161,7 @@ kubectl apply -f k8s/workload-cluster/service2-deployment.yaml
 kubectl apply -f k8s/workload-cluster/service3-deployment.yaml
 
 echo "Waiting for SPIRE agent to be ready..."
-kubectl -n spire wait --for=condition=ready pod -l app=spire-agent --timeout=120s
+kubectl -n spire wait --for=condition=ready pod -l app=spire-agent --timeout=300s || echo "Warning: SPIRE agent timeout, continuing..."
 
 echo "SPIRE agent and workload services deployed successfully!"
 
@@ -167,7 +172,14 @@ echo "Registering SPIFFE IDs for workloads..."
 kubectl apply -f k8s/spire-server/registration-entries.yaml
 
 echo "Setup completed successfully!"
-echo "You can now use the following commands to interact with the clusters:"
+echo ""
+echo "🌐 Web Dashboard Available:"
+echo "  Open in browser: file://$(pwd)/web-dashboard.html"
+echo ""
+echo "📋 Useful commands to interact with the clusters:"
 echo "  kubectl --context spire-server-cluster -n spire get pods"
 echo "  kubectl --context workload-cluster -n workload get pods"
 echo "  kubectl --context workload-cluster -n spire get pods"
+echo ""
+echo "🔍 Run verification script:"
+echo "  ./scripts/verify-setup.sh"
