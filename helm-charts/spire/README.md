@@ -156,11 +156,11 @@ Configure automatic registration entries:
 registrationEntries:
   enabled: true
   entries:
-    - spiffeId: "spiffe://example.org/workload/my-service"
+    - spiffeId: "spiffe://example.org/workload/user-service"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
       selectors:
         - "k8s:ns:production"
-        - "k8s:sa:my-service"
+        - "k8s:sa:user-service"
       ttl: 1800
 ```
 
