@@ -2,7 +2,32 @@
 
 **🚀 Quick Setup → 🔬 Local Testing → 🏢 Enterprise Deployment**
 
-Complete local SPIFFE/SPIRE development environment that provides a clean, reproducible setup for enterprise-grade identity management. The idempotent setup tears down any existing environment and rebuilds from scratch.
+Complete local SPIFFE/SPIRE development environment designed for macOS that provides a clean, reproducible setup for enterprise-grade identity management. The idempotent setup tears down any existing environment and rebuilds from scratch.
+
+## 📋 Prerequisites
+
+**System Requirements:**
+- macOS (designed and tested on macOS)
+- Docker Desktop installed and running
+- 8GB+ RAM recommended for multi-cluster operation
+- SSD storage recommended for optimal performance
+
+**Required Tools:**
+Install via Homebrew:
+```bash
+brew install minikube kubectl node jq
+```
+
+**Dependencies:**
+- **minikube**: Creates local Kubernetes clusters
+- **kubectl**: Kubernetes command-line tool
+- **node**: Node.js runtime for dashboard server
+- **jq**: JSON processor for API data handling
+- **Docker**: Container runtime (via Docker Desktop)
+
+**Optional but Recommended:**
+- **Homebrew**: Package manager for macOS
+- **curl**: HTTP client (usually pre-installed on macOS)
 
 ## 🚀 Quick Start
 
@@ -21,7 +46,7 @@ This script:
 - 📊 Starts the dashboard with real-time data
 - ✅ Validates the installation with comprehensive checks
 
-**Average Runtime:** ~1.5-2 minutes *(verified on local development machine)*
+**Average Runtime:** ~1.5-2 minutes *(verified on macOS with Docker Desktop)*
 
 ### **Alternative: Manual Setup**
 ```bash
