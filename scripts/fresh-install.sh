@@ -111,7 +111,7 @@ setup_fresh_environment() {
     # Make scripts executable (fresh laptop might not have this)
     chmod +x scripts/setup-clusters.sh
     chmod +x scripts/verify-setup.sh
-    chmod +x start-dashboard.sh
+    chmod +x web/start-dashboard.sh
     
     # Run the main setup script
     echo "📦 Running cluster setup script..."
