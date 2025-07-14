@@ -15,16 +15,23 @@ The SPIRE monitoring dashboard works immediately after a **fresh Mac laptop setu
 
 1. **Complete fresh setup** (if not already done):
    ```bash
-   ./fresh-install.sh
+   ./scripts/fresh-install.sh
    ```
 
 2. **Start the dashboard server:**
    ```bash
    ./web/start-dashboard.sh
    ```
+   The server will start on port 3000 and display a confirmation message.
 
-3. **Open the dashboard:**
-   Visit [http://localhost:3000/web-dashboard.html](http://localhost:3000/web-dashboard.html)
+3. **Open the dashboard in your browser:**
+   ```bash
+   # macOS
+   open http://localhost:3000/web-dashboard.html
+   
+   # Or manually visit:
+   # http://localhost:3000/web-dashboard.html
+   ```
 
 ### Features
 
@@ -34,6 +41,17 @@ The SPIRE monitoring dashboard works immediately after a **fresh Mac laptop setu
 ✅ **Live age calculations** that update dynamically  
 ✅ **Enterprise service names** (user-service, payment-api, inventory-service)  
 
+### 🌐 Localhost Web Server Approach
+
+The dashboard uses a **Node.js web server** instead of static file:// URLs, providing several advantages:
+
+**Benefits:**
+- ✅ **Real-time API integration** with live Kubernetes data
+- ✅ **CORS-free operation** - no browser security restrictions  
+- ✅ **Dynamic data updates** via REST API endpoints
+- ✅ **Professional development experience** similar to production web apps
+- ✅ **Easy testing and debugging** with standard web development tools
+
 ### API Endpoint
 
 The dashboard server provides a REST API endpoint:
@@ -41,6 +59,7 @@ The dashboard server provides a REST API endpoint:
 - **URL:** `http://localhost:3000/api/pod-data`
 - **Method:** GET
 - **Response:** JSON with real pod data from kubectl
+- **CORS:** Enabled for local development
 
 ### 📡 Data Sources
 

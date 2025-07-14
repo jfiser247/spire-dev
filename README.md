@@ -129,10 +129,14 @@ Perfect for **fresh Mac laptop testing** with live data from your minikube clust
 # Ensure fresh environment first
 ./scripts/fresh-install.sh
 
-# Start real-time dashboard
+# Start real-time dashboard server
 ./web/start-dashboard.sh
-# Visit: http://localhost:3000/web-dashboard.html
+
+# Open dashboard in browser (macOS)
+open http://localhost:3000/web-dashboard.html
 ```
+
+The **Node.js web server** provides real-time API integration and professional development experience.
 
 The dashboard provides **real-time pod data** from both clusters, replacing mock data with actual kubectl information. Ideal for:
 - Testing identity propagation across services
@@ -236,19 +240,20 @@ Each metric tile is interactive and opens detailed analysis modals:
 
 #### Accessing the Web Dashboard
 
-The setup script will display the dashboard URL when complete:
+After running the setup, start the dashboard server and access via localhost:
 
 ```bash
-./scripts/setup-clusters.sh
+# Start the dashboard server
+./web/start-dashboard.sh
+
+# Open in browser
+open http://localhost:3000/web-dashboard.html
 ```
 
-Look for this output:
-```
-🌐 Web Dashboard Available:
-  Open in browser: file:///path/to/project/web-dashboard.html
-```
-
-Simply copy and paste the file path into your browser address bar to access the dashboard.
+The dashboard server provides:
+- **Real-time API endpoint**: `http://localhost:3000/api/pod-data`
+- **Web interface**: `http://localhost:3000/web-dashboard.html`
+- **Live pod data** directly from your minikube clusters
 
 #### Production-Ready Features
 - **Real-time Data**: Auto-refresh capabilities with configurable intervals (5s-60s)
