@@ -41,6 +41,8 @@ build/
 ### Local Development Settings ###
 .dev-settings/
 .dev-settings/*
+.claude/
+.claude/*
 
 ### Development Tools ###
 scripts/push-changes.sh
