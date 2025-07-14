@@ -105,8 +105,8 @@ The dashboard pulls real-time data from your minikube clusters:
 ### Development
 
 To modify the dashboard:
-1. Edit `web-dashboard.html` for UI changes
-2. Edit `server.js` for API modifications  
+1. Edit `web/web-dashboard.html` for UI changes
+2. Edit `web/server.js` for API modifications  
 3. Edit `scripts/get-pod-data.sh` for data collection changes
 
 The dashboard automatically refreshes data every 30 seconds when using real-time mode.
