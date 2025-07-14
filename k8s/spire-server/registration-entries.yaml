@@ -58,7 +58,8 @@ spec:
       containers:
       - name: spire-registration
         image: ghcr.io/spiffe/spire-server:1.6.3
-        command: ["/bin/sh", "/config/entries.sh"]
+        command: ["/opt/spire/bin/spire-server"]
+        args: ["entry", "create", "-spiffeID", "spiffe://example.org/agent/k8s_psat/cluster/spire-agent", "-selector", "k8s_psat:cluster:cluster", "-selector", "k8s_psat:agent_ns:spire-system", "-selector", "k8s_psat:agent_sa:spire-agent", "-node"]
         volumeMounts:
         - name: spire-registration-entries
           mountPath: /config
