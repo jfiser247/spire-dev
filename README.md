@@ -1,14 +1,14 @@
-# SPIFFE/SPIRE Fresh Mac Laptop Development Environment
+# SPIFFE/SPIRE Local Development Environment
 
-**🍎 Fresh Mac Install → 🔬 Local Testing → 🏢 Enterprise Deployment**
+**🚀 Quick Setup → 🔬 Local Testing → 🏢 Enterprise Deployment**
 
-Complete fresh Mac laptop SPIFFE/SPIRE installation experience that simulates getting a brand new MacBook and setting up enterprise-grade identity management. The idempotent setup tears down any existing environment and rebuilds from scratch.
+Complete local SPIFFE/SPIRE development environment that provides a clean, reproducible setup for enterprise-grade identity management. The idempotent setup tears down any existing environment and rebuilds from scratch.
 
 ## 🚀 Quick Start
 
-### **One-Command Fresh Install**
+### **One-Command Setup**
 ```bash
-# Complete fresh Mac laptop SPIRE installation with dashboard
+# Complete local SPIRE development environment with dashboard
 ./scripts/fresh-install.sh
 ```
 
@@ -21,7 +21,7 @@ This script:
 - 📊 Starts the dashboard with real-time data
 - ✅ Validates the installation with comprehensive checks
 
-**Average Runtime:** ~1.5-2 minutes *(verified on MacBook with Docker)*
+**Average Runtime:** ~1.5-2 minutes *(verified on local development machine)*
 
 ### **Alternative: Manual Setup**
 ```bash
@@ -33,7 +33,7 @@ This script:
 
 ### **Reset Environment**
 ```bash
-# Return to fresh Mac laptop state anytime
+# Return to clean development environment anytime
 ./scripts/fresh-install.sh
 ```
 
@@ -56,10 +56,10 @@ Two minikube clusters simulating enterprise multi-cluster topology:
 
 ## 💻 Local Development Dashboard
 
-Perfect for fresh Mac laptop testing with live data from your minikube clusters:
+Perfect for local development with live data from your minikube clusters:
 
 ```bash
-# Fresh install automatically starts the dashboard
+# Setup automatically starts the dashboard
 ./scripts/fresh-install.sh
 
 # Dashboard is ready at: http://localhost:3000/web-dashboard.html
@@ -101,7 +101,7 @@ Three example enterprise services with realistic configurations:
 <summary>Click to expand storage considerations</summary>
 
 ### Local Development Storage
-- **Current Allocation**: 5GB (optimal for laptop testing)
+- **Current Allocation**: 5GB (optimal for local development)
 - **Minimum**: 2GB (basic testing)
 - **Recommended**: 5GB (extensive testing scenarios)
 - **Maximum**: 10GB (complex multi-workload development)
@@ -153,7 +153,7 @@ kubectl --context workload-cluster -n spire-system logs -l app=spire-agent
 
 ## 🛠️ Troubleshooting
 
-**Having issues?** The fresh install script solves 90% of problems:
+**Having issues?** The setup script solves 90% of problems:
 ```bash
 ./scripts/fresh-install.sh  # ← Try this first!
 ```
@@ -168,7 +168,7 @@ For detailed troubleshooting: **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.m
 ## 🏢 Enterprise Deployment
 
 ### Adapting for Production Kubernetes
-While this project excels at local laptop testing, **enterprise deployment** requires:
+While this project excels at local development, **enterprise deployment** requires:
 
 **Security Hardening:**
 - Replace minikube with production Kubernetes clusters (EKS, GKE, AKS)
@@ -211,7 +211,7 @@ spire-dev/
 
 ## 🎉 Next Steps
 
-1. **Start with the fresh install**: `./scripts/fresh-install.sh`
+1. **Start with the setup**: `./scripts/fresh-install.sh`
 2. **Open the dashboard**: http://localhost:3000/web-dashboard.html
 3. **Explore the clusters**: Use the commands above to inspect your setup
 4. **Experiment with services**: Modify the workload deployments in `k8s/workload-cluster/`
@@ -221,4 +221,4 @@ For complete documentation see: **[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUC
 
 ---
 
-**Fresh Mac Laptop → Production Ready in 2 minutes** ⚡
+**Local Development → Production Ready in 2 minutes** ⚡
