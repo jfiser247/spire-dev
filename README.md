@@ -47,6 +47,22 @@ This **idempotent script** simulates a fresh MacBook setup by:
 - 🚀 **Setting up fresh clusters** from scratch 
 - ✅ **Validating the installation** with real-time dashboard
 
+#### ⏱️ **Fresh Install Performance**
+**Average Runtime: ~3-4 minutes** *(tested on MacBook with Docker Desktop)*
+
+**Breakdown:**
+- 🗂️ **Environment Teardown**: ~10 seconds
+- 🚀 **Cluster Creation**: ~45 seconds (two minikube clusters)
+- 📦 **Kubernetes Deployments**: ~5 seconds  
+- ⏳ **Pod Readiness**: ~90-120 seconds (SPIRE server, PostgreSQL, agents)
+- ✅ **Validation & Dashboard**: ~15 seconds
+
+**Performance Notes:**
+- Initial run may take longer due to Docker image downloads
+- Subsequent runs are faster with cached images
+- SSD storage recommended for optimal performance
+- 8GB+ RAM recommended for smooth operation
+
 ### Prerequisites for macOS Development
 **Install via Homebrew** (as you would on a fresh Mac):
 ```bash
