@@ -366,6 +366,9 @@
         <div class="header">
             <h1>SPIRE Monitoring Dashboard</h1>
             <p>Multi-Cluster SPIFFE Runtime Environment</p>
+            <div id="data-source-indicator" style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
+                📡 Loading pod data...
+            </div>
         </div>
         
         <div class="tabs">
@@ -1070,25 +1073,82 @@ curl http://localhost:9988/metrics</div>
 
         async function fetchPodData() {
             try {
-                // In a browser environment, we can't directly execute shell commands
-                // So we'll create a simple HTTP server or use the data from the script
-                // For now, we'll simulate calling the script and parsing the result
+                // Try to fetch real data from the API endpoint first
+                try {
+                    const response = await fetch('http://localhost:3000/api/pod-data');
+                    if (response.ok) {
+                        const realData = await response.json();
+                        console.log('Using real pod data from API');
+                        updateDataSourceIndicator('real');
+                        return enrichPodData(realData);
+                    }
+                } catch (apiError) {
+                    console.log('API not available, falling back to mock data:', apiError.message);
+                }
                 
-                // This would need to be replaced with an actual HTTP endpoint or websocket
-                // that serves the data from scripts/get-pod-data.sh
+                // Fallback to mock data if API is not available
+                console.log('Using mock pod data');
+                updateDataSourceIndicator('mock');
                 return await simulateKubectlCall();
             } catch (error) {
                 console.error('Failed to fetch pod data:', error);
                 return null;
             }
         }
+        
+        function updateDataSourceIndicator(source) {
+            const indicator = document.getElementById('data-source-indicator');
+            if (source === 'real') {
+                indicator.innerHTML = '✅ Real-time data from Kubernetes clusters';
+                indicator.style.color = '#28a745';
+            } else if (source === 'mock') {
+                indicator.innerHTML = '🔧 Mock data (API server not running)';
+                indicator.style.color = '#ffc107';
+            } else {
+                indicator.innerHTML = '📡 Loading pod data...';
+                indicator.style.color = '#ffffff';
+            }
+        }
+        
+        function enrichPodData(realData) {
+            // Enrich the real data with additional metadata for better display
+            if (realData.workloads) {
+                realData.workloads = realData.workloads.map(pod => {
+                    // Extract service info from pod name and add descriptions
+                    let serviceType = 'api';
+                    let description = '';
+                    
+                    if (pod.name.includes('user-service')) {
+                        pod.serviceName = 'user-service';
+                        description = 'User Management API';
+                    } else if (pod.name.includes('payment-api')) {
+                        pod.serviceName = 'payment-api';
+                        description = 'Payment Processing API';
+                    } else if (pod.name.includes('inventory-service')) {
+                        pod.serviceName = 'inventory-service';
+                        description = 'Inventory Management API';
+                    } else {
+                        // Fallback for other services
+                        pod.serviceName = pod.serviceName || pod.name.split('-')[0] + '-service';
+                        description = `${pod.serviceName.charAt(0).toUpperCase() + pod.serviceName.slice(1)} Service`;
+                    }
+                    
+                    return {
+                        ...pod,
+                        serviceType,
+                        description
+                    };
+                });
+            }
+            
+            return realData;
+        }
 
         async function simulateKubectlCall() {
-            // Simulate the kubectl call by executing the script
-            // In a real implementation, this would be an HTTP API call
+            // Fallback mock data when real API is not available
+            console.log('Generating mock pod data...');
             
             // Generate realistic timestamps for demo purposes
-            // Simulate pods that were created at different realistic intervals
             const now = new Date();
             const serverCreated = new Date(now.getTime() - (4 * 60 * 60 * 1000)).toISOString(); // 4 hours ago
             const dbCreated = new Date(now.getTime() - (4 * 60 * 60 * 1000) - (2 * 60 * 1000)).toISOString(); // 4h 2m ago
