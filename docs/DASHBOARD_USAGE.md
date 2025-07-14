@@ -20,7 +20,7 @@ The SPIRE monitoring dashboard works immediately after a **fresh Mac laptop setu
 
 2. **Start the dashboard server:**
    ```bash
-   ./start-dashboard.sh
+   ./web/start-dashboard.sh
    ```
 
 3. **Open the dashboard:**

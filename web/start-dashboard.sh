@@ -34,4 +34,7 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
+# Change to the directory containing this script
+cd "$(dirname "$0")"
+
 node server.js
