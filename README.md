@@ -161,7 +161,7 @@ This **idempotent script** simulates a fresh MacBook setup by:
 - ✅ **Validating the installation** with real-time dashboard
 
 #### ⏱️ **Fresh Install Performance**
-**Average Runtime: ~1.5-2 minutes** *(verified on MacBook with Docker Desktop)*
+**Average Runtime: ~1.5-2 minutes** *(verified on MacBook with Docker)*
 
 **Optimized Breakdown:**
 - 🗂️ **Environment Teardown**: ~5 seconds
@@ -406,21 +406,6 @@ The dashboard server provides:
 - **Command Integration**: Built-in kubectl and metrics collection commands with database queries
 - **Export Ready**: Structured for integration with monitoring platforms and enterprise systems
 
-### Desktop Dashboard (JavaFX)
-
-A traditional desktop application is also available for advanced monitoring.
-
-#### Running the Desktop Dashboard
-
-```bash
-mvn clean javafx:run
-```
-
-#### Desktop Dashboard Features
-- **Workload Registrations**: View all registered workloads with their SPIFFE IDs, parent IDs, and selectors
-- **Agent Status**: Monitor the health and status of all SPIRE agents
-- **Workload Metrics**: View statistics about registrations, agents, and workloads
-- **Settings**: Configure connection settings for the Kubernetes clusters
 
 ## Useful Commands
 
@@ -553,12 +538,10 @@ minikube delete -p workload-cluster
 │   ├── setup-clusters.sh          # Main setup script
 │   ├── verify-setup.sh           # Verification script
 │   └── push-changes.sh           # Git push script
-├── src/                          # Desktop dashboard source
-│   └── main/
-│       ├── java/                 # JavaFX application code
-│       └── resources/            # FXML and other resources
-├── web-dashboard.html            # Web-based monitoring dashboard
-├── pom.xml                       # Maven build configuration
+├── web/                          # Web dashboard
+│   ├── web-dashboard.html        # Main dashboard interface
+│   ├── server.js                 # Node.js server
+│   └── start-dashboard.sh        # Startup script
 └── README.md                     # This file
 ```
 
