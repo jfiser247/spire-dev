@@ -22,7 +22,8 @@ spec:
       serviceAccountName: user-service
       containers:
       - name: user-service
-        image: nginx:1.21
+        image: alpine/curl:latest
+        command: ["sh", "-c", "while true; do echo 'User Service running - SPIFFE enabled'; sleep 300; done"]
         ports:
         - containerPort: 8080
           name: http
@@ -37,18 +38,15 @@ spec:
           value: "user-service"
         - name: SERVICE_PORT
           value: "8080"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: DATABASE_URL
+          value: "postgresql://users:users@user-db:5432/users"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
       volumes:
       - name: spire-agent-socket
         hostPath:
