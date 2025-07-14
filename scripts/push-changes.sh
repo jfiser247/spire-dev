@@ -1,4 +1,4 @@
-#!/bin/bash
+c#!/bin/bash
 
 # Script to push git changes to the remote repository
 
