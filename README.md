@@ -33,6 +33,119 @@ The setup consists of two minikube clusters simulating enterprise multi-cluster 
 - **SPIRE Agent**: Runs on the workload cluster and attests workloads
 - **Example Workload Services**: Three different services that obtain SPIFFE IDs from the SPIRE agent
 
+## 🗄️ PostgreSQL Storage Considerations
+
+### 💻 **Local Development Storage**
+**Current Allocation**: 5GB (optimal for laptop testing and development)
+
+**Local Development Guidelines**:
+- **Minimum**: 2GB (basic testing with limited registrations)
+- **Recommended**: 5GB (extensive testing scenarios with growth buffer)
+- **Maximum**: 10GB (for complex multi-workload development)
+- **Storage Class**: `standard` (minikube default, sufficient for development)
+
+### 🏢 **Enterprise Production Storage**
+
+#### **Capacity Planning by Scale**
+
+| Deployment Size | Registration Entries | Database Size | Recommended Storage | Buffer |
+|-----------------|---------------------|---------------|-------------------|---------|
+| **Small** (100-500 workloads) | 1K-5K entries | ~10-50MB | **20GB** | 400x |
+| **Medium** (500-2K workloads) | 5K-20K entries | ~50-200MB | **100GB** | 500x |
+| **Large** (2K-10K workloads) | 20K-100K entries | ~200MB-1GB | **500GB** | 500x |
+| **Enterprise** (10K+ workloads) | 100K+ entries | ~1-5GB | **2TB+** | 400x |
+
+#### **Storage Requirements Breakdown**
+
+**Base PostgreSQL Installation**: ~200-500MB
+- PostgreSQL binaries and system databases
+- Initial configuration and metadata
+- Transaction logs and temporary files
+
+**SPIRE Registration Data**: ~10KB per entry average
+- **Registration Entries**: ~2-5KB per workload identity
+- **Agent Attestations**: ~1-3KB per agent node
+- **Trust Bundle Data**: ~1-5KB per trust domain
+- **Join Tokens**: ~1KB per token (temporary)
+- **Certificate Storage**: ~2-4KB per active certificate
+
+**PostgreSQL Overhead**: 20-30% of data size
+- Indexes and metadata (~15% of table data)
+- WAL (Write-Ahead Logging) files (~10-15% during high activity)
+- Temporary query processing space (~5-10%)
+
+#### **High Availability Storage**
+
+**Primary Database**:
+- **Data Volume**: Base calculation + 100% buffer
+- **WAL Volume**: 25% of data volume (separate disk recommended)
+- **Backup Volume**: 200% of data volume (for point-in-time recovery)
+
+**Read Replicas** (2-3 replicas recommended):
+- **Storage per Replica**: Same as primary data volume
+- **Network Storage**: For cross-region replication
+
+#### **Performance Storage Classes**
+
+**Local Development**:
+- **Storage Class**: `standard` (minikube)
+- **IOPS**: Not critical for development
+
+**Production Recommendations**:
+- **Storage Class**: `fast-ssd` or `gp3` (AWS), `pd-ssd` (GCP)
+- **IOPS**: 3000+ for small deployments, 10K+ for enterprise
+- **Throughput**: 250MB/s minimum, 500MB/s+ for large scale
+
+#### **Growth Buffer Recommendations**
+
+**Conservative Growth** (1-year planning):
+- **Registration Growth**: 200-300% year-over-year
+- **Storage Buffer**: 400-500% of current usage
+- **Monitoring Threshold**: Alert at 60% capacity
+
+**Aggressive Growth** (startup/rapid expansion):
+- **Registration Growth**: 500-1000% year-over-year  
+- **Storage Buffer**: 800-1000% of current usage
+- **Auto-scaling**: Enable storage auto-expansion
+
+#### **Backup and Recovery Storage**
+
+**Backup Requirements**:
+- **Full Backups**: Weekly (100% of database size)
+- **Incremental Backups**: Daily (10-20% of database size)
+- **Point-in-Time Recovery**: 30-day retention minimum
+- **Total Backup Storage**: ~500% of database size
+
+**Disaster Recovery**:
+- **Cross-Region Storage**: 200% of primary database
+- **Backup Verification**: Monthly restore testing
+- **RTO Target**: <4 hours for enterprise deployments
+
+#### **Cost Optimization Strategies**
+
+**Development/Staging**:
+- Use `standard` storage classes for non-critical environments
+- Implement automated cleanup of old test data
+- Schedule backup retention cleanup (7-day retention)
+
+**Production**:
+- Tier older backups to cheaper storage (AWS S3 IA, Glacier)
+- Implement data lifecycle policies for registration entries
+- Monitor and right-size storage based on actual usage patterns
+
+### 📊 **Monitoring and Alerting**
+
+**Critical Metrics**:
+- **Storage Usage**: Alert at 70% capacity
+- **IOPS Utilization**: Alert at 80% of provisioned IOPS  
+- **Connection Pool**: Monitor PostgreSQL connection limits
+- **WAL Size**: Monitor write-ahead log growth patterns
+
+**Recommended Tools**:
+- **Prometheus + Grafana**: For comprehensive monitoring
+- **postgres_exporter**: PostgreSQL-specific metrics
+- **Cloud Native**: AWS CloudWatch, GCP Monitoring, Azure Monitor
+
 ## 🍎 Fresh Mac Laptop Setup
 
 ### **🚀 One-Command Fresh Install**
