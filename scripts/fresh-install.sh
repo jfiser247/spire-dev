@@ -153,7 +153,22 @@ validate_installation() {
     echo "   ✅ minikube clusters: $(minikube profile list -o json 2>/dev/null | jq -r '.valid | length' 2>/dev/null || echo '0') active"
     echo "   ✅ kubectl contexts: configured for multi-cluster setup"
     echo "   ✅ SPIRE services: deployed and configuring"
-    echo "   ✅ Dashboard server: ready to start"
+    echo "   🚀 Starting dashboard server..."
+    
+    # Start dashboard server in background
+    ./web/start-dashboard.sh &
+    DASHBOARD_PID=$!
+    
+    # Wait for dashboard to start
+    sleep 3
+    
+    # Test if dashboard is running
+    if curl -s http://localhost:3000 >/dev/null 2>&1; then
+        echo "   ✅ Dashboard server: running on http://localhost:3000"
+        echo "   📊 Dashboard URL: http://localhost:3000/web-dashboard.html"
+    else
+        echo "   ⚠️  Dashboard server: starting (may take a moment)"
+    fi
 }
 
 # Function to display next steps
@@ -162,16 +177,14 @@ show_next_steps() {
     
     echo "🎉 Your fresh SPIRE development environment is ready!"
     echo ""
-    echo "💻 Next steps for local development:"
-    echo "   1. Start the dashboard:"
-    echo "      ./web/start-dashboard.sh"
+    echo "💻 Your development environment is ready:"
+    echo "   📊 Dashboard: http://localhost:3000/web-dashboard.html"
+    echo "   🌐 Open in browser: open http://localhost:3000/web-dashboard.html"
     echo ""
-    echo "   2. Open the dashboard in your browser:"
-    echo "      open http://localhost:3000/web-dashboard.html"
-    echo ""
-    echo "   3. Explore your clusters:"
-    echo "      kubectl --context spire-server-cluster -n spire get pods"
-    echo "      kubectl --context workload-cluster -n workload get pods"
+    echo "🔍 Explore your clusters:"
+    echo "   kubectl --context spire-server-cluster -n spire-server get pods"
+    echo "   kubectl --context workload-cluster -n spire-system get pods"
+    echo "   kubectl --context workload-cluster -n production get pods"
     echo ""
     echo "🔄 To reset to fresh laptop state anytime:"
     echo "   ./scripts/fresh-install.sh"
