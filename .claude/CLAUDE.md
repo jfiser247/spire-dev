@@ -15,19 +15,35 @@ This is a SPIFFE/SPIRE development project demonstrating multi-cluster identity 
 - Helm charts for multi-environment deployment
 - PostgreSQL database with comprehensive policies
 
-## Documentation Preferences
+## Documentation Theme & Emphasis
 
-### Code Style
+### 🎯 **Primary Focus: SPIFFE/SPIRE Local Laptop Testing**
+This project centers on **local development and testing of SPIFFE/SPIRE identity management** on macOS laptops using minikube/kind clusters. All documentation should emphasize:
+
+- **Local-first approach**: Start with laptop testing, then scale to enterprise
+- **Developer experience**: Easy setup, clear testing steps, quick iteration
+- **Multi-cluster simulation**: Two local clusters representing real enterprise topology
+- **Enterprise readiness**: Every local example shows the path to production deployment
+
+### 📋 Documentation Standards
+
+#### **Structure Every Guide With:**
+1. **Local Setup** - Laptop/minikube implementation first
+2. **Testing & Validation** - How to verify it works locally  
+3. **Enterprise Extension** - How to adapt for production Kubernetes clusters
+4. **Scaling Considerations** - Multi-region, HA, security hardening
+
+#### **Writing Style:**
+- **Practical examples**: Real commands that work on local clusters
+- **Enterprise context**: Always explain "In production, you would..."
+- **Security focus**: Highlight identity management best practices
+- **Troubleshooting**: Common local issues and production gotchas
+
+#### **Code & Configuration:**
 - Use enterprise-grade naming conventions (avoid generic service1/2/3)
 - Follow SPIFFE ID format: `spiffe://example.org/workload/service-name`
-- Prefer descriptive service names that reflect business purpose
-- Use consistent indentation and formatting
-
-### Documentation Standards
-- Always include real examples instead of placeholder text
-- Use realistic enterprise service scenarios
-- Provide complete configuration examples
-- Include troubleshooting sections for common issues
+- Show both local and production-ready configurations
+- Include resource limits, security contexts, and monitoring
 
 ### Development Workflow
 - Test changes across both clusters (server and workload)

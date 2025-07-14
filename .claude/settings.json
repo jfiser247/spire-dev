@@ -1,12 +1,16 @@
 {
   "instructions": {
     "custom": [
-      "Always use enterprise service names: user-service, payment-api, inventory-service",
+      "DOCUMENTATION THEME: Focus on SPIFFE/SPIRE local laptop testing with enterprise deployment paths",
+      "Structure documentation: Local Setup → Testing → Enterprise Extension → Scaling",
+      "Always provide working local examples first, then show enterprise adaptations",
+      "Emphasize developer experience on macOS laptops with minikube clusters",
+      "Include both 'laptop testing' and 'production deployment' sections in guides",
+      "Use enterprise service names: user-service, payment-api, inventory-service",
       "Verify kubectl contexts before making cluster changes",
-      "Use real pod data from dashboard API when available",
       "Follow SPIFFE ID format: spiffe://example.org/workload/service-name",
-      "Test changes on both spire-server-cluster and workload-cluster contexts",
-      "Update documentation with realistic enterprise examples"
+      "Show security hardening steps for production environments",
+      "Always explain 'In production, you would...' for enterprise context"
     ]
   },
   "tools": {
