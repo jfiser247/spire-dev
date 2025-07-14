@@ -42,3 +42,9 @@ build/
 .dev-settings/
 .dev-settings/*
 
+### Development Tools ###
+scripts/push-changes.sh
+scripts/get-pod-data.sh
+mvnw
+mvnw.cmd
+
