@@ -1,4 +1,4 @@
-# SPIRE Development Project - Claude Documentation
+# SPIRE Development Project - AI Assistant Documentation
 
 ## Project Overview
 This is a SPIFFE/SPIRE development project demonstrating multi-cluster identity management with Kubernetes. The project includes enterprise-grade service examples and comprehensive monitoring dashboards.
