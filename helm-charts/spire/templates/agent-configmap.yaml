@@ -64,4 +64,13 @@ data:
       }
     }
     {{- end }}
+
+    {{- if .Values.spireAgent.config.cache }}
+    # Cache configuration for improved performance
+    cache {
+      {{- if .Values.spireAgent.config.cache.x509_svid_cache_max_size }}
+      x509_svid_cache_max_size = {{ .Values.spireAgent.config.cache.x509_svid_cache_max_size }}
+      {{- end }}
+    }
+    {{- end }}
 {{- end }}

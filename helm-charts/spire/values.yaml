@@ -25,7 +25,7 @@ spireServer:
   image:
     registry: "ghcr.io"
     repository: "spiffe/spire-server"
-    tag: "1.6.3"
+    tag: "1.12.4"
     pullPolicy: "IfNotPresent"
   
   # Replica count
@@ -72,7 +72,7 @@ spireServer:
     storageClass: ""
     accessModes:
       - ReadWriteOnce
-    size: 1Gi
+    size: 5Gi
     annotations: {}
   
   # SPIRE Server configuration
@@ -103,6 +103,10 @@ spireServer:
     telemetry:
       enabled: true
       prometheusPort: 9988
+    
+    # Cache configuration for performance (new in 1.12.x)
+    cache:
+      x509_svid_cache_max_size: 1000
       
   # Node selector and tolerations
   nodeSelector: {}
@@ -135,7 +139,7 @@ spireAgent:
   image:
     registry: "ghcr.io"
     repository: "spiffe/spire-agent"
-    tag: "1.6.3"
+    tag: "1.12.4"
     pullPolicy: "IfNotPresent"
   
   # Deploy as DaemonSet
@@ -201,6 +205,10 @@ spireAgent:
     telemetry:
       enabled: true
       prometheusPort: 9988
+    
+    # Cache configuration for performance (new in 1.12.x) 
+    cache:
+      x509_svid_cache_max_size: 1000
   
   # Node selector and tolerations
   nodeSelector: {}
@@ -241,7 +249,7 @@ postgresql:
     persistence:
       enabled: true
       storageClass: ""
-      size: 1Gi
+      size: 5Gi
     
     resources:
       limits:
@@ -265,7 +273,7 @@ workloadServices:
   userService:
     enabled: true
     name: "user-service"
-    image: "nginx:1.21"
+    image: "alpine/curl:latest"
     replicas: 2
     port: 8080
     spiffeId: "spiffe://example.org/workload/user-service"
