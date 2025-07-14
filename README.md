@@ -8,7 +8,7 @@ Complete local SPIFFE/SPIRE development environment designed for macOS that prov
 
 **System Requirements:**
 - macOS (designed and tested on macOS)
-- Docker Desktop installed and running
+- Container runtime: Docker Desktop or Rancher Desktop installed and running
 - 8GB+ RAM recommended for multi-cluster operation
 - SSD storage recommended for optimal performance
 
@@ -23,7 +23,9 @@ brew install minikube kubectl node jq
 - **kubectl**: Kubernetes command-line tool
 - **node**: Node.js runtime for dashboard server
 - **jq**: JSON processor for API data handling
-- **Docker**: Container runtime (via Docker Desktop)
+- **Container Runtime**: Docker Desktop or Rancher Desktop
+  - **Docker Desktop**: Traditional Docker solution with GUI
+  - **Rancher Desktop**: Open-source alternative with built-in Kubernetes support
 
 **Optional but Recommended:**
 - **Homebrew**: Package manager for macOS
@@ -46,7 +48,7 @@ This script:
 - 📊 Starts the dashboard with real-time data
 - ✅ Validates the installation with comprehensive checks
 
-**Average Runtime:** ~1.5-2 minutes *(verified on macOS with Docker Desktop)*
+**Average Runtime:** ~1.5-2 minutes *(verified on macOS with Docker Desktop and Rancher Desktop)*
 
 ### **Alternative: Manual Setup**
 ```bash
