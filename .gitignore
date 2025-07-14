@@ -39,5 +39,5 @@ build/
 .DS_Store
 
 ### AI Development Tools ###
-.devtools/settings.local.json
-.devtools/*.local.*
+.devtools/
+.devtools/*
