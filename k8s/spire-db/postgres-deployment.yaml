@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spire-db
-  namespace: spire
+  namespace: spire-server
   labels:
     app: spire-db
 spec:
