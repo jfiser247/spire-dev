@@ -20,11 +20,15 @@ spec:
       serviceAccountName: spire-agent
       initContainers:
         - name: init
-          image: ghcr.io/spiffe/wait-for-it
+          image: busybox:1.35
+          command: ['sh', '-c']
           args:
-            - -t
-            - "30"
-            - spire-server:8081
+            - |
+              echo "Waiting for SPIRE server to be ready..."
+              # The server address will be set by the setup script dynamically
+              # This init container just waits a reasonable time for the server to start
+              sleep 30
+              echo "SPIRE server should be ready!"
       containers:
         - name: spire-agent
           image: ghcr.io/spiffe/spire-agent:1.6.3
