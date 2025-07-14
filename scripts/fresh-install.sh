@@ -131,7 +131,7 @@ validate_installation() {
     echo "📊 Testing real-time dashboard API..."
     
     # Start dashboard in background for testing
-    ./start-dashboard.sh &
+    ./web/start-dashboard.sh &
     DASHBOARD_PID=$!
     
     # Wait for dashboard to start
@@ -164,7 +164,7 @@ show_next_steps() {
     echo ""
     echo "💻 Next steps for local development:"
     echo "   1. Start the dashboard:"
-    echo "      ./start-dashboard.sh"
+    echo "      ./web/start-dashboard.sh"
     echo ""
     echo "   2. Open the dashboard in your browser:"
     echo "      open http://localhost:3000/web-dashboard.html"
@@ -174,7 +174,7 @@ show_next_steps() {
     echo "      kubectl --context workload-cluster -n workload get pods"
     echo ""
     echo "🔄 To reset to fresh laptop state anytime:"
-    echo "   ./fresh-install.sh"
+    echo "   ./scripts/fresh-install.sh"
     echo ""
     echo "📖 See README.md for complete documentation"
     echo ""

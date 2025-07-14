@@ -38,7 +38,7 @@ The setup consists of two minikube clusters simulating enterprise multi-cluster 
 ### **🚀 One-Command Fresh Install**
 ```bash
 # Complete fresh Mac laptop SPIRE installation
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 This **idempotent script** simulates a fresh MacBook setup by:
@@ -72,16 +72,18 @@ If you prefer step-by-step control:
 ### 🔄 Reset to Fresh State Anytime
 ```bash
 # Return to fresh Mac laptop state
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 ### 🛠️ Troubleshooting
 **Having issues?** The fresh install script solves 90% of problems:
 ```bash
-./fresh-install.sh  # ← Try this first!
+./scripts/fresh-install.sh  # ← Try this first!
 ```
 
-For detailed troubleshooting: **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
+For detailed troubleshooting: **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**
+
+**📁 Project Structure:** See **[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)** for complete repository organization
 
 ## 🏢 Enterprise Deployment Considerations
 
@@ -106,7 +108,7 @@ While this project excels at local laptop testing, **enterprise deployment** req
 - Configure alerting for SPIRE server downtime and certificate expiration
 - Implement backup/restore procedures for registration entries
 
-**See [HELM_DEPLOYMENT_GUIDE.md](HELM_DEPLOYMENT_GUIDE.md) for production deployment using Helm charts.**
+**See [docs/HELM_DEPLOYMENT_GUIDE.md](docs/HELM_DEPLOYMENT_GUIDE.md) for production deployment using Helm charts.**
 
 ## 💼 Workload Services
 
@@ -125,10 +127,10 @@ Perfect for **fresh Mac laptop testing** with live data from your minikube clust
 
 ```bash
 # Ensure fresh environment first
-./fresh-install.sh
+./scripts/fresh-install.sh
 
 # Start real-time dashboard
-./start-dashboard.sh
+./web/start-dashboard.sh
 # Visit: http://localhost:3000/web-dashboard.html
 ```
 

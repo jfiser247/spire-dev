@@ -21,7 +21,7 @@ const server = http.createServer((req, res) => {
 
     if (req.url === '/api/pod-data' && req.method === 'GET') {
         // Execute the get-pod-data.sh script
-        const scriptPath = path.join(__dirname, 'scripts', 'get-pod-data.sh');
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'get-pod-data.sh');
         
         exec(`bash "${scriptPath}"`, { timeout: 30000 }, (error, stdout, stderr) => {
             if (error) {

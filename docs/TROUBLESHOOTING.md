@@ -8,7 +8,7 @@ This guide helps you troubleshoot common issues with your SPIFFE/SPIRE Mac lapto
 
 **For 90% of issues, this solves everything:**
 ```bash
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 This completely tears down and rebuilds your environment as if you just got a new MacBook.
@@ -24,7 +24,7 @@ This completely tears down and rebuilds your environment as if you just got a ne
 
 **Fresh Mac Solution:**
 ```bash
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 **Manual troubleshooting:**
@@ -48,7 +48,7 @@ minikube cache reload
 
 **Fresh Mac Solution:**
 ```bash
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 **Manual verification:**
@@ -72,7 +72,7 @@ curl http://localhost:3000/api/pod-data
 
 **Fresh Mac Solution:**
 ```bash
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 **Manual debugging:**
@@ -96,7 +96,7 @@ kubectl --context workload-cluster -n spire get configmap spire-bundle -o yaml
 
 **Fresh Mac Solution:**
 ```bash
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 **Resource optimization:**
@@ -119,7 +119,7 @@ docker system prune -a
 
 **Fresh Mac Solution:**
 ```bash
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 **Manual port cleanup:**
@@ -148,7 +148,7 @@ cd ..
 rm -rf spire-dev
 git clone https://github.com/jfiser247/spire-dev.git
 cd spire-dev
-./fresh-install.sh
+./scripts/fresh-install.sh
 ```
 
 ## 🍎 Fresh Mac Prerequisites
@@ -174,7 +174,7 @@ jq --version
 When adapting this for production:
 
 **Development Environment:**
-- Use `./fresh-install.sh` for consistent local development
+- Use `./scripts/fresh-install.sh` for consistent local development
 
 **CI/CD Environment:**
 - Adapt the teardown/setup logic for pipeline environments
@@ -187,7 +187,7 @@ When adapting this for production:
 
 ## 📞 When Fresh Install Doesn't Work
 
-If `./fresh-install.sh` doesn't solve your issue:
+If `./scripts/fresh-install.sh` doesn't solve your issue:
 
 1. **Check Mac system requirements:**
    - macOS 10.14+ (Mojave or newer)
@@ -207,7 +207,7 @@ If `./fresh-install.sh` doesn't solve your issue:
 4. **Restart your Mac** (seriously, this helps with Docker issues)
 
 5. **Create a GitHub issue** with:
-   - Output of `./fresh-install.sh`
+   - Output of `./scripts/fresh-install.sh`
    - Your macOS version: `sw_vers`
    - Available resources: `docker system info`
 
