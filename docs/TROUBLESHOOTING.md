@@ -13,6 +13,8 @@ This guide helps you troubleshoot common issues with your SPIFFE/SPIRE Mac lapto
 
 This completely tears down and rebuilds your environment as if you just got a new MacBook.
 
+**⏱️ Expected Runtime:** The fresh install typically takes **3-4 minutes** on modern Macs. If it takes significantly longer, check the specific issues below.
+
 ## 🔧 Common Issues and Solutions
 
 ### 1. **"Clusters won't start" or "minikube errors"**
@@ -134,7 +136,34 @@ pkill -f "node server.js"
 ./start-dashboard.sh
 ```
 
-### 6. **"Git or repository issues"**
+### 6. **"Fresh install taking too long" or "Script hangs"**
+
+**Symptoms:**
+- Fresh install runs longer than 5-6 minutes
+- Script appears to hang during setup
+- Pods stuck in pending/creating state
+
+**Fresh Mac Solution:**
+```bash
+./scripts/fresh-install.sh
+```
+
+**Performance troubleshooting:**
+```bash
+# Check Docker Desktop resources (8GB+ RAM recommended)
+docker system info | grep -E "CPUs|Total Memory"
+
+# Monitor Docker resource usage
+docker stats
+
+# Check available disk space (20GB+ recommended)
+df -h
+
+# Clean Docker if needed
+docker system prune -a
+```
+
+### 7. **"Git or repository issues"**
 
 **Symptoms:**
 - Git conflicts
