@@ -44,18 +44,18 @@ kubectl config use-context workload-cluster
 
 echo "Deploying SPIRE agent and workload components..."
 
-# Apply workload cluster manifests - create namespaces first
+# Apply workload cluster manifests - create namespaces first (following SPIFFE best practices)
+kubectl apply -f k8s/workload-cluster/spire-system-namespace.yaml
 kubectl apply -f k8s/workload-cluster/namespace.yaml
-kubectl apply -f k8s/spire-server/namespace.yaml
 
 # Create a service account token for the SPIRE server to access the workload cluster
-kubectl create serviceaccount spire-server-sa -n spire --dry-run=client -o yaml | kubectl apply -f -
-kubectl create clusterrolebinding spire-server-binding --clusterrole=system:auth-delegator --serviceaccount=spire:spire-server-sa --dry-run=client -o yaml | kubectl apply -f -
+kubectl create serviceaccount spire-server-sa -n spire-system --dry-run=client -o yaml | kubectl apply -f -
+kubectl create clusterrolebinding spire-server-binding --clusterrole=system:auth-delegator --serviceaccount=spire-system:spire-server-sa --dry-run=client -o yaml | kubectl apply -f -
 
 # Get the service account token
-SA_SECRET_NAME=$(kubectl -n spire get serviceaccount spire-server-sa -o jsonpath='{.secrets[0].name}')
-SA_TOKEN=$(kubectl -n spire get secret $SA_SECRET_NAME -o jsonpath='{.data.token}' | base64 --decode)
-WORKLOAD_CLUSTER_CA=$(kubectl -n spire get secret $SA_SECRET_NAME -o jsonpath='{.data.ca\.crt}')
+SA_SECRET_NAME=$(kubectl -n spire-system get serviceaccount spire-server-sa -o jsonpath='{.secrets[0].name}')
+SA_TOKEN=$(kubectl -n spire-system get secret $SA_SECRET_NAME -o jsonpath='{.data.token}' | base64 --decode)
+WORKLOAD_CLUSTER_CA=$(kubectl -n spire-system get secret $SA_SECRET_NAME -o jsonpath='{.data.ca\.crt}')
 WORKLOAD_CLUSTER_ENDPOINT=$(kubectl config view -o jsonpath='{.clusters[?(@.name=="workload-cluster")].cluster.server}')
 
 # Create a kubeconfig file for the SPIRE server

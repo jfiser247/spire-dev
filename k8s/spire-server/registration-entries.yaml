@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: spire-registration-entries
-  namespace: spire
+  namespace: spire-server
 data:
   entries.sh: |
     #!/bin/bash
@@ -11,35 +11,35 @@ data:
     # Wait for the SPIRE server to be ready
     sleep 10
 
-    # Register the SPIRE agent
+    # Register the SPIRE agent (follows best practices for spire-system namespace)
     /opt/spire/bin/spire-server entry create \
       -spiffeID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
       -selector k8s_psat:cluster:cluster \
-      -selector k8s_psat:agent_ns:spire \
+      -selector k8s_psat:agent_ns:spire-system \
       -selector k8s_psat:agent_sa:spire-agent \
       -node
 
-    # Register user management service
+    # Register user management service (follows Istio SPIFFE ID pattern)
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/workload/user-service \
+      -spiffeID spiffe://example.org/ns/production/sa/user-service \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
-      -selector k8s:ns:workload \
+      -selector k8s:ns:production \
       -selector k8s:sa:user-service \
       -selector k8s:pod-label:app:user-service
 
-    # Register payment processing API
+    # Register payment processing API (follows Istio SPIFFE ID pattern)
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/workload/payment-api \
+      -spiffeID spiffe://example.org/ns/production/sa/payment-api \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
-      -selector k8s:ns:workload \
+      -selector k8s:ns:production \
       -selector k8s:sa:payment-api \
       -selector k8s:pod-label:app:payment-api
 
-    # Register inventory management service
+    # Register inventory management service (follows Istio SPIFFE ID pattern)
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/workload/inventory-service \
+      -spiffeID spiffe://example.org/ns/production/sa/inventory-service \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
-      -selector k8s:ns:workload \
+      -selector k8s:ns:production \
       -selector k8s:sa:inventory-service \
       -selector k8s:pod-label:app:inventory-service
 
@@ -50,7 +50,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: spire-registration
-  namespace: spire
+  namespace: spire-server
 spec:
   template:
     spec:

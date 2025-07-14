@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: inventory-service
-  namespace: workload
+  namespace: production
   labels:
     app: inventory-service
     service: inventory-management
@@ -59,7 +59,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: inventory-service
-  namespace: workload
+  namespace: production
   labels:
     app: inventory-service
     service: inventory-management
@@ -76,7 +76,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: inventory-service
-  namespace: workload
+  namespace: production
   labels:
     app: inventory-service
     service: inventory-management

@@ -311,25 +311,47 @@ mvn clean javafx:run
 
 ## Useful Commands
 
+### 📁 **SPIFFE Namespace Structure (Best Practices)**
+
+Following official SPIFFE documentation recommendations:
+
+- **`spire-server`** - SPIRE Server, PostgreSQL database, control plane
+- **`spire-system`** - SPIRE Agents and system components  
+- **`production`** - Enterprise workload services
+
 ### Check SPIRE Server Status
 ```bash
-kubectl --context spire-server-cluster -n spire get pods
+kubectl --context spire-server-cluster -n spire-server get pods
 ```
 
 ### Check SPIRE Agent Status
 ```bash
-kubectl --context workload-cluster -n spire get pods
+kubectl --context workload-cluster -n spire-system get pods
 ```
 
 ### Check Workload Services
 ```bash
-kubectl --context workload-cluster -n workload get pods
+kubectl --context workload-cluster -n production get pods
 ```
 
 ### List SPIRE Registration Entries
 ```bash
-SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
-kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server entry show
+SERVER_POD=$(kubectl --context spire-server-cluster -n spire-server get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+kubectl --context spire-server-cluster -n spire-server exec $SERVER_POD -- /opt/spire/bin/spire-server entry show
+```
+
+### 🏷️ **SPIFFE ID Patterns (Istio Compatible)**
+
+The setup uses standard SPIFFE ID patterns for enterprise integration:
+
+```
+# SPIRE Agent
+spiffe://example.org/agent/k8s_psat/cluster/spire-agent
+
+# Workload Services (Istio pattern)
+spiffe://example.org/ns/production/sa/user-service
+spiffe://example.org/ns/production/sa/payment-api
+spiffe://example.org/ns/production/sa/inventory-service
 ```
 
 ### SPIRE Metrics and Telemetry Commands
@@ -337,7 +359,7 @@ kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/b
 #### Access SPIRE Server Metrics (Prometheus Format)
 ```bash
 # Port-forward to access metrics endpoint
-kubectl --context spire-server-cluster -n spire port-forward spire-server-0 9988:9988 &
+kubectl --context spire-server-cluster -n spire-server port-forward spire-server-0 9988:9988 &
 
 # Fetch metrics
 curl http://localhost:9988/metrics
@@ -346,10 +368,10 @@ curl http://localhost:9988/metrics
 #### Access SPIRE Agent Metrics
 ```bash
 # Get agent pod name
-AGENT_POD=$(kubectl --context workload-cluster -n spire get pod -l app=spire-agent -o jsonpath='{.items[0].metadata.name}')
+AGENT_POD=$(kubectl --context workload-cluster -n spire-system get pod -l app=spire-agent -o jsonpath='{.items[0].metadata.name}')
 
 # Port-forward to agent metrics
-kubectl --context workload-cluster -n spire port-forward $AGENT_POD 9988:9988 &
+kubectl --context workload-cluster -n spire-system port-forward $AGENT_POD 9988:9988 &
 
 # Fetch agent metrics
 curl http://localhost:9988/metrics
@@ -357,19 +379,19 @@ curl http://localhost:9988/metrics
 
 #### View SPIRE Server Telemetry Configuration
 ```bash
-kubectl --context spire-server-cluster -n spire get configmap spire-server -o yaml | grep -A 20 telemetry
+kubectl --context spire-server-cluster -n spire-server get configmap spire-server-config -o yaml | grep -A 20 telemetry
 ```
 
 #### Monitor Real-time SPIRE Operations
 ```bash
 # Watch SPIRE server logs
-kubectl --context spire-server-cluster -n spire logs -f spire-server-0
+kubectl --context spire-server-cluster -n spire-server logs -f spire-server-0
 
 # Watch agent logs
-kubectl --context workload-cluster -n spire logs -f -l app=spire-agent
+kubectl --context workload-cluster -n spire-system logs -f -l app=spire-agent
 
 # Monitor certificate operations
-kubectl --context spire-server-cluster -n spire logs spire-server-0 | grep -i "certificate\|svid\|attest"
+kubectl --context spire-server-cluster -n spire-server logs spire-server-0 | grep -i "certificate\|svid\|attest"
 ```
 
 ### Push Git Changes
