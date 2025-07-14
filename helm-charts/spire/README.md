@@ -13,10 +13,11 @@ This chart deploys:
 
 ## ✅ **Prerequisites**
 
-- Kubernetes 1.20+
-- Helm 3.2.0+
+- Kubernetes 1.24+ (recommended for SPIRE 1.12.4)
+- Helm 3.8.0+
 - PV provisioner support (for persistent volumes)
 - StorageClass configured (optional, uses default if not specified)
+- Container runtime: Docker Desktop or Rancher Desktop
 
 ## 📦 **Installation**
 

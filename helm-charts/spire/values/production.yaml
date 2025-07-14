@@ -15,13 +15,15 @@ spireServer:
       cpu: 500m
       memory: 512Mi
   
-  # Production logging
+  # Production logging and cache configuration
   config:
     logLevel: "WARN"
+    cache:
+      x509_svid_cache_max_size: 5000
   
   # Larger storage for production
   persistence:
-    size: 5Gi
+    size: 20Gi
     storageClass: "fast-ssd"
   
   # Production-grade health checks
@@ -53,9 +55,11 @@ spireAgent:
       cpu: 200m
       memory: 256Mi
   
-  # Production logging
+  # Production logging and cache configuration 
   config:
     logLevel: "WARN"
+    cache:
+      x509_svid_cache_max_size: 2000
   
   # Production-grade health checks
   livenessProbe:
@@ -88,7 +92,7 @@ postgresql:
         memory: 1Gi
     
     persistence:
-      size: 20Gi
+      size: 100Gi
       storageClass: "fast-ssd"
   
   # Enable backup in production
