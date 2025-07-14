@@ -13,7 +13,7 @@ This guide helps you troubleshoot common issues with your SPIFFE/SPIRE Mac lapto
 
 This completely tears down and rebuilds your environment as if you just got a new MacBook.
 
-**⏱️ Expected Runtime:** The fresh install typically takes **3-4 minutes** on modern Macs. If it takes significantly longer, check the specific issues below.
+**⏱️ Expected Runtime:** The fresh install typically takes **1.5-2 minutes** on modern Macs with cached Docker images (3-4 minutes on first run). If it takes significantly longer, check the specific issues below.
 
 ## 🔧 Common Issues and Solutions
 
@@ -139,7 +139,7 @@ pkill -f "node server.js"
 ### 6. **"Fresh install taking too long" or "Script hangs"**
 
 **Symptoms:**
-- Fresh install runs longer than 5-6 minutes
+- Fresh install runs longer than 3-4 minutes (beyond first-time setup)
 - Script appears to hang during setup
 - Pods stuck in pending/creating state
 
