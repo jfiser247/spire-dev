@@ -1075,7 +1075,7 @@ curl http://localhost:9988/metrics</div>
             try {
                 // Try to fetch real data from the API endpoint first
                 try {
-                    const response = await fetch('http://localhost:3000/api/pod-data');
+                    const response = await fetch('/api/pod-data');
                     if (response.ok) {
                         const realData = await response.json();
                         console.log('Using real pod data from API');
@@ -1112,31 +1112,100 @@ curl http://localhost:9988/metrics</div>
         
         function enrichPodData(realData) {
             // Enrich the real data with additional metadata for better display
+            
+            // Fix server pods to extract metadata properly
+            if (realData.server) {
+                realData.server = realData.server.map(pod => ({
+                    name: pod.metadata.name,
+                    status: pod.status.phase,
+                    ready: pod.status.containerStatuses?.[0]?.ready || false,
+                    restarts: pod.status.containerStatuses?.[0]?.restartCount || 0,
+                    node: pod.spec.nodeName,
+                    age: pod.metadata.creationTimestamp
+                }));
+            }
+            
+            // Fix database pods
+            if (realData.database) {
+                realData.database = realData.database.map(pod => ({
+                    name: pod.metadata.name,
+                    status: pod.status.phase,
+                    ready: pod.status.containerStatuses?.[0]?.ready || false,
+                    restarts: pod.status.containerStatuses?.[0]?.restartCount || 0,
+                    node: pod.spec.nodeName,
+                    image: pod.spec.containers?.[0]?.image || '',
+                    age: pod.metadata.creationTimestamp
+                }));
+            }
+            
+            // Fix storage
+            if (realData.storage) {
+                realData.storage = realData.storage.map(pvc => ({
+                    name: pvc.metadata.name,
+                    status: pvc.status.phase,
+                    capacity: pvc.status.capacity?.storage || pvc.spec.resources.requests.storage,
+                    accessModes: pvc.spec.accessModes?.[0] || '',
+                    storageClass: pvc.spec.storageClassName || '',
+                    age: pvc.metadata.creationTimestamp
+                }));
+            }
+            
+            // Fix database service
+            if (realData.dbService) {
+                realData.dbService = realData.dbService.map(svc => ({
+                    name: svc.metadata.name,
+                    type: svc.spec.type,
+                    clusterIP: svc.spec.clusterIP,
+                    port: svc.spec.ports?.[0]?.port || 0,
+                    targetPort: svc.spec.ports?.[0]?.targetPort || 0,
+                    age: svc.metadata.creationTimestamp
+                }));
+            }
+            
+            // Fix agents
+            if (realData.agents) {
+                realData.agents = realData.agents.map(pod => ({
+                    name: pod.metadata.name,
+                    node: pod.spec.nodeName,
+                    status: pod.status.phase,
+                    ready: pod.status.containerStatuses?.[0]?.ready || false,
+                    age: pod.metadata.creationTimestamp
+                }));
+            }
+            
+            // Fix workloads
             if (realData.workloads) {
                 realData.workloads = realData.workloads.map(pod => {
                     // Extract service info from pod name and add descriptions
                     let serviceType = 'api';
                     let description = '';
                     
-                    if (pod.name.includes('user-service')) {
+                    if (pod.metadata.name.includes('user-service')) {
                         pod.serviceName = 'user-service';
                         description = 'User Management API';
-                    } else if (pod.name.includes('payment-api')) {
+                    } else if (pod.metadata.name.includes('payment-api')) {
                         pod.serviceName = 'payment-api';
                         description = 'Payment Processing API';
-                    } else if (pod.name.includes('inventory-service')) {
+                    } else if (pod.metadata.name.includes('inventory-service')) {
                         pod.serviceName = 'inventory-service';
                         description = 'Inventory Management API';
                     } else {
                         // Fallback for other services
-                        pod.serviceName = pod.serviceName || pod.name.split('-')[0] + '-service';
+                        pod.serviceName = pod.serviceName || pod.metadata.name.split('-')[0] + '-service';
                         description = `${pod.serviceName.charAt(0).toUpperCase() + pod.serviceName.slice(1)} Service`;
                     }
                     
                     return {
-                        ...pod,
+                        name: pod.metadata.name,
+                        serviceName: pod.serviceName,
                         serviceType,
-                        description
+                        description,
+                        status: pod.status.phase,
+                        ready: pod.status.containerStatuses?.[0]?.ready || false,
+                        restarts: pod.status.containerStatuses?.[0]?.restartCount || 0,
+                        upToDate: 1,
+                        available: 1,
+                        age: pod.metadata.creationTimestamp
                     };
                 });
             }
