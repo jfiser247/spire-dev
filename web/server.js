@@ -20,36 +20,50 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.url === '/api/pod-data' && req.method === 'GET') {
-        // Execute the get-pod-data.sh script
-        const scriptPath = path.join(__dirname, '..', 'scripts', 'get-pod-data.sh');
+        // Fetch real pod data directly using kubectl commands
+        const kubectlCommands = [
+            'kubectl --context spire-server-cluster -n spire-server get pods -o json',
+            'kubectl --context spire-server-cluster -n spire-server get pvc -o json',
+            'kubectl --context spire-server-cluster -n spire-server get svc -o json',
+            'kubectl --context workload-cluster -n spire-system get pods -o json',
+            'kubectl --context workload-cluster -n production get pods -o json'
+        ];
         
-        exec(`bash "${scriptPath}"`, { timeout: 30000 }, (error, stdout, stderr) => {
-            if (error) {
-                console.error('Script execution error:', error);
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ 
-                    error: 'Failed to fetch pod data', 
-                    details: error.message,
-                    stderr: stderr 
-                }));
-                return;
-            }
-
-            try {
-                // Parse the JSON output from the script
-                const podData = JSON.parse(stdout);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(podData));
-            } catch (parseError) {
-                console.error('JSON parse error:', parseError);
-                console.error('Script output:', stdout);
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ 
-                    error: 'Failed to parse pod data', 
-                    details: parseError.message,
-                    output: stdout 
-                }));
-            }
+        Promise.all(kubectlCommands.map(cmd => 
+            new Promise((resolve, reject) => {
+                exec(cmd, { timeout: 10000 }, (error, stdout, stderr) => {
+                    if (error) {
+                        console.warn(`Command failed: ${cmd}`, error.message);
+                        resolve({ items: [] }); // Return empty result on error
+                    } else {
+                        try {
+                            resolve(JSON.parse(stdout));
+                        } catch (parseError) {
+                            console.warn(`Parse error for: ${cmd}`, parseError.message);
+                            resolve({ items: [] });
+                        }
+                    }
+                });
+            })
+        )).then(([serverPods, serverPVC, serverSVC, agentPods, workloadPods]) => {
+            const podData = {
+                server: serverPods.items.filter(pod => pod.metadata.name.startsWith('spire-server')),
+                database: serverPods.items.filter(pod => pod.metadata.name.startsWith('spire-db')),
+                storage: serverPVC.items.filter(pvc => pvc.metadata.name.startsWith('postgres')),
+                dbService: serverSVC.items.filter(svc => svc.metadata.name.startsWith('spire-db')),
+                agents: agentPods.items.filter(pod => pod.metadata.name.startsWith('spire-agent')),
+                workloads: workloadPods.items
+            };
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(podData));
+        }).catch(err => {
+            console.error('Error fetching pod data:', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+                error: 'Failed to fetch pod data', 
+                details: err.message 
+            }));
         });
     } else if (req.url === '/' || req.url === '/web-dashboard.html') {
         // Serve the web dashboard
