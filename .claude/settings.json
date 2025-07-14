@@ -1,0 +1,19 @@
+{
+  "instructions": {
+    "custom": [
+      "Always use enterprise service names: user-service, payment-api, inventory-service",
+      "Verify kubectl contexts before making cluster changes",
+      "Use real pod data from dashboard API when available",
+      "Follow SPIFFE ID format: spiffe://example.org/workload/service-name",
+      "Test changes on both spire-server-cluster and workload-cluster contexts",
+      "Update documentation with realistic enterprise examples"
+    ]
+  },
+  "tools": {
+    "preferences": {
+      "kubectl_contexts": ["spire-server-cluster", "workload-cluster"],
+      "dashboard_url": "http://localhost:3000/web-dashboard.html",
+      "api_endpoint": "http://localhost:3000/api/pod-data"
+    }
+  }
+}
