@@ -1,8 +1,8 @@
-# SPIFFE/SPIRE Local Development Environment
+# SPIFFE/SPIRE Fresh Mac Laptop Development Environment
 
-**🔬 Local Laptop Testing → 🏢 Enterprise Deployment Ready**
+**🍎 Fresh Mac Install → 🔬 Local Testing → 🏢 Enterprise Deployment**
 
-This project provides a complete **SPIFFE/SPIRE identity management testing environment** designed for local development on macOS laptops, with clear pathways for enterprise Kubernetes deployment. Built on multi-minikube clusters, it simulates real enterprise topology while maintaining developer-friendly local testing.
+This project provides a **complete fresh Mac laptop SPIFFE/SPIRE installation experience** that simulates getting a brand new MacBook and setting up enterprise-grade identity management. The idempotent setup tears down any existing environment and rebuilds from scratch, ensuring consistent developer experience across teams.
 
 ## Architecture
 
@@ -33,15 +33,28 @@ The setup consists of two minikube clusters simulating enterprise multi-cluster 
 - **SPIRE Agent**: Runs on the workload cluster and attests workloads
 - **Example Workload Services**: Three different services that obtain SPIFFE IDs from the SPIRE agent
 
-## 🚀 Local Laptop Setup
+## 🍎 Fresh Mac Laptop Setup
+
+### **🚀 One-Command Fresh Install**
+```bash
+# Complete fresh Mac laptop SPIRE installation
+./fresh-install.sh
+```
+
+This **idempotent script** simulates a fresh MacBook setup by:
+- 🧹 **Completely tearing down** any existing SPIRE environment
+- 🔄 **Cleaning all local configurations** (Docker, minikube, kubectl contexts)
+- 🚀 **Setting up fresh clusters** from scratch 
+- ✅ **Validating the installation** with real-time dashboard
 
 ### Prerequisites for macOS Development
-- [minikube](https://minikube.sigs.k8s.io/docs/start/) - Local Kubernetes clusters
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - Kubernetes CLI
-- [Node.js](https://nodejs.org/) - For real-time dashboard server
-- [jq](https://stedolan.github.io/jq/) - JSON processing for scripts
+**Install via Homebrew** (as you would on a fresh Mac):
+```bash
+brew install minikube kubectl node jq
+```
 
-### Quick Start for Local Testing
+### Manual Setup (Alternative)
+If you prefer step-by-step control:
 
 1. **Clone and Setup**:
    ```bash
@@ -49,30 +62,26 @@ The setup consists of two minikube clusters simulating enterprise multi-cluster 
    cd spire-dev
    ```
 
-2. Make the scripts executable:
-   ```
-   chmod +x scripts/setup-clusters.sh
-   chmod +x scripts/verify-setup.sh
-   chmod +x scripts/push-changes.sh
-   ```
-
-3. Run the setup script:
-   ```
+2. **Run individual setup scripts**:
+   ```bash
+   chmod +x scripts/setup-clusters.sh scripts/verify-setup.sh
    ./scripts/setup-clusters.sh
-   ```
-   This script will:
-   - Create two minikube clusters
-   - Deploy the SPIRE server and database to the server cluster
-   - Deploy the SPIRE agent and workload services to the workload cluster
-   - Register SPIFFE IDs for the workload services
-
-4. Verify the setup:
-   ```
    ./scripts/verify-setup.sh
    ```
-   This script will:
-   - Check the status of all components
-   - Verify that each workload service can obtain its SPIFFE ID
+
+### 🔄 Reset to Fresh State Anytime
+```bash
+# Return to fresh Mac laptop state
+./fresh-install.sh
+```
+
+### 🛠️ Troubleshooting
+**Having issues?** The fresh install script solves 90% of problems:
+```bash
+./fresh-install.sh  # ← Try this first!
+```
+
+For detailed troubleshooting: **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
 ## 🏢 Enterprise Deployment Considerations
 
@@ -112,9 +121,13 @@ Each service is configured to access the SPIRE agent socket and can obtain its S
 ## 📊 Real-Time Monitoring Dashboard
 
 ### 💻 Local Development Dashboard
-Perfect for **laptop testing** with live data from your minikube clusters:
+Perfect for **fresh Mac laptop testing** with live data from your minikube clusters:
 
 ```bash
+# Ensure fresh environment first
+./fresh-install.sh
+
+# Start real-time dashboard
 ./start-dashboard.sh
 # Visit: http://localhost:3000/web-dashboard.html
 ```
