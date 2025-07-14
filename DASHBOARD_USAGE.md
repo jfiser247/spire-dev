@@ -1,24 +1,29 @@
 # SPIRE Dashboard Usage Guide
 
-**🔬 Local Testing → 🏢 Enterprise Monitoring**
+**🍎 Fresh Mac Install → 🔬 Local Testing → 🏢 Enterprise Monitoring**
 
 ## Real-Time Pod Data Dashboard
 
-### 💻 Perfect for Local Laptop Development
-The SPIRE monitoring dashboard connects directly to your **minikube clusters**, providing real-time pod data that's perfect for:
-- **Local testing** of SPIFFE identity propagation
+### 💻 Perfect for Fresh Mac Laptop Development
+The SPIRE monitoring dashboard works immediately after a **fresh Mac laptop setup**, connecting directly to your newly created **minikube clusters** and providing real-time pod data that's perfect for:
+- **Fresh environment testing** of SPIFFE identity propagation
 - **Rapid iteration** during development 
-- **Debugging** agent connectivity issues on your laptop
-- **Validating** configuration changes instantly
+- **Debugging** agent connectivity issues on a clean Mac
+- **Validating** fresh installation success instantly
 
-### 🚀 Quick Start for Local Testing
+### 🚀 Quick Start After Fresh Install
 
-1. **Start the dashboard server:**
+1. **Complete fresh setup** (if not already done):
+   ```bash
+   ./fresh-install.sh
+   ```
+
+2. **Start the dashboard server:**
    ```bash
    ./start-dashboard.sh
    ```
 
-2. **Open the dashboard:**
+3. **Open the dashboard:**
    Visit [http://localhost:3000/web-dashboard.html](http://localhost:3000/web-dashboard.html)
 
 ### Features
@@ -65,14 +70,18 @@ The dashboard pulls real-time data from your minikube clusters:
 ### Troubleshooting
 
 **Dashboard shows "Mock data" indicator:**
-- Ensure both Kubernetes clusters are running
+- Run fresh install to ensure clean environment: `./fresh-install.sh`
 - Verify kubectl contexts: `kubectl config get-contexts`
-- Check if get-pod-data.sh script has proper permissions
+- Check if clusters are running: `minikube profile list`
 
 **Server won't start:**
-- Ensure Node.js is installed: `node --version`
-- Check if port 3000 is available
-- Verify script permissions: `chmod +x start-dashboard.sh`
+- Ensure fresh Mac prerequisites: `brew install node`
+- Check if port 3000 is available or run fresh install: `./fresh-install.sh`
+- Verify Node.js installation: `node --version`
+
+**Environment feels inconsistent:**
+- Reset to fresh Mac state: `./fresh-install.sh`
+- This tears down everything and rebuilds from scratch
 
 ### Development
 
