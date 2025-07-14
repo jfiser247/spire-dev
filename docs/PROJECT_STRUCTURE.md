@@ -1,6 +1,6 @@
 # SPIFFE/SPIRE Project Structure
 
-This document outlines the organized structure of the SPIFFE/SPIRE fresh Mac laptop development environment.
+This document outlines the organized structure of the SPIFFE/SPIRE local development environment.
 
 ## 📁 Repository Structure
 
@@ -8,15 +8,12 @@ This document outlines the organized structure of the SPIFFE/SPIRE fresh Mac lap
 spire-dev/
 ├── README.md                          # Main project documentation
 ├── 📁 docs/                          # All documentation files
-│   ├── DASHBOARD_USAGE.md             # Dashboard usage guide
 │   ├── HELM_DEPLOYMENT_GUIDE.md       # Production Helm deployment
 │   ├── PROJECT_STRUCTURE.md           # This file
 │   ├── SPIFFE_SERVICE_INTEGRATION_GUIDE.md  # Service integration guide
 │   └── TROUBLESHOOTING.md             # Troubleshooting guide
 ├── 📁 scripts/                       # All executable scripts
 │   ├── fresh-install.sh               # Complete fresh Mac setup (main script)
-│   ├── get-pod-data.sh               # Fetch real-time pod data
-│   ├── push-changes.sh               # Git push helper
 │   ├── setup-clusters.sh             # Manual cluster setup
 │   └── verify-setup.sh               # Installation verification
 ├── 📁 web/                           # Web dashboard components

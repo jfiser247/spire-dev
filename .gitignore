@@ -50,3 +50,43 @@ scripts/get-pod-data.sh
 mvnw
 mvnw.cmd
 
+### Kubernetes and Docker ###
+# Kubernetes temporary files
+*.kubeconfig
+*.kube
+
+# Docker compose override files
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Helm generated files
+helm-charts/*/charts/*.tgz
+helm-charts/*/Chart.lock
+
+### Runtime and Logs ###
+# Application logs
+*.log
+logs/
+*.out
+
+# Temporary files
+*.tmp
+*.temp
+
+# SPIRE runtime data (if accidentally copied locally)
+spire-data/
+*.sock
+
+### Environment Files ###
+# Environment configuration
+.env
+.env.local
+.env.*.local
+
+### Backup Files ###
+# Editor backups
+*~
+*.backup
+*.bak
+*.orig
+
