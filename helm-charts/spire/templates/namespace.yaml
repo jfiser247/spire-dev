@@ -6,6 +6,9 @@ metadata:
   labels:
     {{- include "spire.labels" . | nindent 4 }}
     name: {{ .Release.Namespace }}
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
   {{- with .Values.namespaceAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -18,6 +21,9 @@ metadata:
   labels:
     {{- include "spire.labels" . | nindent 4 }}
     name: workload
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
   {{- with .Values.namespaceAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
