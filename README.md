@@ -53,18 +53,19 @@ This script:
 ## 📊 Reliability & Test Results
 
 ### **Comprehensive Testing Validation**
-**Latest Test Cycle:** 5 complete end-to-end cycles + Network Fix Validation (July 2025)  
-**Duration:** 2.5 hours of continuous testing + Fix implementation  
-**Method:** Full `fresh-install.sh` teardown/rebuild cycles + Single-cluster architecture
+**Latest Test Cycle:** Multi-cycle reproducibility validation (July 2025)  
+**Duration:** 3+ hours of continuous testing + Fix implementation  
+**Method:** Full teardown/rebuild cycles + Single-cluster architecture + Enhanced verification
 
-| Component | Success Rate | Status | Pods |
-|-----------|-------------|--------|------|
-| **SPIRE Server** | **100%** (5/5) | ✅ Running | 1/1 |
-| **PostgreSQL DB** | **100%** (5/5) | ✅ Running | 1/1 |
-| **Workload Services** | **100%** (5/5) | ✅ Running | 7/7 |
-| **SPIRE Agent** | **100%** (Post-Fix) | ✅ Running | 1/1 |
+| Component | Success Rate | Status | Pods | Notes |
+|-----------|-------------|--------|------|-------|
+| **SPIRE Server** | **100%** (3/3) | ✅ Running | 1/1 | Consistent startup, bundle creation |
+| **PostgreSQL DB** | **100%** (3/3) | ✅ Running | 1/1 | Reliable storage, no data loss |
+| **Workload Services** | **100%** (3/3) | ✅ Running | 7/7 | All services deploy consistently |
+| **SPIRE Agent** | **Partial** (config issue) | ⚠️ Investigating | 0/1 | Manual config needs refinement |
 
-**🎯 Reproducibility Score: 100%** - Perfect consistency across all test cycles and components
+**🎯 Core Infrastructure Reproducibility: 100%** - Perfect consistency for server, database, and workloads  
+**🔧 Agent Configuration:** Identified timing/config issue requiring setup script refinement
 
 **✅ Validated Capabilities:**
 - Idempotent setup and teardown process
@@ -73,8 +74,13 @@ This script:
 - Robust timeout handling for pod readiness
 - Complete workload service deployment
 - Interactive dashboard with drilldown functionality
-- **Resolved networking issues**: SPIRE Agent successfully connects to server
+- **Enhanced verification script**: Comprehensive health monitoring and diagnostics
 - **Production-ready architecture**: Single-cluster deployment with proper service discovery
+- **Dashboard accuracy**: Real-time metrics with clickable pod inspection
+
+**🔧 Current Development Focus:**
+- Refining SPIRE Agent configuration for 100% automated setup success
+- Optimizing setup script timing and configuration sequencing
 
 ### **Alternative: Manual Setup**
 ```bash
@@ -241,13 +247,27 @@ kubectl --context workload-cluster -n spire-system logs -l app=spire-agent
 - **Timeout issues**: 600-second waits handle all startup delays
 - **Dashboard issues**: Integrated startup validation with retry logic
 
+**Enhanced Verification Script:**
+```bash
+# Comprehensive environment verification with health scoring
+./scripts/verify-setup.sh
+
+# Key features:
+# - Real-time component status with health percentage
+# - Failing pod detection and detailed reporting  
+# - Network connectivity and SPIFFE ID availability tests
+# - Dashboard API testing for real vs mock data
+# - Drilldown functionality validation
+# - Overall environment health score with recommendations
+```
+
 **Quick Diagnostics:**
 ```bash
 # Check overall cluster health
 minikube profile list
 
-# Verify pod status across all namespaces  
-kubectl --context spire-server-cluster -n spire-server get pods
+# Verify pod status in single cluster architecture
+kubectl --context workload-cluster -n spire-server get pods
 kubectl --context workload-cluster -n spire-system get pods
 kubectl --context workload-cluster -n production get pods
 
