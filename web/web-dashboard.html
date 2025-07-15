@@ -359,6 +359,111 @@
             from {transform: translateY(-50px); opacity: 0;}
             to {transform: translateY(0); opacity: 1;}
         }
+        
+        /* Modal styles for kubectl describe drilldown */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        .modal-close:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .modal-body {
+            padding: 20px;
+            max-height: calc(90vh - 140px);
+            overflow-y: auto;
+        }
+        .describe-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 60vh;
+            margin-top: 10px;
+        }
+        .command-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .clickable-pod-name {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+        .clickable-pod-name:hover {
+            color: #764ba2;
+            font-weight: bold;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -1361,7 +1466,7 @@ curl http://localhost:9988/metrics</div>
                         
                         tableHTML += `
                             <tr>
-                                <td>${pod.name}</td>
+                                <td>${createClickablePodName(pod.name)}</td>
                                 <td>${statusIcon} ${pod.status}</td>
                                 <td>${readyText}</td>
                                 <td>${pod.restarts}</td>
@@ -1413,7 +1518,7 @@ curl http://localhost:9988/metrics</div>
                         
                         dbTableHTML += `
                             <tr>
-                                <td>${pod.name}</td>
+                                <td>${createClickablePodName(pod.name)}</td>
                                 <td>${statusIcon} ${pod.status}</td>
                                 <td>${pod.ready ? '1/1' : '0/1'}</td>
                                 <td>${pod.restarts}</td>
@@ -1504,7 +1609,7 @@ curl http://localhost:9988/metrics</div>
                         
                         tableHTML += `
                             <tr>
-                                <td>${pod.name}</td>
+                                <td>${createClickablePodName(pod.name)}</td>
                                 <td>${pod.node}</td>
                                 <td>${statusIcon} ${pod.status}</td>
                                 <td>${readyText}</td>
@@ -1547,6 +1652,7 @@ curl http://localhost:9988/metrics</div>
                                 <td>
                                     <strong>${serviceName}</strong>
                                     ${description ? `<br><small style="color: #666;">${description}</small>` : ''}
+                                    <br><small style="color: #999;">${createClickablePodName(pod.name)}</small>
                                 </td>
                                 <td><span style="background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${serviceType}</span></td>
                                 <td>${statusIcon} ${pod.status}</td>
@@ -2328,6 +2434,86 @@ kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/b
             refreshMetricsStatus();
             updateRefreshInterval(); // Start auto-refresh with default 10s interval
         };
+        
+        // Modal functionality for kubectl describe drilldown
+        function showResourceDetails(resourceType, resourceName, namespace, context) {
+            const modal = document.getElementById('resourceModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalCommand = document.getElementById('modalCommand');
+            const modalOutput = document.getElementById('modalOutput');
+            
+            // Show modal with loading state
+            modal.style.display = 'block';
+            modalTitle.textContent = `${resourceType}: ${resourceName}`;
+            modalCommand.textContent = `kubectl --context ${context} -n ${namespace} describe ${resourceType} ${resourceName}`;
+            modalOutput.innerHTML = '<div class="loading-spinner"></div> Loading resource details...';
+            
+            // Fetch describe output
+            const url = `/api/describe/${resourceType}/${namespace}/${context}/${resourceName}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        modalOutput.innerHTML = `<div style="color: #dc3545;">Error: ${data.error}</div><div style="margin-top: 10px; font-size: 11px; color: #6c757d;">Command: ${data.command || 'Unknown'}</div>`;
+                    } else {
+                        modalOutput.textContent = data.output;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching resource details:', error);
+                    modalOutput.innerHTML = `<div style="color: #dc3545;">Failed to load resource details: ${error.message}</div>`;
+                });
+        }
+        
+        function closeModal() {
+            document.getElementById('resourceModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('resourceModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        // Helper function to determine resource context and namespace
+        function getResourceContext(resourceName) {
+            if (resourceName.startsWith('spire-server') || resourceName.startsWith('spire-db') || resourceName.startsWith('postgres')) {
+                return { context: 'spire-server-cluster', namespace: 'spire-server' };
+            } else if (resourceName.startsWith('spire-agent')) {
+                return { context: 'workload-cluster', namespace: 'spire-system' };
+            } else {
+                // Workload services
+                return { context: 'workload-cluster', namespace: 'production' };
+            }
+        }
+        
+        // Create clickable pod name
+        function createClickablePodName(podName) {
+            const context = getResourceContext(podName);
+            return `<span class="clickable-pod-name" onclick="showResourceDetails('pod', '${podName}', '${context.namespace}', '${context.context}')" title="Click to view details">${podName}</span>`;
+        }
+        
     </script>
+    
+    <!-- Modal for kubectl describe output -->
+    <div id="resourceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Resource Details</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="command-info">
+                    <strong>Command:</strong> <span id="modalCommand"></span>
+                </div>
+                <div class="describe-output" id="modalOutput">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
