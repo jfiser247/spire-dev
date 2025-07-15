@@ -107,12 +107,14 @@ The dashboard provides **real-time pod data** from both clusters, ideal for:
 - Debugging SPIRE agent connectivity issues  
 - Monitoring certificate expiration during development
 - Validating configuration changes instantly
+- **Drilldown debugging**: Click any pod name for detailed inspection
 
 ## 🎯 Enterprise Features
 
 ### Enhanced Dashboard
 Industry-standard SPIFFE/SPIRE observability with:
 - Five-tile overview with dynamic SPIRE metrics integration
+- **Interactive drilldown**: Click any pod name to view detailed `kubectl describe` output
 - Command integration with built-in kubectl and metrics collection
 - Export ready for integration with monitoring platforms
 
@@ -149,6 +151,25 @@ Three example enterprise services with realistic configurations:
 - **High Availability**: Primary + 2-3 replicas + backup volumes
 
 </details>
+
+## 🔍 Interactive Dashboard Features
+
+### Pod Drilldown Capability
+The dashboard now includes **clickable pod names** that provide instant access to detailed pod information:
+
+**How it works:**
+1. Navigate to any tab: **SPIRE Server**, **Agents**, or **Workloads**
+2. Click on any pod name (shown as blue underlined text)
+3. View complete `kubectl describe` output in a modal popup
+4. Inspect pod status, events, volumes, and configuration details
+
+**Available for:**
+- ✅ **SPIRE Server pods** (`spire-server-cluster`)
+- ✅ **SPIRE Database pods** (`spire-server-cluster`) 
+- ✅ **SPIRE Agent pods** (`workload-cluster`)
+- ✅ **Workload Service pods** (`workload-cluster`)
+
+**Security:** Only authorized namespaces and contexts are accessible through the drilldown feature.
 
 ## 🔍 Useful Commands
 

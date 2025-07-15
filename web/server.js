@@ -65,6 +65,57 @@ const server = http.createServer((req, res) => {
                 details: err.message 
             }));
         });
+    } else if (req.url.startsWith('/api/describe/') && req.method === 'GET') {
+        // Handle kubectl describe requests
+        const urlParts = req.url.split('/');
+        if (urlParts.length >= 6) {
+            const resourceType = urlParts[3]; // pod, service, etc.
+            const namespace = urlParts[4];
+            const context = urlParts[5];
+            const resourceName = urlParts[6];
+            
+            // Security check - only allow specific contexts and namespaces
+            const allowedContexts = ['spire-server-cluster', 'workload-cluster'];
+            const allowedNamespaces = ['spire-server', 'spire-system', 'production'];
+            const allowedResourceTypes = ['pod', 'service', 'pvc', 'deployment', 'daemonset', 'statefulset'];
+            
+            if (!allowedContexts.includes(context) || 
+                !allowedNamespaces.includes(namespace) || 
+                !allowedResourceTypes.includes(resourceType)) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid resource parameters' }));
+                return;
+            }
+            
+            const command = `kubectl --context ${context} -n ${namespace} describe ${resourceType} ${resourceName}`;
+            
+            exec(command, { timeout: 15000 }, (error, stdout, stderr) => {
+                if (error) {
+                    console.warn(`Describe command failed: ${command}`, error.message);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ 
+                        error: 'Failed to describe resource', 
+                        details: error.message,
+                        command: command
+                    }));
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ 
+                        output: stdout,
+                        command: command,
+                        resource: {
+                            type: resourceType,
+                            name: resourceName,
+                            namespace: namespace,
+                            context: context
+                        }
+                    }));
+                }
+            });
+        } else {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid describe URL format. Expected: /api/describe/{type}/{namespace}/{context}/{name}' }));
+        }
     } else if (req.url === '/' || req.url === '/web-dashboard.html') {
         // Serve the web dashboard
         const dashboardPath = path.join(__dirname, 'web-dashboard.html');
