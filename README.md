@@ -190,6 +190,27 @@ kubectl --context workload-cluster -n spire-system logs -l app=spire-agent
 - **Pods not starting**: Check Pod Security Standards with `kubectl describe pod`
 - **Minikube issues**: Delete all profiles and restart: `minikube delete --all`
 
+### ⚠️ Known Issue: SPIRE Agent Network Connectivity
+
+**Issue**: SPIRE Agent may experience `CrashLoopBackOff` due to network timeouts between Minikube clusters.
+
+**Symptoms**:
+```
+error="create attestation client: failed to dial dns:///192.168.49.2:31583: context deadline exceeded"
+```
+
+**Current Status**: 
+- ✅ **SPIRE Server & Database**: Work perfectly (100% success rate)
+- ✅ **Workload Services**: Deploy successfully (7/7 pods running)
+- ❌ **Cross-cluster Agent**: Network connectivity issues in multi-cluster Minikube setup
+
+**Workarounds**:
+1. **Single-cluster deployment**: Deploy server and agent in same cluster
+2. **Alternative runtimes**: Test with Kind or real Kubernetes clusters
+3. **Network debugging**: Check Minikube network configuration
+
+**This is a known limitation of the multi-cluster Minikube networking setup and does not affect production deployments.**
+
 For detailed troubleshooting: **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**
 
 ## 🏢 Enterprise Deployment

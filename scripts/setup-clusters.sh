@@ -122,7 +122,29 @@ sleep 30
 
 # Copy the bundle from the server cluster to the workload cluster
 SERVER_POD=$(kubectl --context spire-server-cluster -n spire-server get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
-kubectl --context spire-server-cluster -n spire-server exec $SERVER_POD -- /opt/spire/bin/spire-server bundle show -format pem > /tmp/bundle.pem || echo "Warning: Failed to get bundle, continuing..."
+
+# Wait for SPIRE server API to be ready and get bundle with retries
+echo "Getting SPIRE server bundle..."
+for i in {1..5}; do
+    if kubectl --context spire-server-cluster -n spire-server exec $SERVER_POD -- /opt/spire/bin/spire-server bundle show -socketPath /run/spire/sockets/server.sock -format pem > /tmp/bundle.pem 2>/dev/null; then
+        if [ -s /tmp/bundle.pem ]; then
+            echo "✅ Bundle retrieved successfully"
+            break
+        else
+            echo "⏳ Bundle is empty, retrying... (attempt $i/5)"
+        fi
+    else
+        echo "⏳ SPIRE server API not ready, retrying... (attempt $i/5)"
+    fi
+    
+    if [ $i -eq 5 ]; then
+        echo "❌ Failed to get bundle after 5 attempts"
+        exit 1
+    fi
+    
+    sleep 15
+done
+
 kubectl -n spire-system create configmap spire-bundle --from-file=bundle.crt=/tmp/bundle.pem --dry-run=client -o yaml | kubectl apply -f -
 
 # Update agent configmap with the correct server address
