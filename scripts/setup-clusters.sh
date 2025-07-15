@@ -18,6 +18,10 @@ echo "Deploying SPIRE server and database components..."
 
 # Apply SPIRE server and database manifests
 kubectl apply -f k8s/spire-server/namespace.yaml
+
+# Configure pod security standards for spire-server namespace
+echo "Configuring pod security standards..."
+kubectl label namespace spire-server pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite
 kubectl apply -f k8s/spire-db/postgres-pvc.yaml
 kubectl apply -f k8s/spire-db/postgres-deployment.yaml
 kubectl apply -f k8s/spire-db/postgres-service.yaml
@@ -27,11 +31,21 @@ kubectl apply -f k8s/spire-server/server-service.yaml
 kubectl apply -f k8s/spire-server/server-statefulset.yaml
 
 echo "Waiting for SPIRE server to be ready..."
-kubectl -n spire wait --for=condition=ready pod -l app=spire-server --timeout=300s || echo "Warning: SPIRE server timeout, continuing..."
-kubectl -n spire wait --for=condition=ready pod -l app=spire-db --timeout=300s || echo "Warning: SPIRE DB timeout, continuing..."
+# Increased timeouts to handle pod startup delays
+if ! kubectl -n spire-server wait --for=condition=ready pod -l app=spire-server --timeout=600s; then
+    echo "Warning: SPIRE server timeout, checking pod status..."
+    kubectl -n spire-server get pods -l app=spire-server
+    kubectl -n spire-server describe pods -l app=spire-server
+fi
+
+if ! kubectl -n spire-server wait --for=condition=ready pod -l app=spire-db --timeout=600s; then
+    echo "Warning: SPIRE DB timeout, checking pod status..."
+    kubectl -n spire-server get pods -l app=spire-db
+    kubectl -n spire-server describe pods -l app=spire-db
+fi
 
 # Get the NodePort for the SPIRE server
-SERVER_NODEPORT=$(kubectl -n spire get svc spire-server -o jsonpath='{.spec.ports[?(@.name=="server")].nodePort}')
+SERVER_NODEPORT=$(kubectl -n spire-server get svc spire-server -o jsonpath='{.spec.ports[?(@.name=="server")].nodePort}')
 # Get the IP address of the minikube node
 SERVER_IP=$(minikube -p spire-server-cluster ip)
 
@@ -46,7 +60,13 @@ echo "Deploying SPIRE agent and workload components..."
 
 # Apply workload cluster manifests - create namespaces first (following SPIFFE best practices)
 kubectl apply -f k8s/workload-cluster/spire-system-namespace.yaml
-kubectl apply -f k8s/workload-cluster/namespace.yaml
+
+# Configure pod security standards for spire-system namespace
+kubectl label namespace spire-system pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite
+
+# Create production namespace and configure pod security
+kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
+kubectl label namespace production pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite
 
 # Create a service account token for the SPIRE server to access the workload cluster
 kubectl create serviceaccount spire-server-sa -n spire-system --dry-run=client -o yaml | kubectl apply -f -
@@ -83,15 +103,15 @@ EOF
 kubectl config use-context spire-server-cluster
 
 # Create a ConfigMap with the workload cluster kubeconfig
-kubectl -n spire create configmap workload-cluster-kubeconfig --from-file=kubeconfig=/tmp/workload-cluster-kubeconfig --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n spire-server create configmap workload-cluster-kubeconfig --from-file=kubeconfig=/tmp/workload-cluster-kubeconfig --dry-run=client -o yaml | kubectl apply -f -
 
 # Update the SPIRE server StatefulSet to mount the kubeconfig
-kubectl -n spire patch statefulset spire-server --type=json -p '[{"op":"add","path":"/spec/template/spec/volumes/-","value":{"name":"workload-cluster-kubeconfig","configMap":{"name":"workload-cluster-kubeconfig"}}}]'
-kubectl -n spire patch statefulset spire-server --type=json -p '[{"op":"add","path":"/spec/template/spec/containers/0/volumeMounts/-","value":{"name":"workload-cluster-kubeconfig","mountPath":"/run/spire/workload-cluster-kubeconfig","readOnly":true}}]'
+kubectl -n spire-server patch statefulset spire-server --type=json -p '[{"op":"add","path":"/spec/template/spec/volumes/-","value":{"name":"workload-cluster-kubeconfig","configMap":{"name":"workload-cluster-kubeconfig"}}}]'
+kubectl -n spire-server patch statefulset spire-server --type=json -p '[{"op":"add","path":"/spec/template/spec/containers/0/volumeMounts/-","value":{"name":"workload-cluster-kubeconfig","mountPath":"/run/spire/workload-cluster-kubeconfig","readOnly":true}}]'
 
 # Restart the SPIRE server to apply the changes
-kubectl -n spire rollout restart statefulset spire-server
-kubectl -n spire rollout status statefulset spire-server --timeout=300s
+kubectl -n spire-server rollout restart statefulset spire-server
+kubectl -n spire-server rollout status statefulset spire-server --timeout=600s
 
 # Switch back to workload cluster
 kubectl config use-context workload-cluster
@@ -101,9 +121,9 @@ echo "Waiting for SPIRE server to stabilize..."
 sleep 30
 
 # Copy the bundle from the server cluster to the workload cluster
-SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
-kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server bundle show -format pem > /tmp/bundle.pem || echo "Warning: Failed to get bundle, continuing..."
-kubectl -n spire create configmap spire-bundle --from-file=bundle.crt=/tmp/bundle.pem --dry-run=client -o yaml | kubectl apply -f -
+SERVER_POD=$(kubectl --context spire-server-cluster -n spire-server get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+kubectl --context spire-server-cluster -n spire-server exec $SERVER_POD -- /opt/spire/bin/spire-server bundle show -format pem > /tmp/bundle.pem || echo "Warning: Failed to get bundle, continuing..."
+kubectl -n spire-system create configmap spire-bundle --from-file=bundle.crt=/tmp/bundle.pem --dry-run=client -o yaml | kubectl apply -f -
 
 # Update agent configmap with the correct server address
 cat > /tmp/agent-configmap.yaml << EOF
@@ -111,7 +131,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: spire-agent-config
-  namespace: spire
+  namespace: spire-system
 data:
   agent.conf: |
     agent {
@@ -161,7 +181,19 @@ kubectl apply -f k8s/workload-cluster/payment-api-deployment.yaml
 kubectl apply -f k8s/workload-cluster/inventory-service-deployment.yaml
 
 echo "Waiting for SPIRE agent to be ready..."
-kubectl -n spire wait --for=condition=ready pod -l app=spire-agent --timeout=300s || echo "Warning: SPIRE agent timeout, continuing..."
+if ! kubectl -n spire-system wait --for=condition=ready pod -l app=spire-agent --timeout=600s; then
+    echo "Warning: SPIRE agent timeout, checking pod status..."
+    kubectl -n spire-system get pods -l app=spire-agent
+    kubectl -n spire-system describe pods -l app=spire-agent
+fi
+
+echo "Checking workload service deployments..."
+kubectl -n production get pods
+if [ $(kubectl -n production get pods --field-selector=status.phase=Running --no-headers | wc -l) -lt 3 ]; then
+    echo "Warning: Not all workload services are running. Checking deployment status..."
+    kubectl -n production get deployments
+    kubectl -n production describe deployments
+fi
 
 echo "SPIRE agent and workload services deployed successfully!"
 
@@ -178,9 +210,9 @@ echo "  Start server: ./web/start-dashboard.sh"
 echo "  Open in browser: http://localhost:3000/web-dashboard.html"
 echo ""
 echo "📋 Useful commands to interact with the clusters:"
-echo "  kubectl --context spire-server-cluster -n spire get pods"
-echo "  kubectl --context workload-cluster -n workload get pods"
-echo "  kubectl --context workload-cluster -n spire get pods"
+echo "  kubectl --context spire-server-cluster -n spire-server get pods"
+echo "  kubectl --context workload-cluster -n production get pods"
+echo "  kubectl --context workload-cluster -n spire-system get pods"
 echo ""
 echo "🔍 Run verification script:"
 echo "  ./scripts/verify-setup.sh"

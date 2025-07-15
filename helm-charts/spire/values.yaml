@@ -414,7 +414,7 @@ security:
   # Pod security standards
   podSecurityStandards:
     enabled: true
-    enforce: "restricted"
+    enforce: "privileged"
     
   # Security contexts
   securityContexts:

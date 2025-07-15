@@ -135,15 +135,20 @@ validate_installation() {
     DASHBOARD_PID=$!
     
     # Wait for dashboard to start
-    sleep 5
+    sleep 10
     
-    # Test API endpoint
-    if curl -s http://localhost:3000/api/pod-data >/dev/null 2>&1; then
-        echo "✅ Dashboard API responding successfully"
-        echo "   🌐 Dashboard URL: http://localhost:3000/web-dashboard.html"
-    else
-        echo "⚠️  Dashboard API not yet ready (clusters may still be initializing)"
-    fi
+    # Test API endpoint with retries
+    echo "Testing dashboard API..."
+    for i in {1..5}; do
+        if curl -s http://localhost:3000/api/pod-data >/dev/null 2>&1; then
+            echo "✅ Dashboard API responding successfully"
+            echo "   🌐 Dashboard URL: http://localhost:3000/web-dashboard.html"
+            break
+        else
+            echo "   ⏳ Dashboard API attempt $i/5 - waiting..."
+            sleep 5
+        fi
+    done
     
     # Stop test dashboard
     kill $DASHBOARD_PID 2>/dev/null || true
@@ -160,15 +165,19 @@ validate_installation() {
     DASHBOARD_PID=$!
     
     # Wait for dashboard to start
-    sleep 3
+    sleep 5
     
-    # Test if dashboard is running
-    if curl -s http://localhost:3000 >/dev/null 2>&1; then
-        echo "   ✅ Dashboard server: running on http://localhost:3000"
-        echo "   📊 Dashboard URL: http://localhost:3000/web-dashboard.html"
-    else
-        echo "   ⚠️  Dashboard server: starting (may take a moment)"
-    fi
+    # Test if dashboard is running with retries
+    for i in {1..3}; do
+        if curl -s http://localhost:3000 >/dev/null 2>&1; then
+            echo "   ✅ Dashboard server: running on http://localhost:3000"
+            echo "   📊 Dashboard URL: http://localhost:3000/web-dashboard.html"
+            break
+        else
+            echo "   ⏳ Dashboard starting... (attempt $i/3)"
+            sleep 3
+        fi
+    done
 }
 
 # Function to display next steps
