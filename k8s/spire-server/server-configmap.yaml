@@ -28,6 +28,16 @@ data:
           keys_path = "/run/spire/data/keys.json"
         }
       }
+
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          clusters = {
+            "cluster" = {
+              service_account_allow_list = ["spire-system:spire-agent"]
+            }
+          }
+        }
+      }
     }
 
     health_checks {
