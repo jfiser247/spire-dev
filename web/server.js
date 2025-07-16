@@ -22,9 +22,9 @@ const server = http.createServer((req, res) => {
     if (req.url === '/api/pod-data' && req.method === 'GET') {
         // Fetch real pod data directly using kubectl commands
         const kubectlCommands = [
-            'kubectl --context spire-server-cluster -n spire-server get pods -o json',
-            'kubectl --context spire-server-cluster -n spire-server get pvc -o json',
-            'kubectl --context spire-server-cluster -n spire-server get svc -o json',
+            'kubectl --context workload-cluster -n spire-server get pods -o json',
+            'kubectl --context workload-cluster -n spire-server get pvc -o json',
+            'kubectl --context workload-cluster -n spire-server get svc -o json',
             'kubectl --context workload-cluster -n spire-system get pods -o json',
             'kubectl --context workload-cluster -n production get pods -o json'
         ];

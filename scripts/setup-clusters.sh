@@ -20,11 +20,18 @@ echo "Deploying SPIRE server and database components in workload cluster..."
 kubectl config use-context workload-cluster
 
 # Apply SPIRE server and database manifests in workload cluster
-kubectl create namespace spire-server --dry-run=client -o yaml | kubectl apply -f -
-
-# Configure pod security standards for spire-server namespace
-echo "Configuring pod security standards..."
-kubectl label namespace spire-server pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite
+echo "Creating spire-server namespace with pod security standards..."
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spire-server
+  labels:
+    name: spire-server
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+EOF
 kubectl apply -f k8s/spire-db/postgres-pvc.yaml -n spire-server
 kubectl apply -f k8s/spire-db/postgres-deployment.yaml -n spire-server
 kubectl apply -f k8s/spire-db/postgres-service.yaml -n spire-server
@@ -52,14 +59,21 @@ echo "SPIRE server and database deployed successfully!"
 echo "Deploying SPIRE agent and workload components..."
 
 # Apply workload cluster manifests - create namespaces first (following SPIFFE best practices)
+echo "Creating spire-system namespace with pod security standards..."
 kubectl apply -f k8s/workload-cluster/spire-system-namespace.yaml
 
-# Configure pod security standards for spire-system namespace
-kubectl label namespace spire-system pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite
-
-# Create production namespace and configure pod security
-kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
-kubectl label namespace production pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite
+echo "Creating production namespace with pod security standards..."
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    name: production
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+EOF
 
 
 # Get the bundle from the local server
