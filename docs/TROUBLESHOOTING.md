@@ -13,7 +13,7 @@ This guide helps you troubleshoot common issues with your SPIFFE/SPIRE Mac lapto
 
 This completely tears down and rebuilds your environment as if you just got a new MacBook.
 
-**⏱️ Expected Runtime:** The fresh install typically takes **1.5-2 minutes** on modern Macs with cached Docker images (3-4 minutes on first run). If it takes significantly longer, check the specific issues below.
+**⏱️ Expected Runtime:** The fresh install typically takes **5-8 minutes** on modern Macs (includes image pulls, pod scheduling, and full validation). First run may take longer due to image downloads. If it fails before completion, check the specific issues below.
 
 ## 🔧 Common Issues and Solutions
 
@@ -139,9 +139,9 @@ pkill -f "node server.js"
 ### 6. **"Fresh install taking too long" or "Script hangs"**
 
 **Symptoms:**
-- Fresh install runs longer than 3-4 minutes (beyond first-time setup)
-- Script appears to hang during setup
-- Pods stuck in pending/creating state
+- Fresh install runs longer than 10-12 minutes
+- Script appears to hang during pod scheduling or readiness checks
+- Pods stuck in pending/creating state for extended periods
 
 **Fresh Mac Solution:**
 ```bash
@@ -163,7 +163,53 @@ df -h
 docker system prune -a
 ```
 
-### 7. **"Git or repository issues"**
+### 7. **"Fresh install script fails" or "Jsonpath errors"**
+
+**Symptoms:**
+- Script exits with "array index out of bounds" errors
+- "No matching resources found" errors
+- SPIRE agent fails with connection timeouts
+- Script reports component timeouts but continues running
+
+**Root Causes & Solutions:**
+
+**Issue: Jsonpath Array Index Errors**
+```bash
+# Error: "array index out of bounds: index 0, length 0"
+SERVER_POD=$(kubectl get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+```
+**Solution:** Script now includes proper validation before accessing pod arrays.
+
+**Issue: SPIRE Agent Connection Failures**
+```bash
+# Error: "failed to dial dns:///spire-server:8081: timed out"
+```
+**Solution:** Agent configuration updated to use full FQDN: `spire-server.spire-server.svc.cluster.local`
+
+**Issue: Script Continues After Failures**
+```bash
+# Warning: SPIRE server timeout (script continued anyway)
+```
+**Solution:** Script now exits immediately when critical components fail to deploy.
+
+**Fresh Mac Solution:**
+```bash
+./scripts/fresh-install.sh
+```
+
+**Manual Recovery:**
+```bash
+# If script fails partway through:
+minikube delete --all
+./scripts/fresh-install.sh
+
+# Check specific component status:
+kubectl --context workload-cluster -n spire-server get pods
+kubectl --context workload-cluster -n spire-system get pods  
+kubectl --context workload-cluster -n production get pods
+```
+
+### 8. **"Git or repository issues"**
 
 **Symptoms:**
 - Git conflicts

@@ -41,20 +41,59 @@ kubectl apply -f k8s/spire-server/server-service.yaml -n spire-server
 kubectl apply -f k8s/spire-server/server-statefulset.yaml -n spire-server
 
 echo "Waiting for SPIRE server to be ready..."
+# Allow time for pods to be created before waiting
+echo "Allowing time for pods to be scheduled..."
+sleep 10
+
+# Check if pods exist before waiting
+echo "Checking if pods are being created..."
+for i in {1..12}; do
+    SERVER_PODS=$(kubectl -n spire-server get pods -l app=spire-server --no-headers 2>/dev/null | wc -l)
+    DB_PODS=$(kubectl -n spire-server get pods -l app=spire-db --no-headers 2>/dev/null | wc -l)
+    
+    if [ $SERVER_PODS -gt 0 ] && [ $DB_PODS -gt 0 ]; then
+        echo "✅ Pods are being created, proceeding to wait for readiness..."
+        break
+    fi
+    
+    echo "⏳ Waiting for pods to be scheduled... (attempt $i/12)"
+    sleep 5
+    
+    if [ $i -eq 12 ]; then
+        echo "❌ Pods were not scheduled after 60 seconds"
+        kubectl -n spire-server get all
+        exit 1
+    fi
+done
+
 # Increased timeouts to handle pod startup delays
-if ! kubectl -n spire-server wait --for=condition=ready pod -l app=spire-server --timeout=600s; then
-    echo "Warning: SPIRE server timeout, checking pod status..."
+SERVER_READY=false
+DB_READY=false
+
+if kubectl -n spire-server wait --for=condition=ready pod -l app=spire-server --timeout=600s; then
+    echo "✅ SPIRE server is ready"
+    SERVER_READY=true
+else
+    echo "❌ SPIRE server timeout, checking pod status..."
     kubectl -n spire-server get pods -l app=spire-server
     kubectl -n spire-server describe pods -l app=spire-server
 fi
 
-if ! kubectl -n spire-server wait --for=condition=ready pod -l app=spire-db --timeout=600s; then
-    echo "Warning: SPIRE DB timeout, checking pod status..."
+if kubectl -n spire-server wait --for=condition=ready pod -l app=spire-db --timeout=600s; then
+    echo "✅ SPIRE database is ready"
+    DB_READY=true
+else
+    echo "❌ SPIRE DB timeout, checking pod status..."
     kubectl -n spire-server get pods -l app=spire-db
     kubectl -n spire-server describe pods -l app=spire-db
 fi
 
-echo "SPIRE server and database deployed successfully!"
+if [ "$SERVER_READY" = true ] && [ "$DB_READY" = true ]; then
+    echo "✅ SPIRE server and database deployed successfully!"
+else
+    echo "❌ SPIRE server deployment failed. Exiting..."
+    exit 1
+fi
 
 echo "Deploying SPIRE agent and workload components..."
 
@@ -77,7 +116,16 @@ EOF
 
 
 # Get the bundle from the local server
-SERVER_POD=$(kubectl -n spire-server get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+echo "Getting SPIRE server pod name..."
+SERVER_POD=$(kubectl -n spire-server get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+
+if [ -z "$SERVER_POD" ]; then
+    echo "❌ Failed to get SPIRE server pod name. No pods found."
+    kubectl -n spire-server get pods
+    exit 1
+fi
+
+echo "✅ Found SPIRE server pod: $SERVER_POD"
 
 # Wait for SPIRE server API to be ready and get bundle with retries
 echo "Getting SPIRE server bundle from local deployment..."
@@ -159,21 +207,37 @@ kubectl apply -f k8s/workload-cluster/payment-api-deployment.yaml
 kubectl apply -f k8s/workload-cluster/inventory-service-deployment.yaml
 
 echo "Waiting for SPIRE agent to be ready..."
-if ! kubectl -n spire-system wait --for=condition=ready pod -l app=spire-agent --timeout=600s; then
-    echo "Warning: SPIRE agent timeout, checking pod status..."
+if kubectl -n spire-system wait --for=condition=ready pod -l app=spire-agent --timeout=600s; then
+    echo "✅ SPIRE agent is ready"
+else
+    echo "❌ SPIRE agent timeout, checking pod status..."
     kubectl -n spire-system get pods -l app=spire-agent
     kubectl -n spire-system describe pods -l app=spire-agent
+    kubectl -n spire-system logs -l app=spire-agent --tail=20
+    echo "❌ SPIRE agent deployment failed. Exiting..."
+    exit 1
 fi
+
+echo "Waiting for workload services to be ready..."
+# Wait for each deployment to be available
+kubectl -n production rollout status deployment/user-service --timeout=300s
+kubectl -n production rollout status deployment/payment-api --timeout=300s  
+kubectl -n production rollout status deployment/inventory-service --timeout=300s
 
 echo "Checking workload service deployments..."
 kubectl -n production get pods
-if [ $(kubectl -n production get pods --field-selector=status.phase=Running --no-headers | wc -l) -lt 3 ]; then
-    echo "Warning: Not all workload services are running. Checking deployment status..."
+RUNNING_PODS=$(kubectl -n production get pods --field-selector=status.phase=Running --no-headers | wc -l)
+if [ $RUNNING_PODS -lt 3 ]; then
+    echo "❌ Not all workload services are running ($RUNNING_PODS/7 expected). Checking deployment status..."
     kubectl -n production get deployments
     kubectl -n production describe deployments
+    echo "❌ Workload services deployment incomplete. Exiting..."
+    exit 1
+else
+    echo "✅ All workload services are running ($RUNNING_PODS pods)"
 fi
 
-echo "SPIRE agent and workload services deployed successfully!"
+echo "✅ SPIRE agent and workload services deployed successfully!"
 
 echo "Registering SPIFFE IDs for workloads..."
 kubectl apply -f k8s/spire-server/registration-entries.yaml -n spire-server

@@ -150,8 +150,31 @@ validate_installation() {
         fi
     done
     
-    # Stop test dashboard
-    kill $DASHBOARD_PID 2>/dev/null || true
+    # Stop test dashboard with proper cleanup
+    if [ ! -z "$DASHBOARD_PID" ]; then
+        kill $DASHBOARD_PID 2>/dev/null || true
+        wait $DASHBOARD_PID 2>/dev/null || true
+    fi
+    
+    # Kill any remaining dashboard processes
+    pkill -f "node server.js" 2>/dev/null || true
+    
+    # Wait for port to be released with longer timeout
+    echo "⏳ Waiting for dashboard port to be released..."
+    for i in {1..15}; do
+        if ! lsof -i :3000 >/dev/null 2>&1; then
+            echo "✅ Port 3000 is available"
+            break
+        fi
+        echo "   Waiting for port cleanup... (attempt $i/15)"
+        sleep 3
+        
+        # Force kill any remaining processes on port 3000 after a few attempts
+        if [ $i -eq 5 ]; then
+            echo "   🔧 Force killing processes on port 3000..."
+            pkill -9 -f "node server.js" 2>/dev/null || true
+        fi
+    done
     
     echo ""
     echo "📋 Fresh laptop installation summary:"
