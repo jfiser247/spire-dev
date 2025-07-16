@@ -4,6 +4,11 @@ set -e
 # SPIRE Environment Reproducibility Test Suite
 # Tests all known issues encountered during consistency and reproducibility testing
 # Uses fresh-install.sh for clean environment setup
+#
+# Expected Timing:
+# - Fresh install: 5-8 minutes (includes image pulls and validation)
+# - Individual component startup: 2-5 minutes per component
+# - Total test suite: 10-15 minutes for complete validation
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"

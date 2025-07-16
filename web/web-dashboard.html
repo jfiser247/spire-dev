@@ -124,6 +124,7 @@
             font-size: 2em;
             font-weight: bold;
             margin: 10px 0;
+            transition: color 0.3s ease;
         }
         .status-online {
             color: #28a745;
@@ -133,6 +134,14 @@
         }
         .status-warning {
             color: #ffc107;
+        }
+        /* Consistent health indicator styling */
+        .status-card .status-value {
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .status-card.clickable:hover .status-value {
+            transform: scale(1.05);
+            transition: transform 0.2s ease;
         }
         .table {
             width: 100%;
@@ -519,14 +528,14 @@
                     </div>
                     <div class="status-card clickable" onclick="navigateToTab('agents')" title="Click to view SPIRE Agents details">
                         <h3>SPIRE Agents</h3>
-                        <div class="status-value" id="agent-count">-</div>
-                        <p>Active agents</p>
+                        <div class="status-value" id="agent-status">●</div>
+                        <p id="agent-context">Active agents: <span id="agent-count">-</span></p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
                     <div class="status-card clickable" onclick="navigateToTab('workloads')" title="Click to view Workload Services details">
                         <h3>Workload Services</h3>
-                        <div class="status-value" id="workload-count">-</div>
-                        <p>Running services</p>
+                        <div class="status-value" id="workload-status">●</div>
+                        <p id="workload-context">Running services: <span id="workload-count">-</span></p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
                     <div class="status-card clickable" onclick="navigateToTab('metrics')" title="Click to view SPIRE Metrics & Telemetry">
@@ -1433,9 +1442,57 @@ curl http://localhost:9988/metrics</div>
             try {
                 const data = await fetchPodData();
                 if (data) {
-                    // Update counts with real data
-                    document.getElementById('agent-count').textContent = data.agents.length;
-                    document.getElementById('workload-count').textContent = data.workloads.length;
+                    // Update agent status and count
+                    const agentCountEl = document.getElementById('agent-count');
+                    const agentStatusEl = document.getElementById('agent-status');
+                    const agentCount = data.agents.length;
+                    const agentHealthy = data.agents.filter(agent => 
+                        agent.status?.containerStatuses?.[0]?.ready || false
+                    ).length;
+                    
+                    agentCountEl.textContent = agentCount;
+                    
+                    // Set agent health status
+                    agentStatusEl.className = 'status-value';
+                    if (agentCount === 0) {
+                        agentStatusEl.classList.add('status-offline');
+                        agentStatusEl.textContent = '●';
+                    } else if (agentHealthy === agentCount) {
+                        agentStatusEl.classList.add('status-online');
+                        agentStatusEl.textContent = '●';
+                    } else if (agentHealthy > 0) {
+                        agentStatusEl.classList.add('status-warning');
+                        agentStatusEl.textContent = '●';
+                    } else {
+                        agentStatusEl.classList.add('status-offline');
+                        agentStatusEl.textContent = '●';
+                    }
+                    
+                    // Update workload status and count
+                    const workloadCountEl = document.getElementById('workload-count');
+                    const workloadStatusEl = document.getElementById('workload-status');
+                    const workloadCount = data.workloads.length;
+                    const workloadHealthy = data.workloads.filter(workload => 
+                        workload.status?.containerStatuses?.[0]?.ready || false
+                    ).length;
+                    
+                    workloadCountEl.textContent = workloadCount;
+                    
+                    // Set workload health status
+                    workloadStatusEl.className = 'status-value';
+                    if (workloadCount === 0) {
+                        workloadStatusEl.classList.add('status-offline');
+                        workloadStatusEl.textContent = '●';
+                    } else if (workloadHealthy === workloadCount) {
+                        workloadStatusEl.classList.add('status-online');
+                        workloadStatusEl.textContent = '●';
+                    } else if (workloadHealthy > 0) {
+                        workloadStatusEl.classList.add('status-warning');
+                        workloadStatusEl.textContent = '●';
+                    } else {
+                        workloadStatusEl.classList.add('status-offline');
+                        workloadStatusEl.textContent = '●';
+                    }
                     
                     // Update metrics summary
                     updateMetricsSummary();
