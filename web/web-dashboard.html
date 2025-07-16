@@ -1447,10 +1447,13 @@ curl http://localhost:9988/metrics</div>
                     const agentStatusEl = document.getElementById('agent-status');
                     const agentCount = data.agents.length;
                     const agentHealthy = data.agents.filter(agent => 
-                        agent.status?.containerStatuses?.[0]?.ready || false
+                        agent.ready === true
                     ).length;
                     
                     agentCountEl.textContent = agentCount;
+                    
+                    // Debug logging
+                    console.log(`Agent health: ${agentHealthy}/${agentCount} healthy`);
                     
                     // Set agent health status
                     agentStatusEl.className = 'status-value';
@@ -1473,10 +1476,13 @@ curl http://localhost:9988/metrics</div>
                     const workloadStatusEl = document.getElementById('workload-status');
                     const workloadCount = data.workloads.length;
                     const workloadHealthy = data.workloads.filter(workload => 
-                        workload.status?.containerStatuses?.[0]?.ready || false
+                        workload.ready === true
                     ).length;
                     
                     workloadCountEl.textContent = workloadCount;
+                    
+                    // Debug logging
+                    console.log(`Workload health: ${workloadHealthy}/${workloadCount} healthy`);
                     
                     // Set workload health status
                     workloadStatusEl.className = 'status-value';
