@@ -1,0 +1,103 @@
+site_name: SPIRE Enterprise Documentation
+site_description: Complete SPIFFE/SPIRE enterprise deployment guide with multiple architecture options
+site_author: SPIRE Enterprise Team
+site_url: http://localhost:8000
+
+repo_name: spiffe/spire-dev
+repo_url: https://github.com/spiffe/spire
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid
+  - pymdownx.mark
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - toc:
+      permalink: true
+
+nav:
+  - Home:
+    - Overview: index.md
+    - Quick Start: getting-started.md
+  - Architecture:
+    - Architecture Overview: architecture/overview.md
+    - Enterprise Multi-Cluster: architecture/enterprise-architecture.md
+    - CRD-Free Deployment: architecture/crd-free-architecture.md
+    - Architecture Validation: architecture/validation.md
+  - Deployment Guides:
+    - Basic Development: deployment/basic-development.md
+    - Enterprise Deployment: deployment/enterprise-deployment.md  
+    - CRD-Free Enterprise: deployment/crd-free-deployment.md
+    - Helm Deployment: deployment/helm-deployment.md
+  - Integration:
+    - SPIFFE Service Integration: integration/spiffe-service-integration.md
+    - Project Structure: integration/project-structure.md
+  - Operations:
+    - Troubleshooting: operations/troubleshooting.md
+    - Namespace Labeling: operations/namespace-labeling-fix.md
+    - Script Fixes: operations/script-fixes-summary.md
+  - Enterprise:
+    - CRD Requirements: enterprise/crd-requirements.md
+    - Architecture Diagrams: enterprise/architecture-diagrams.md
+    - Validation Guide: enterprise/validation-guide.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/spiffe/spire
+    - icon: fontawesome/solid/globe
+      link: https://spiffe.io
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

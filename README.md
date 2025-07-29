@@ -7,15 +7,31 @@ Complete local SPIFFE/SPIRE development environment with real-time monitoring da
 ## 🚀 Quick Start
 
 ### **One-Command Setup**
+
+**🔧 Basic Development Setup:**
 ```bash
 # Complete local SPIRE development environment with dashboard
 ./scripts/fresh-install.sh
+```
+
+**🏢 Enterprise Architecture Setup:**
+```bash
+# Enterprise upstream/downstream clusters with federation
+./scripts/fresh-install.sh enterprise
+```
+
+**🏢 CRD-Free Enterprise Setup:**
+```bash
+# Enterprise deployment without CRDs (for restricted environments)
+./scripts/setup-crd-free-deployment.sh
 ```
 
 **✨ Dashboard Ready:** http://localhost:3000/web-dashboard.html
 
 - 🧹 **Clean Setup**: Tears down existing environment and rebuilds from scratch
 - 📊 **Real-time Dashboard**: Live monitoring with clickable pod inspection
+- 🏢 **Enterprise Ready**: Supports basic, enterprise, and CRD-free deployments
+- 🔒 **CRD-Free Option**: For enterprises with strict CRD/privilege restrictions
 - ⚡ **Fast**: ~5-8 minutes to fully operational environment (including image pulls)
 - ✅ **Validated**: 100% reproducible setup across core components
 
@@ -73,7 +89,7 @@ open http://localhost:3000/web-dashboard.html
 
 ## 🏗️ Architecture
 
-### **Local Development Environment**
+### **🔧 Basic Development Environment**
 Optimized single-cluster architecture for reliable development:
 
 ```
@@ -89,11 +105,59 @@ workload-cluster (Primary)
     └── inventory-service (supply chain)
 ```
 
+### **🏢 Enterprise Multi-Cluster Architecture**
+Production-ready upstream/downstream trust hierarchy:
+
+```
+ENTERPRISE SPIRE ARCHITECTURE
+┌─────────────────────────────────────────────────────────┐
+│ 🔒 UPSTREAM CLUSTER (Root Certificate Authority)       │
+│ ├── Trust Domain: enterprise-root.org                  │
+│ ├── Context: upstream-spire-cluster                    │
+│ └── Components: SPIRE Server, Database, Federation     │
+└─────────────────────────────────────────────────────────┘
+                          │ Federation
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│ 🌐 DOWNSTREAM CLUSTER (Regional/Workload Cluster)      │
+│ ├── Trust Domain: downstream.example.org               │
+│ ├── Context: downstream-spire-cluster                  │
+│ ├── Components: SPIRE Server, Agents, Controller       │
+│ └── Enterprise Services: API, Data Processor, Gateway  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### **🔒 CRD-Free Enterprise Architecture**
+For enterprises with strict CRD and privilege restrictions:
+
+```
+CRD-FREE ENTERPRISE ARCHITECTURE
+┌─────────────────────────────────────────────────────────┐
+│ 🏢 EXTERNAL INFRASTRUCTURE (Outside Kubernetes)        │
+│ ├── SPIRE Servers (VMs/Bare Metal)                     │
+│ ├── PostgreSQL HA Database                             │
+│ ├── Federation Endpoints                               │
+│ └── Certificate Authority Chain                        │
+└─────────────────────────────────────────────────────────┘
+                          │ gRPC/HTTPS
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│ 🔧 KUBERNETES CLUSTER (Agents Only - No CRDs)         │
+│ ├── SPIRE Agents (DaemonSet)                          │
+│ ├── Custom Registration Service                        │
+│ ├── Annotation-Based Workload Selection                │
+│ └── Namespace-Scoped Permissions Only                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+📖 **[Complete Enterprise Deployment Guide](docs/ENTERPRISE_DEPLOYMENT_GUIDE.md)**  
+🔒 **[CRD Requirements & Alternatives](docs/ENTERPRISE_CRD_REQUIREMENTS.md)**
+
 ### **Enterprise Production Services**
-Three realistic enterprise workload examples:
-- **User Management API**: Authentication and identity management
-- **Payment Processing API**: Financial transaction processing  
-- **Inventory Management Service**: Supply chain and stock management
+Realistic enterprise workload examples:
+- **Enterprise API**: Core business logic and data access
+- **Data Processor**: Backend analytics and processing
+- **Security Gateway**: Envoy-based ingress with SPIFFE auth
 
 ## 🔧 Development & Testing
 

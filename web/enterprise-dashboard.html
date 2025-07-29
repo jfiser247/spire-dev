@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPIRE Enterprise Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .deployment-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 1rem;
+        }
+        
+        .deployment-basic {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .deployment-enterprise {
+            background-color: #f59e0b;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .cluster-section {
+            margin-bottom: 2rem;
+        }
+        
+        .cluster-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            border-left: 4px solid;
+        }
+        
+        .cluster-upstream {
+            border-left-color: #8b5cf6;
+        }
+        
+        .cluster-downstream {
+            border-left-color: #06b6d4;
+        }
+        
+        .cluster-basic {
+            border-left-color: #10b981;
+        }
+        
+        .cluster-header h2 {
+            color: #1f2937;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .cluster-meta {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
+        .namespace-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .namespace-card {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .namespace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .namespace-name {
+            font-weight: 600;
+            color: #374151;
+            font-size: 1.1rem;
+        }
+        
+        .health-summary {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .health-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .health-healthy { background-color: #10b981; }
+        .health-warning { background-color: #f59e0b; }
+        .health-error { background-color: #ef4444; }
+        .health-unknown { background-color: #6b7280; }
+        
+        .pod-list {
+            space-y: 0.5rem;
+        }
+        
+        .pod-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .pod-item:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pod-name {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .pod-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-running { background-color: #d1fae5; color: #065f46; }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-failed { background-color: #fee2e2; color: #991b1b; }
+        .status-unknown { background-color: #f3f4f6; color: #374151; }
+        
+        .refresh-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .last-updated {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .error {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .namespace-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .refresh-controls {
+                position: static;
+                justify-content: center;
+                margin: 1rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            🏢 SPIRE Enterprise Dashboard
+            <span id="deploymentType" class="deployment-type">Loading...</span>
+        </h1>
+    </div>
+    
+    <div class="refresh-controls">
+        <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+        <button class="refresh-btn" onclick="window.open('http://localhost:8000', '_blank')">📖 Docs</button>
+        <div class="last-updated" id="lastUpdated">Never updated</div>
+    </div>
+    
+    <div class="container">
+        <div id="loading" class="loading">
+            🔄 Loading enterprise dashboard data...
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            ❌ Failed to load dashboard data. Please check your cluster connections.
+        </div>
+        
+        <div id="dashboard-content">
+            <!-- Dashboard content will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+        
+        function getStatusClass(phase) {
+            switch (phase?.toLowerCase()) {
+                case 'running': return 'status-running';
+                case 'pending': return 'status-pending';
+                case 'failed': return 'status-failed';
+                default: return 'status-unknown';
+            }
+        }
+        
+        function getHealthDot(pods) {
+            if (!pods || pods.length === 0) return 'health-unknown';
+            
+            const runningPods = pods.filter(pod => pod.status?.phase === 'Running').length;
+            const totalPods = pods.length;
+            
+            if (runningPods === totalPods) return 'health-healthy';
+            if (runningPods > 0) return 'health-warning';
+            return 'health-error';
+        }
+        
+        function renderBasicDashboard(data) {
+            const cluster = data.clusters['workload-cluster'];
+            if (!cluster) return '<div class="no-data">No cluster data available</div>';
+            
+            return `
+                <div class="cluster-section">
+                    <div class="cluster-header cluster-basic">
+                        <h2>🔧 Development Cluster</h2>
+                        <div class="cluster-meta">Context: workload-cluster | Mode: Basic Development</div>
+                    </div>
+                    <div class="namespace-grid">
+                        ${Object.entries(cluster.namespaces).map(([nsName, nsData]) => `
+                            <div class="namespace-card">
+                                <div class="namespace-header">
+                                    <div class="namespace-name">${nsName}</div>
+                                    <div class="health-summary">
+                                        <div class="health-dot ${getHealthDot(nsData.pods)}"></div>
+                                        <span>${nsData.pods?.length || 0} pods</span>
+                                    </div>
+                                </div>
+                                <div class="pod-list">
+                                    ${nsData.pods?.length ? nsData.pods.map(pod => `
+                                        <div class="pod-item">
+                                            <div class="pod-name">${pod.metadata.name}</div>
+                                            <div class="pod-status">
+                                                <span class="status-badge ${getStatusClass(pod.status?.phase)}">
+                                                    ${pod.status?.phase || 'Unknown'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    `).join('') : '<div class="no-data">No pods found</div>'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderEnterpriseDashboard(data) {
+            const upstreamCluster = data.clusters['upstream-spire-cluster'];
+            const downstreamCluster = data.clusters['downstream-spire-cluster'];
+            
+            let html = '';
+            
+            if (upstreamCluster) {
+                html += `
+                    <div class="cluster-section">
+                        <div class="cluster-header cluster-upstream">
+                            <h2>🔒 Upstream Cluster (Root CA)</h2>
+                            <div class="cluster-meta">Context: upstream-spire-cluster | Trust Domain: enterprise-root.org</div>
+                        </div>
+                        <div class="namespace-grid">
+                            ${Object.entries(upstreamCluster.namespaces).map(([nsName, nsData]) => `
+                                <div class="namespace-card">
+                                    <div class="namespace-header">
+                                        <div class="namespace-name">${nsName}</div>
+                                        <div class="health-summary">
+                                            <div class="health-dot ${getHealthDot(nsData.pods)}"></div>
+                                            <span>${nsData.pods?.length || 0} pods</span>
+                                        </div>
+                                    </div>
+                                    <div class="pod-list">
+                                        ${nsData.pods?.length ? nsData.pods.map(pod => `
+                                            <div class="pod-item">
+                                                <div class="pod-name">${pod.metadata.name}</div>
+                                                <div class="pod-status">
+                                                    <span class="status-badge ${getStatusClass(pod.status?.phase)}">
+                                                        ${pod.status?.phase || 'Unknown'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        `).join('') : '<div class="no-data">No pods found</div>'}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (downstreamCluster) {
+                html += `
+                    <div class="cluster-section">
+                        <div class="cluster-header cluster-downstream">
+                            <h2>🌐 Downstream Cluster (Regional)</h2>
+                            <div class="cluster-meta">Context: downstream-spire-cluster | Trust Domain: downstream.example.org</div>
+                        </div>
+                        <div class="namespace-grid">
+                            ${Object.entries(downstreamCluster.namespaces).map(([nsName, nsData]) => `
+                                <div class="namespace-card">
+                                    <div class="namespace-header">
+                                        <div class="namespace-name">${nsName}</div>
+                                        <div class="health-summary">
+                                            <div class="health-dot ${getHealthDot(nsData.pods)}"></div>
+                                            <span>${nsData.pods?.length || 0} pods</span>
+                                        </div>
+                                    </div>
+                                    <div class="pod-list">
+                                        ${nsData.pods?.length ? nsData.pods.map(pod => `
+                                            <div class="pod-item">
+                                                <div class="pod-name">${pod.metadata.name}</div>
+                                                <div class="pod-status">
+                                                    <span class="status-badge ${getStatusClass(pod.status?.phase)}">
+                                                        ${pod.status?.phase || 'Unknown'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        `).join('') : '<div class="no-data">No pods found</div>'}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return html || '<div class="no-data">No enterprise cluster data available</div>';
+        }
+        
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('/api/pod-data');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                throw error;
+            }
+        }
+        
+        async function refreshData() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const contentEl = document.getElementById('dashboard-content');
+            const deploymentTypeEl = document.getElementById('deploymentType');
+            
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            
+            try {
+                const data = await fetchDashboardData();
+                
+                // Update deployment type badge
+                deploymentTypeEl.textContent = data.deploymentType === 'enterprise' ? 'Enterprise' : 'Basic';
+                deploymentTypeEl.className = `deployment-type deployment-${data.deploymentType}`;
+                
+                // Render appropriate dashboard
+                let html;
+                if (data.deploymentType === 'enterprise') {
+                    html = renderEnterpriseDashboard(data);
+                } else {
+                    html = renderBasicDashboard(data);
+                }
+                
+                contentEl.innerHTML = html;
+                
+                // Update last updated time
+                document.getElementById('lastUpdated').textContent = 
+                    `Updated: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                errorEl.style.display = 'block';
+                contentEl.innerHTML = '';
+                deploymentTypeEl.textContent = 'Error';
+                deploymentTypeEl.className = 'deployment-type';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        // Initial load and auto-refresh setup
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshData();
+            
+            // Auto-refresh every 30 seconds
+            refreshInterval = setInterval(refreshData, 30000);
+        });
+        
+        // Clean up interval on page unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

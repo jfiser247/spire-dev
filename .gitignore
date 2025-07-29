@@ -83,6 +83,37 @@ spire-data/
 .env.local
 .env.*.local
 
+### MkDocs ###
+# MkDocs build directory
+site/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+### Node.js ###
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Optional npm cache directory
+.npm
+
+# Runtime files
+pids
+*.pid
+*.seed
+*.pid.lock
+
+### Minikube ###
+.minikube/
+
+### Test Results ###
+reproducibility-test-results.log
+
 ### Backup Files ###
 # Editor backups
 *~

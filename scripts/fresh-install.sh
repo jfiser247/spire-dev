@@ -6,14 +6,31 @@
 
 set -e  # Exit on any error
 
+# Configuration
+DEPLOYMENT_TYPE="${1:-basic}"  # basic, enterprise, or crd-free
+
 echo "🍎 SPIFFE/SPIRE Fresh Mac Laptop Install"
 echo "========================================"
 echo ""
-echo "This script simulates a fresh Mac laptop setup by:"
-echo "  1. 🧹 Completely tearing down existing environment"
-echo "  2. 🔄 Cleaning all local configurations"
-echo "  3. 🚀 Setting up fresh SPIRE clusters from scratch"
-echo "  4. ✅ Validating the complete installation"
+if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
+    echo "🏢 Enterprise Deployment Mode:"
+    echo "  1. 🧹 Completely tearing down existing environment"
+    echo "  2. 🔄 Cleaning all local configurations"
+    echo "  3. 🚀 Setting up enterprise SPIRE clusters (upstream + downstream)"
+    echo "  4. ✅ Validating the complete enterprise installation"
+elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
+    echo "🔒 CRD-Free Enterprise Mode:"
+    echo "  1. 🧹 Completely tearing down existing environment"
+    echo "  2. 🔄 Cleaning all local configurations"
+    echo "  3. 🚀 Setting up CRD-free SPIRE deployment (external servers + agents)"
+    echo "  4. ✅ Validating the CRD-free installation"
+else
+    echo "📚 Basic Development Mode:"
+    echo "  1. 🧹 Completely tearing down existing environment"
+    echo "  2. 🔄 Cleaning all local configurations"
+    echo "  3. 🚀 Setting up basic SPIRE clusters from scratch"
+    echo "  4. ✅ Validating the complete installation"
+fi
 echo ""
 
 # Function to print section headers
@@ -80,7 +97,7 @@ teardown_environment() {
     local profiles=$(minikube profile list -o json 2>/dev/null | jq -r '.valid[]?.Name // empty' 2>/dev/null || echo "")
     
     for profile in $profiles; do
-        if [[ "$profile" =~ spire.*cluster$ ]] || [[ "$profile" =~ workload.*cluster$ ]]; then
+        if [[ "$profile" =~ spire.*cluster$ ]] || [[ "$profile" =~ workload.*cluster$ ]] || [[ "$profile" =~ upstream.*cluster$ ]] || [[ "$profile" =~ downstream.*cluster$ ]]; then
             echo "   Deleting cluster: $profile"
             minikube delete --profile "$profile" >/dev/null 2>&1 || echo "   Warning: Could not delete $profile"
         fi
@@ -90,10 +107,12 @@ teardown_environment() {
     echo "🧹 Cleaning kubectl contexts..."
     kubectl config delete-context spire-server-cluster 2>/dev/null || echo "   spire-server-cluster context not found"
     kubectl config delete-context workload-cluster 2>/dev/null || echo "   workload-cluster context not found"
+    kubectl config delete-context upstream-spire-cluster 2>/dev/null || echo "   upstream-spire-cluster context not found"
+    kubectl config delete-context downstream-spire-cluster 2>/dev/null || echo "   downstream-spire-cluster context not found"
     
     # Clean up temporary files
     echo "🗂️  Cleaning temporary files..."
-    rm -f /tmp/bundle.* /tmp/spire-* /tmp/agent-* /tmp/workload-* 2>/dev/null || true
+    rm -f /tmp/bundle.* /tmp/spire-* /tmp/agent-* /tmp/workload-* /tmp/upstream-* /tmp/downstream-* 2>/dev/null || true
     
     # Reset Docker (in case of Docker driver issues)
     echo "🐳 Resetting Docker state..."
@@ -110,12 +129,24 @@ setup_fresh_environment() {
     
     # Make scripts executable (fresh laptop might not have this)
     chmod +x scripts/setup-clusters.sh
+    chmod +x scripts/setup-enterprise-clusters.sh
+    chmod +x scripts/setup-crd-free-deployment.sh
     chmod +x scripts/verify-setup.sh
+    chmod +x scripts/verify-enterprise-setup.sh
+    chmod +x scripts/start-docs-server.sh
     chmod +x web/start-dashboard.sh
     
-    # Run the main setup script
-    echo "📦 Running cluster setup script..."
-    ./scripts/setup-clusters.sh
+    # Run the appropriate setup script based on deployment type
+    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
+        echo "📦 Running enterprise cluster setup script..."
+        ./scripts/setup-enterprise-clusters.sh
+    elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
+        echo "📦 Running CRD-free deployment script..."
+        ./scripts/setup-crd-free-deployment.sh
+    else
+        echo "📦 Running basic cluster setup script..."
+        ./scripts/setup-clusters.sh
+    fi
     
     echo "✅ Fresh SPIRE environment setup completed"
 }
@@ -125,7 +156,11 @@ validate_installation() {
     print_section "Validating fresh installation"
     
     echo "🔍 Running verification checks..."
-    ./scripts/verify-setup.sh || echo "⚠️  Some components may still be initializing"
+    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
+        ./scripts/verify-enterprise-setup.sh || echo "⚠️  Some components may still be initializing"
+    else
+        ./scripts/verify-setup.sh || echo "⚠️  Some components may still be initializing"
+    fi
     
     echo ""
     echo "📊 Testing real-time dashboard API..."
@@ -179,15 +214,24 @@ validate_installation() {
     echo ""
     echo "📋 Fresh laptop installation summary:"
     echo "   ✅ minikube clusters: $(minikube profile list -o json 2>/dev/null | jq -r '.valid | length' 2>/dev/null || echo '0') active"
-    echo "   ✅ kubectl contexts: configured for multi-cluster setup"
-    echo "   ✅ SPIRE services: deployed and configuring"
+    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
+        echo "   ✅ kubectl contexts: configured for enterprise multi-cluster setup"
+        echo "   ✅ SPIRE services: enterprise upstream and downstream clusters deployed"
+    else
+        echo "   ✅ kubectl contexts: configured for basic multi-cluster setup"
+        echo "   ✅ SPIRE services: basic development clusters deployed"
+    fi
     echo "   🚀 Starting dashboard server..."
     
     # Start dashboard server in background
     ./web/start-dashboard.sh &
     DASHBOARD_PID=$!
     
-    # Wait for dashboard to start
+    # Start documentation server in background
+    ./scripts/start-docs-server.sh &
+    DOCS_PID=$!
+    
+    # Wait for servers to start
     sleep 5
     
     # Test if dashboard is running with retries
@@ -201,6 +245,18 @@ validate_installation() {
             sleep 3
         fi
     done
+    
+    # Test if documentation server is running
+    for i in {1..3}; do
+        if curl -s http://localhost:8000 >/dev/null 2>&1; then
+            echo "   ✅ Documentation server: running on http://localhost:8000"
+            echo "   📚 Documentation URL: http://localhost:8000"
+            break
+        else
+            echo "   ⏳ Documentation starting... (attempt $i/3)"
+            sleep 3
+        fi
+    done
 }
 
 # Function to display next steps
@@ -211,32 +267,88 @@ show_next_steps() {
     echo ""
     echo "💻 Your development environment is ready:"
     echo "   📊 Dashboard: http://localhost:3000/web-dashboard.html"
-    echo "   🌐 Open in browser: open http://localhost:3000/web-dashboard.html"
+    echo "   📚 Documentation: http://localhost:8000"
+    echo "   🌐 Open dashboard: open http://localhost:3000/web-dashboard.html"
+    echo "   📖 Open docs: open http://localhost:8000"
     echo ""
-    echo "🔍 Explore your clusters:"
-    echo "   kubectl --context spire-server-cluster -n spire-server get pods"
-    echo "   kubectl --context workload-cluster -n spire-system get pods"
-    echo "   kubectl --context workload-cluster -n production get pods"
-    echo ""
-    echo "🔄 To reset to fresh laptop state anytime:"
-    echo "   ./scripts/fresh-install.sh"
+    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
+        echo "🏢 Explore your enterprise clusters:"
+        echo "   # Upstream cluster (Root CA)"
+        echo "   kubectl --context upstream-spire-cluster -n spire-upstream get pods"
+        echo ""
+        echo "   # Downstream cluster (Regional/Workload)"
+        echo "   kubectl --context downstream-spire-cluster -n spire-downstream get pods"
+        echo "   kubectl --context downstream-spire-cluster -n downstream-workloads get pods"
+        echo ""
+        echo "🔄 To reset to fresh enterprise state anytime:"
+        echo "   ./scripts/fresh-install.sh enterprise"
+        echo ""
+        echo "🔍 Run enterprise verification:"
+        echo "   ./scripts/verify-enterprise-setup.sh"
+    elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
+        echo "🔒 Explore your CRD-free deployment:"
+        echo "   # SPIRE agents (no CRDs)"
+        echo "   kubectl --context crd-free-cluster -n spire-system get pods"
+        echo ""
+        echo "   # CRD-free workloads"
+        echo "   kubectl --context crd-free-cluster -n crd-free-workloads get pods"
+        echo ""
+        echo "   # Check for CRDs (should be none)"
+        echo "   kubectl get crd | grep spire || echo 'No SPIRE CRDs found (✅ CRD-free confirmed)'"
+        echo ""
+        echo "🔄 To reset to fresh CRD-free state anytime:"
+        echo "   ./scripts/fresh-install.sh crd-free"
+        echo ""
+        echo "🔍 Verify CRD-free deployment:"
+        echo "   ./scripts/setup-crd-free-deployment.sh  # Re-run for verification"
+        echo ""
+        echo "⚠️  Remember: This deployment requires external SPIRE servers"
+        echo "   Configure: external-spire-server.company.com:8081"
+    else
+        echo "🔍 Explore your basic clusters:"
+        echo "   kubectl --context spire-server-cluster -n spire-server get pods"
+        echo "   kubectl --context workload-cluster -n spire-system get pods"
+        echo "   kubectl --context workload-cluster -n production get pods"
+        echo ""
+        echo "🔄 To reset to fresh laptop state anytime:"
+        echo "   ./scripts/fresh-install.sh"
+        echo ""
+        echo "🔍 Run basic verification:"
+        echo "   ./scripts/verify-setup.sh"
+    fi
     echo ""
     echo "📖 See README.md for complete documentation"
     echo ""
-    echo "🏢 Ready for enterprise deployment adaptation!"
+    echo "🏢 Ready for enterprise deployment!"
 }
 
 # Main execution flow
 main() {
     echo "Starting fresh Mac laptop install process..."
+    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
+        echo "🏢 Enterprise deployment selected"
+    else
+        echo "📚 Basic development deployment selected"
+    fi
     echo ""
     
     # Confirm with user
-    read -p "🤔 This will completely tear down your current SPIRE environment. Continue? (y/N): " -n 1 -r
+    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
+        read -p "🤔 This will completely tear down your current SPIRE environment and set up enterprise clusters. Continue? (y/N): " -n 1 -r
+    elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
+        read -p "🤔 This will completely tear down your current SPIRE environment and set up CRD-free deployment. Continue? (y/N): " -n 1 -r
+    else
+        read -p "🤔 This will completely tear down your current SPIRE environment and set up basic clusters. Continue? (y/N): " -n 1 -r
+    fi
     echo ""
     
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "❌ Fresh install cancelled by user"
+        echo ""
+        echo "💡 Usage:"
+        echo "   ./scripts/fresh-install.sh              # Basic development setup"
+        echo "   ./scripts/fresh-install.sh enterprise   # Enterprise setup"
+        echo "   ./scripts/fresh-install.sh crd-free     # CRD-free enterprise setup"
         exit 0
     fi
     

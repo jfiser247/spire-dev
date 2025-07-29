@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-upstream-server-config
+  namespace: spire-upstream
+data:
+  server.conf: |
+    server {
+      bind_address = "0.0.0.0"
+      bind_port = "8081"
+      socket_path = "/run/spire/sockets/server.sock"
+      trust_domain = "enterprise-root.org"
+      data_dir = "/run/spire/data"
+      log_level = "INFO"
+      log_file = "/run/spire/data/server.log"
+      default_svid_ttl = "6h"
+      default_jwt_svid_ttl = "30m"
+    }
+
+    plugins {
+      DataStore "sql" {
+        plugin_data {
+          database_type = "postgres"
+          connection_string = "postgres://postgres:postgres@spire-upstream-db:5432/spire?sslmode=disable"
+        }
+      }
+
+      KeyManager "disk" {
+        plugin_data {
+          keys_path = "/run/spire/data/keys.json"
+        }
+      }
+
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          clusters = {
+            "upstream-cluster" = {
+              service_account_allow_list = ["spire-upstream:spire-upstream-agent"]
+            }
+          }
+        }
+      }
+
+      # Enable federation for downstream clusters
+      UpstreamAuthority "spiffe" {
+        plugin_data {
+          # This will be configured for external CA in production
+          trust_domain = "enterprise-root.org"
+          server_address = "upstream-ca.enterprise.com"
+          server_port = "443"
+          # In this demo, we'll use self-signed root
+        }
+      }
+    }
+
+    health_checks {
+      listener_enabled = true
+      bind_address = "0.0.0.0"
+      bind_port = "8080"
+      live_path = "/live"
+      ready_path = "/ready"
+    }
+
+    # Enable federation endpoint
+    federation {
+      bundle_endpoint {
+        address = "0.0.0.0"
+        port = 8443
+      }
+      federates_with "downstream.example.org" {
+        bundle_endpoint_url = "https://spire-downstream-server.spire-downstream:8443"
+        bundle_endpoint_profile "https_spiffe" {
+          endpoint_spiffe_id = "spiffe://downstream.example.org/spiffe/server"
+        }
+      }
+    }

@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crd-free-workloads
+  labels:
+    name: crd-free-workloads
+    spire.io/managed: "true"  # Annotation-based selection
+    security.openshift.io/scc.podSecurityLabelSync: false
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+spec: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-api-crd-free
+  namespace: crd-free-workloads
+  labels:
+    app: enterprise-api-crd-free
+    spire.io/workload: "enterprise-api"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: enterprise-api-crd-free
+  template:
+    metadata:
+      labels:
+        app: enterprise-api-crd-free
+        spire.io/workload: "enterprise-api"
+      annotations:
+        # Annotation-based SPIFFE ID specification (CRD-free approach)
+        spire.io/spiffe-id: "spiffe://company.com/enterprise-api"
+        spire.io/parent-id: "spiffe://company.com/spire/agent/k8s_psat/cluster/kubernetes-cluster"
+        spire.io/selector: "k8s:pod-label:app:enterprise-api-crd-free"
+        spire.io/dns-names: "enterprise-api.crd-free-workloads.svc.cluster.local"
+    spec:
+      serviceAccountName: enterprise-workload
+      containers:
+      - name: enterprise-api
+        image: httpd:2.4
+        ports:
+        - containerPort: 80
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: unix:///run/spire/sockets/agent.sock
+        - name: SERVICE_NAME
+          value: enterprise-api
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-api-crd-free
+  namespace: crd-free-workloads
+  labels:
+    app: enterprise-api-crd-free
+spec:
+  selector:
+    app: enterprise-api-crd-free
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-processor-crd-free
+  namespace: crd-free-workloads
+  labels:
+    app: data-processor-crd-free
+    spire.io/workload: "data-processor"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-processor-crd-free
+  template:
+    metadata:
+      labels:
+        app: data-processor-crd-free
+        spire.io/workload: "data-processor"
+      annotations:
+        # Annotation-based SPIFFE ID specification
+        spire.io/spiffe-id: "spiffe://company.com/data-processor"
+        spire.io/parent-id: "spiffe://company.com/spire/agent/k8s_psat/cluster/kubernetes-cluster"
+        spire.io/selector: "k8s:pod-label:app:data-processor-crd-free"
+        spire.io/dns-names: "data-processor.crd-free-workloads.svc.cluster.local"
+    spec:
+      serviceAccountName: enterprise-workload
+      containers:
+      - name: data-processor
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: unix:///run/spire/sockets/agent.sock
+        - name: SERVICE_NAME
+          value: data-processor
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /run/spire/sockets
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-processor-crd-free
+  namespace: crd-free-workloads
+  labels:
+    app: data-processor-crd-free
+spec:
+  selector:
+    app: data-processor-crd-free
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: enterprise-workload
+  namespace: crd-free-workloads
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: enterprise-workload-role
+  namespace: crd-free-workloads
+rules:
+# Minimal namespace-scoped permissions - NO cluster-wide or CRD access
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: enterprise-workload-binding
+  namespace: crd-free-workloads
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: enterprise-workload-role
+subjects:
+- kind: ServiceAccount
+  name: enterprise-workload
+  namespace: crd-free-workloads

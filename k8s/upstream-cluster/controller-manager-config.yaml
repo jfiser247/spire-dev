@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-upstream-controller-manager-config
+  namespace: spire-upstream
+data:
+  controller-manager-config.yaml: |
+    apiVersion: spire.spiffe.io/v1alpha1
+    kind: ControllerManagerConfig
+    metadata:
+      name: spire-upstream-controller-manager
+      namespace: spire-upstream
+    metrics:
+      bindAddress: 0.0.0.0:8082
+    health:
+      healthProbeBindAddress: 0.0.0.0:8083
+    leaderElection:
+      leaderElect: true
+      resourceName: 6be21c33.spiffe.io
+      resourceNamespace: spire-upstream
+    spireServerSocketPath: /run/spire/sockets/server.sock
+    className: spire-upstream
+    trustDomain: enterprise-root.org
+    ignoreNamespaces: ["kube-system", "kube-public", "spire-system"]
+    clusterSPIFFEIDs:
+      default:
+        dnsNameTemplates:
+          - "{{ .ClusterName }}.{{ .TrustDomain }}"
+        federatesWith: ["downstream.example.org"]

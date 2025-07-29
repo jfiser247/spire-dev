@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spire-registration-service
+  namespace: spire-system
+  labels:
+    app: spire-registration-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-registration-service
+  template:
+    metadata:
+      labels:
+        app: spire-registration-service
+    spec:
+      serviceAccountName: spire-registration-service
+      containers:
+      - name: registrar
+        image: curlimages/curl:latest  # Replace with custom registration service image
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "SPIRE Registration Service - CRD-Free Implementation"
+          echo "This would be replaced with custom registration logic"
+          echo "Monitoring pods and registering with external SPIRE server"
+          
+          while true; do
+            echo "$(date): Checking for new workloads to register..."
+            # Custom registration logic would go here
+            # - Watch for pods with specific annotations
+            # - Call external SPIRE server API to register entries
+            # - Handle cleanup when pods are deleted
+            sleep 30
+          done
+        env:
+        - name: SPIRE_SERVER_ADDRESS
+          value: "external-spire-server.company.com:8081"
+        - name: TRUST_DOMAIN
+          value: "company.com"
+        - name: CLUSTER_NAME
+          value: "kubernetes-cluster"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-registration-service
+  namespace: spire-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-registration-service-role
+rules:
+# Minimal permissions for pod watching - NO CRD permissions required
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+# Optional: deployments if registration based on deployment metadata
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spire-registration-service-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spire-registration-service-role
+subjects:
+- kind: ServiceAccount
+  name: spire-registration-service
+  namespace: spire-system

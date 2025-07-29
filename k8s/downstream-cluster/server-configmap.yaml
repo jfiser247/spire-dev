@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-downstream-server-config
+  namespace: spire-downstream
+data:
+  server.conf: |
+    server {
+      bind_address = "0.0.0.0"
+      bind_port = "8081"
+      socket_path = "/run/spire/sockets/server.sock"
+      trust_domain = "downstream.example.org"
+      data_dir = "/run/spire/data"
+      log_level = "INFO"
+      log_file = "/run/spire/data/server.log"
+      default_svid_ttl = "4h"
+      default_jwt_svid_ttl = "15m"
+    }
+
+    plugins {
+      DataStore "sql" {
+        plugin_data {
+          database_type = "postgres"
+          connection_string = "postgres://postgres:postgres@spire-downstream-db:5432/spire?sslmode=disable"
+        }
+      }
+
+      KeyManager "disk" {
+        plugin_data {
+          keys_path = "/run/spire/data/keys.json"
+        }
+      }
+
+      NodeAttestor "k8s_psat" {
+        plugin_data {
+          clusters = {
+            "downstream-cluster" = {
+              service_account_allow_list = ["spire-downstream:spire-downstream-agent", "downstream-workloads:spire-downstream-agent"]
+            }
+          }
+        }
+      }
+
+      # Connect to upstream SPIRE server for certificate authority
+      UpstreamAuthority "spiffe" {
+        plugin_data {
+          server_address = "spire-upstream-server-external.spire-upstream"
+          server_port = "8081"
+          server_id = "spiffe://enterprise-root.org/spire/server"
+          workload_api_socket_path = "/run/spire/sockets/agent.sock"
+          insecure_bootstrap = true
+        }
+      }
+    }
+
+    health_checks {
+      listener_enabled = true
+      bind_address = "0.0.0.0"
+      bind_port = "8080"
+      live_path = "/live"
+      ready_path = "/ready"
+    }
+
+    # Enable federation for workload communication
+    federation {
+      bundle_endpoint {
+        address = "0.0.0.0"
+        port = 8443
+      }
+      federates_with "enterprise-root.org" {
+        bundle_endpoint_url = "https://spire-upstream-server-external.spire-upstream:8443"
+        bundle_endpoint_profile "https_spiffe" {
+          endpoint_spiffe_id = "spiffe://enterprise-root.org/spire/server"
+        }
+      }
+    }

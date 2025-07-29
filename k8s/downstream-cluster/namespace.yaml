@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spire-downstream
+  labels:
+    app: spire-downstream
+    component: regional-server
+    security.openshift.io/scc.podSecurityLabelSync: false
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+spec: {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: downstream-workloads
+  labels:
+    app: downstream-workloads
+    component: application-services
+    security.openshift.io/scc.podSecurityLabelSync: false
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+spec: {}
