@@ -64,12 +64,12 @@ graph TD
     C --> E[Payment API]
     C --> F[Inventory Service]
     
-    style A fill:#e1f5fe
-    style B fill:#ffecb3
-    style C fill:#fff3e0
-    style D fill:#e8f5e8
-    style E fill:#e8f5e8
-    style F fill:#e8f5e8
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style B fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
+    style C fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style D fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style E fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style F fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
 ```
 
 ### Enterprise Multi-Cluster
@@ -87,14 +87,14 @@ graph TD
     E --> G[Data Processor]
     E --> H[Security Gateway]
     
-    style A fill:#ffcdd2
-    style C fill:#e8f5e8
-    style B fill:#fff3e0
-    style D fill:#fff3e0
-    style E fill:#f3e5f5
-    style F fill:#e3f2fd
-    style G fill:#e3f2fd
-    style H fill:#e3f2fd
+    style A fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+    style C fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style B fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
+    style D fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
+    style E fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style F fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style G fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style H fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
 ```
 
 ### CRD-Free Enterprise
@@ -112,13 +112,13 @@ graph TD
     G[Custom Registration Service] --> A
     G --> D
     
-    style A fill:#ffcdd2
-    style B fill:#fff3e0
-    style C fill:#e1f5fe
-    style D fill:#f3e5f5
-    style E fill:#e3f2fd
-    style F fill:#e3f2fd
-    style G fill:#fff3e0
+    style A fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+    style B fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
+    style C fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style D fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style E fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style F fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style G fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
 ```
 
 ## Component Architecture

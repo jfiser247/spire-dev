@@ -108,46 +108,29 @@ workload-cluster (Primary)
 ### **🏢 Enterprise Multi-Cluster Architecture**
 Production-ready upstream/downstream trust hierarchy:
 
-```
-ENTERPRISE SPIRE ARCHITECTURE
-┌─────────────────────────────────────────────────────────┐
-│ 🔒 UPSTREAM CLUSTER (Root Certificate Authority)       │
-│ ├── Trust Domain: enterprise-root.org                  │
-│ ├── Context: upstream-spire-cluster                    │
-│ └── Components: SPIRE Server, Database, Federation     │
-└─────────────────────────────────────────────────────────┘
-                          │ Federation
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│ 🌐 DOWNSTREAM CLUSTER (Regional/Workload Cluster)      │
-│ ├── Trust Domain: downstream.example.org               │
-│ ├── Context: downstream-spire-cluster                  │
-│ ├── Components: SPIRE Server, Agents, Controller       │
-│ └── Enterprise Services: API, Data Processor, Gateway  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[🔒 UPSTREAM CLUSTER<br/>Root Certificate Authority<br/>Trust Domain: enterprise-root.org<br/>Context: upstream-spire-cluster<br/>Components: SPIRE Server, Database, Federation]
+    B[🌐 DOWNSTREAM CLUSTER<br/>Regional/Workload Cluster<br/>Trust Domain: downstream.example.org<br/>Context: downstream-spire-cluster<br/>Components: SPIRE Server, Agents, Controller<br/>Enterprise Services: API, Data Processor, Gateway]
+    
+    A -.->|Federation| B
+    
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:3px,stroke-dasharray:0
+    style B fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,stroke-dasharray:0
 ```
 
 ### **🔒 CRD-Free Enterprise Architecture**
 For enterprises with strict CRD and privilege restrictions:
 
-```
-CRD-FREE ENTERPRISE ARCHITECTURE
-┌─────────────────────────────────────────────────────────┐
-│ 🏢 EXTERNAL INFRASTRUCTURE (Outside Kubernetes)        │
-│ ├── SPIRE Servers (VMs/Bare Metal)                     │
-│ ├── PostgreSQL HA Database                             │
-│ ├── Federation Endpoints                               │
-│ └── Certificate Authority Chain                        │
-└─────────────────────────────────────────────────────────┘
-                          │ gRPC/HTTPS
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│ 🔧 KUBERNETES CLUSTER (Agents Only - No CRDs)         │
-│ ├── SPIRE Agents (DaemonSet)                          │
-│ ├── Custom Registration Service                        │
-│ ├── Annotation-Based Workload Selection                │
-│ └── Namespace-Scoped Permissions Only                  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[🏢 EXTERNAL INFRASTRUCTURE<br/>Outside Kubernetes<br/>SPIRE Servers (VMs/Bare Metal)<br/>PostgreSQL HA Database<br/>Federation Endpoints<br/>Certificate Authority Chain]
+    B[🔧 KUBERNETES CLUSTER<br/>Agents Only - No CRDs<br/>SPIRE Agents (DaemonSet)<br/>Custom Registration Service<br/>Annotation-Based Workload Selection<br/>Namespace-Scoped Permissions Only]
+    
+    A -.->|gRPC/HTTPS| B
+    
+    style A fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px,stroke-dasharray:0
+    style B fill:#e1f5fe,stroke:#01579b,stroke-width:3px,stroke-dasharray:0
 ```
 
 📖 **[Complete Enterprise Deployment Guide](docs/ENTERPRISE_DEPLOYMENT_GUIDE.md)**  

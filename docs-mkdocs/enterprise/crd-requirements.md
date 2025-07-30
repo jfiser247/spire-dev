@@ -224,6 +224,16 @@ graph TD
     
     B -.->|gRPC/HTTPS| F
     C -.->|Database Connection| G
+    
+    %% Consistent styling
+    style A fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+    style B fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
+    style C fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style D fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style E fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style F fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style G fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style H fill:#fce4ec,stroke:#c2185b,stroke-width:2px
 ```
 
 **Configuration**:

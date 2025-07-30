@@ -129,14 +129,22 @@ kubectl --context spire-server-cluster -n spire exec spire-server-0 -- \
 
 ### Architecture Overview
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Your Service  │    │   SPIRE Agent   │    │  SPIRE Server   │
-│                 │    │                 │    │                 │
-│ 1. Request SVID │───►│ 2. Validate     │───►│ 3. Issue SVID   │
-│ 4. Receive SVID │◄───│    Workload     │◄───│    Certificate │
-│ 5. Use for mTLS │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+```mermaid
+sequenceDiagram
+    participant YS as Your Service
+    participant SA as SPIRE Agent
+    participant SS as SPIRE Server
+    
+    YS->>SA: 1. Request SVID
+    SA->>SS: 2. Validate Workload
+    SS->>SA: 3. Issue SVID Certificate
+    SA->>YS: 4. Receive SVID
+    Note over YS: 5. Use for mTLS
+    
+    %% Consistent styling
+    participant YS
+    participant SA
+    participant SS
 ```
 
 ### Integration Steps

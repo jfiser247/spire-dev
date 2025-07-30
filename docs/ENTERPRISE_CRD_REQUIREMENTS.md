@@ -218,32 +218,24 @@ func registerWorkload(pod *corev1.Pod) error {
 
 **Approach**: SPIRE servers outside Kubernetes cluster
 
-```bash
-# External SPIRE deployment pattern
-┌─────────────────────────────────────┐
-│        Enterprise Data Center       │
-│  ┌─────────────────────────────────┐│
-│  │     External SPIRE Servers      ││
-│  │   (VM/Bare Metal Deployment)    ││
-│  │                                 ││
-│  │  🔐 Root SPIRE Server           ││
-│  │  🔐 Regional SPIRE Servers      ││
-│  │  🗄️ External Database (HA)      ││
-│  └─────────────────────────────────┘│
-└─────────────────────────────────────┘
-                   │
-            Network Connection
-                   │
-┌─────────────────────────────────────┐
-│        Kubernetes Cluster          │
-│  ┌─────────────────────────────────┐│
-│  │    SPIRE Agents Only            ││
-│  │  (DaemonSet - No CRDs)          ││
-│  │                                 ││
-│  │  🤖 SPIRE Agent Pods            ││
-│  │  📡 External Registration       ││
-│  └─────────────────────────────────┘│
-└─────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Enterprise Data Center"
+        ES[🔐 External SPIRE Servers<br/>VM/Bare Metal Deployment<br/>Root SPIRE Server<br/>Regional SPIRE Servers]
+        EDB[(🗄️ External Database HA)]
+        
+        ES --> EDB
+    end
+    
+    subgraph "Kubernetes Cluster"
+        KA[🤖 SPIRE Agents Only<br/>DaemonSet - No CRDs<br/>Agent Pods<br/>External Registration]
+    end
+    
+    ES -.->|Network Connection| KA
+    
+    style ES fill:#ffecb3,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
+    style EDB fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,stroke-dasharray:0
+    style KA fill:#e1f5fe,stroke:#01579b,stroke-width:2px,stroke-dasharray:0
 ```
 
 **Configuration**:

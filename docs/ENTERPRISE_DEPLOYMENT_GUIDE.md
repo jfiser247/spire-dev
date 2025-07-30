@@ -6,43 +6,66 @@ This guide demonstrates a production-ready enterprise SPIRE deployment with upst
 
 ### Enterprise Multi-Cluster Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ENTERPRISE SPIRE ARCHITECTURE                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  🔒 UPSTREAM CLUSTER (Root Certificate Authority)              │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Trust Domain: enterprise-root.org                       │   │
-│  │ Context: upstream-spire-cluster                         │   │
-│  │ Namespace: spire-upstream                               │   │
-│  │                                                         │   │
-│  │ Components:                                             │   │
-│  │ • SPIRE Server (Root CA)                               │   │
-│  │ • PostgreSQL Database                                   │   │
-│  │ • SPIRE Controller Manager                              │   │
-│  │ • Federation Bundle Endpoint                            │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                            │                                   │
-│                         Federation                             │
-│                            │                                   │
-│  🌐 DOWNSTREAM CLUSTER (Regional/Workload Cluster)            │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Trust Domain: downstream.example.org                    │   │
-│  │ Context: downstream-spire-cluster                       │   │
-│  │ Namespaces: spire-downstream, downstream-workloads     │   │
-│  │                                                         │   │
-│  │ Components:                                             │   │
-│  │ • SPIRE Server (Regional Authority)                    │   │
-│  │ • PostgreSQL Database                                   │   │ 
-│  │ • SPIRE Agents (DaemonSet)                             │   │
-│  │ • SPIRE Controller Manager                              │   │
-│  │ • Enterprise Workload Services                         │   │
-│  │   - Enterprise API                                     │   │
-│  │   - Data Processor                                     │   │
-│  │   - Security Gateway                                   │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "🏢 ENTERPRISE SPIRE ARCHITECTURE"
+        subgraph "🔒 UPSTREAM CLUSTER (Root Certificate Authority)"
+            subgraph "upstream-spire-cluster"
+                subgraph "spire-upstream namespace"
+                    US[🔐 SPIRE Server<br/>Trust Domain: enterprise-root.org<br/>Root CA]
+                    UDB[(🗃️ PostgreSQL Database)]
+                    UCM[⚙️ SPIRE Controller Manager]
+                    UFE[🌐 Federation Bundle Endpoint]
+                    
+                    US --> UDB
+                    US --> UFE
+                    UCM --> US
+                end
+            end
+        end
+        
+        subgraph "🌐 DOWNSTREAM CLUSTER (Regional/Workload Cluster)"
+            subgraph "downstream-spire-cluster"
+                subgraph "spire-downstream namespace"
+                    DS[🔐 SPIRE Server<br/>Trust Domain: downstream.example.org<br/>Regional Authority]
+                    DDB[(🗃️ PostgreSQL Database)]
+                    DCM[⚙️ SPIRE Controller Manager]
+                    DA[🤖 SPIRE Agents<br/>DaemonSet]
+                    
+                    DS --> DDB
+                    DCM --> DS
+                    DA --> DS
+                end
+                
+                subgraph "downstream-workloads namespace"
+                    EA[🏢 Enterprise API]
+                    DP[📊 Data Processor]
+                    SG[🛡️ Security Gateway]
+                    
+                    DA --> EA
+                    DA --> DP
+                    DA --> SG
+                end
+            end
+        end
+    end
+    
+    %% Federation relationship
+    UFE -.->|Trust Bundle Exchange<br/>Federation| DS
+    DS -.->|Certificate Signing<br/>Regional Authority| US
+    
+    %% Consistent styling
+    style US fill:#ffecb3,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
+    style DS fill:#ffecb3,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
+    style UDB fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,stroke-dasharray:0
+    style DDB fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,stroke-dasharray:0
+    style UCM fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    style DCM fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    style UFE fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,stroke-dasharray:0
+    style DA fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    style EA fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray:0
+    style DP fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray:0
+    style SG fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray:0
 ```
 
 ### Trust Hierarchy
@@ -328,29 +351,56 @@ For enterprises with strict CRD and elevated privilege restrictions, SPIRE can b
 
 ### Architecture Components
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  CRD-FREE ARCHITECTURE                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  🏢 EXTERNAL INFRASTRUCTURE (Outside Kubernetes)           │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 🔐 SPIRE Servers (VMs/Bare Metal)                  │   │
-│  │ 🗄️ PostgreSQL HA Database                          │   │
-│  │ 🌐 Federation Endpoints                             │   │
-│  │ 🔒 Certificate Authority Chain                      │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                            │                               │
-│                     gRPC/HTTPS Connection                  │
-│                            │                               │
-│  🔧 KUBERNETES CLUSTER (Agents Only)                      │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 🤖 SPIRE Agents (DaemonSet)                        │   │
-│  │ 🔧 Custom Registration Service                      │   │
-│  │ 📝 Annotation-Based Workload Selection              │   │
-│  │ 🔒 Namespace-Scoped Permissions Only                │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "🏢 CRD-FREE ARCHITECTURE"
+        subgraph "🏢 EXTERNAL INFRASTRUCTURE (Outside Kubernetes)"
+            ES[🔐 SPIRE Servers<br/>VMs/Bare Metal]
+            EDB[(🗄️ PostgreSQL HA Database)]
+            FE[🌐 Federation Endpoints]
+            CA[🔒 Certificate Authority Chain]
+            
+            ES --> EDB
+            ES --> FE
+            ES --> CA
+        end
+        
+        subgraph "🔧 KUBERNETES CLUSTER (Agents Only)"
+            subgraph "spire-system namespace"
+                KA[🤖 SPIRE Agents<br/>DaemonSet]
+                RS[🔧 Custom Registration Service]
+                AS[📝 Annotation-Based Workload Selection]
+                NS[🔒 Namespace-Scoped Permissions Only]
+                
+                KA --> RS
+                RS --> AS
+                RS --> NS
+            end
+            
+            subgraph "workload namespaces"
+                WL1[Enterprise API]
+                WL2[Data Processor]
+                
+                KA --> WL1
+                KA --> WL2
+            end
+        end
+    end
+    
+    %% External connection
+    ES -.->|gRPC/HTTPS Connection| KA
+    
+    %% Consistent styling
+    style ES fill:#ffecb3,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
+    style EDB fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,stroke-dasharray:0
+    style FE fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,stroke-dasharray:0
+    style CA fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px,stroke-dasharray:0
+    style KA fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    style RS fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    style AS fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,stroke-dasharray:0
+    style NS fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,stroke-dasharray:0
+    style WL1 fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray:0
+    style WL2 fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray:0
 ```
 
 ### CRD-Free Deployment Steps

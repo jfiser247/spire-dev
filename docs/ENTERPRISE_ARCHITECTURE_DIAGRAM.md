@@ -121,14 +121,14 @@ graph TB
     MON -.->|Metrics Collection| US
     MON -.->|Metrics Collection| DS
 
-    %% Styling
-    classDef upstreamCluster fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef downstreamCluster fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef spireServer fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
-    classDef database fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef workload fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef external fill:#f5f5f5,stroke:#424242,stroke-width:2px
+    %% Consistent styling with proper border alignment
+    classDef upstreamCluster fill:#e1f5fe,stroke:#01579b,stroke-width:3px,stroke-dasharray:0
+    classDef downstreamCluster fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,stroke-dasharray:0
+    classDef spireServer fill:#ffecb3,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
+    classDef database fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,stroke-dasharray:0
+    classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    classDef workload fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray:0
+    classDef external fill:#f5f5f5,stroke:#424242,stroke-width:2px,stroke-dasharray:0
     
     class US,DS spireServer
     class UDB,DDB database
@@ -214,10 +214,10 @@ graph TD
     US_TD <--> FB
     DS_TD <--> FB
     
-    classDef rootCA fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
-    classDef intermediate fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
-    classDef workloadId fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef federation fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef rootCA fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px,stroke-dasharray:0
+    classDef intermediate fill:#fff3e0,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
+    classDef workloadId fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,stroke-dasharray:0
+    classDef federation fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,stroke-dasharray:0
     
     class ROOT rootCA
     class US_TD,DS_TD intermediate
@@ -281,11 +281,11 @@ graph LR
     DASHBOARD -.->|kubectl API| US_API
     DASHBOARD -.->|kubectl API| DS_API
     
-    classDef server fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
-    classDef database fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef workload fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef external fill:#f5f5f5,stroke:#424242,stroke-width:2px
+    classDef server fill:#ffecb3,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
+    classDef database fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,stroke-dasharray:0
+    classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    classDef workload fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray:0
+    classDef external fill:#f5f5f5,stroke:#424242,stroke-width:2px,stroke-dasharray:0
     
     class US_API,DS_API,US_FED,DS_FED server
     class US_DB,DS_DB database
@@ -380,11 +380,11 @@ graph TB
         end
     end
     
-    classDef namespace fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef workload fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef service fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef config fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef security fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
+    classDef namespace fill:#e1f5fe,stroke:#01579b,stroke-width:3px,stroke-dasharray:0
+    classDef workload fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,stroke-dasharray:0
+    classDef service fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,stroke-dasharray:0
+    classDef config fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,stroke-dasharray:0
+    classDef security fill:#ffecb3,stroke:#ff8f00,stroke-width:2px,stroke-dasharray:0
     
     class U_NS,D_NS,W_NS namespace
     class U_SS,U_DEP,D_SS,D_DEP,D_DS,W_DS,W_DEP1,W_DEP2,W_DEP3 workload

@@ -172,6 +172,18 @@ graph TD
     D --> H[User Service]
     D --> I[Payment API]
     D --> J[Inventory Service]
+    
+    %% Consistent styling
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style B fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style C fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style D fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style E fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
+    style F fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style G fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style H fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style I fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style J fill:#fce4ec,stroke:#c2185b,stroke-width:2px
 ```
 
 ### Enterprise Multi-Cluster
@@ -192,6 +204,21 @@ graph TD
     E --> K[Enterprise API]
     E --> L[Data Processor]
     E --> M[Security Gateway]
+    
+    %% Consistent styling
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style B fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style C fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style D fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style E fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style F fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
+    style G fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style H fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
+    style I fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style J fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style K fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style L fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style M fill:#fce4ec,stroke:#c2185b,stroke-width:2px
 ```
 
 ### CRD-Free Enterprise
@@ -212,6 +239,19 @@ graph TD
     G --> K[Data Processor]
     
     B -.->|gRPC/HTTPS| H
+    
+    %% Consistent styling
+    style A fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+    style B fill:#fff3e0,stroke:#ff8f00,stroke-width:2px
+    style C fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style D fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style E fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style F fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style G fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style H fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style I fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style J fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style K fill:#fce4ec,stroke:#c2185b,stroke-width:2px
 ```
 
 ## Next Steps
