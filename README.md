@@ -110,13 +110,13 @@ Production-ready upstream/downstream trust hierarchy:
 
 ```mermaid
 graph TD
-    A[🔒 UPSTREAM CLUSTER<br/>Root Certificate Authority<br/>Trust Domain: enterprise-root.org<br/>Context: upstream-spire-cluster<br/>Components: SPIRE Server, Database, Federation]
-    B[🌐 DOWNSTREAM CLUSTER<br/>Regional/Workload Cluster<br/>Trust Domain: downstream.example.org<br/>Context: downstream-spire-cluster<br/>Components: SPIRE Server, Agents, Controller<br/>Enterprise Services: API, Data Processor, Gateway]
+    A["🔒 UPSTREAM CLUSTER<br/>Root Certificate Authority<br/>Trust Domain: enterprise-root.org"]
+    B["🌐 DOWNSTREAM CLUSTER<br/>Regional Workload Cluster<br/>Trust Domain: downstream.example.org"]
     
     A -.->|Federation| B
     
-    style A fill:#e1f5fe,stroke:#01579b,stroke-width:3px,stroke-dasharray:0
-    style B fill:#f3e5f5,stroke:#4a148c,stroke-width:3px,stroke-dasharray:0
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
 ```
 
 ### **🔒 CRD-Free Enterprise Architecture**
@@ -124,13 +124,13 @@ For enterprises with strict CRD and privilege restrictions:
 
 ```mermaid
 graph TD
-    A[🏢 EXTERNAL INFRASTRUCTURE<br/>Outside Kubernetes<br/>SPIRE Servers (VMs/Bare Metal)<br/>PostgreSQL HA Database<br/>Federation Endpoints<br/>Certificate Authority Chain]
-    B[🔧 KUBERNETES CLUSTER<br/>Agents Only - No CRDs<br/>SPIRE Agents (DaemonSet)<br/>Custom Registration Service<br/>Annotation-Based Workload Selection<br/>Namespace-Scoped Permissions Only]
+    A["🏢 EXTERNAL INFRASTRUCTURE<br/>Outside Kubernetes<br/>SPIRE Servers and Database<br/>Certificate Authority Chain"]
+    B["🔧 KUBERNETES CLUSTER<br/>Agents Only - No CRDs<br/>SPIRE Agents DaemonSet<br/>Custom Registration Service"]
     
     A -.->|gRPC/HTTPS| B
     
-    style A fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px,stroke-dasharray:0
-    style B fill:#e1f5fe,stroke:#01579b,stroke-width:3px,stroke-dasharray:0
+    style A fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+    style B fill:#e1f5fe,stroke:#01579b,stroke-width:2px
 ```
 
 📖 **[Complete Enterprise Deployment Guide](docs/enterprise_deployment_guide.md)**  
