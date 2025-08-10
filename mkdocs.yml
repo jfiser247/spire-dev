@@ -1,10 +1,13 @@
-site_name: SPIRE Enterprise Documentation
-site_description: Complete SPIFFE/SPIRE enterprise deployment guide with multiple architecture options
-site_author: SPIRE Enterprise Team
+site_name: SPIRE Local Development Environment
+site_description: Learn and experiment with SPIFFE/SPIRE on your local machine - perfect for testing, development, and understanding zero-trust identity concepts
+site_author: SPIRE Development Community
 site_url: http://localhost:8000
 
 repo_name: spiffe/spire-dev
 repo_url: https://github.com/spiffe/spire
+
+exclude_docs: |
+  venv/
 
 theme:
   name: material
@@ -56,48 +59,45 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - toc:
       permalink: true
 
 nav:
-  - Home:
-    - Overview: index.md
-    - Quick Start: getting-started.md
-  - Architecture:
-    - Architecture Overview: architecture/overview.md
-    - Enterprise Multi-Cluster: architecture/enterprise-architecture.md
-    - CRD-Free Deployment: architecture/crd-free-architecture.md
-    - Architecture Validation: architecture/validation.md
-  - Deployment Guides:
-    - Basic Development: deployment/basic-development.md
-    - Enterprise Deployment: deployment/enterprise-deployment.md  
-    - CRD-Free Enterprise: deployment/crd-free-deployment.md
-    - Helm Deployment: deployment/helm-deployment.md
-  - Integration:
-    - SPIFFE Service Integration: integration/spiffe-service-integration.md
-    - Project Structure: integration/project-structure.md
-  - Operations:
-    - Troubleshooting: operations/troubleshooting.md
-    - Namespace Labeling: operations/namespace-labeling-fix.md
-    - Script Fixes: operations/script-fixes-summary.md
-  - Enterprise:
-    - CRD Requirements: enterprise/crd-requirements.md
-    - Architecture Diagrams: enterprise/architecture-diagrams.md
-    - Validation Guide: enterprise/validation-guide.md
+  - 🏠 Home: index.md
+  - 🚀 Getting Started:
+    - Fresh Install Setup: fresh_install_guide.md
+    - Quick Start Integration: quick_start_workload_integration.md
+    - Troubleshooting Setup: troubleshooting.md
+  - 🎓 Learning SPIRE:
+    - SPIFFE Service Integration: spiffe_service_integration_guide.md
+    - Workload Integration Guide: workload_integration_guide.md
+    - Understanding Architecture: architecture_diagrams.md
+  - 🔧 Local Development:
+    - Project Structure: project_structure.md
+    - Architecture Validation: architecture_validation.md
+    - Namespace Configuration: namespace_labeling_fix.md
+    - Script Fixes Reference: script_fixes_summary.md
+  - 🏢 Advanced Enterprise:
+    - Enterprise Architecture: enterprise_architecture_diagram.md
+    - Production Deployment: enterprise_deployment_guide.md
+    - Enterprise Integration: enterprise_workload_integration.md
+    - Helm Charts: helm_deployment_guide.md
+    - CRD Requirements: enterprise_crd_requirements.md
 
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/spiffe/spire
+      name: SPIRE on GitHub
     - icon: fontawesome/solid/globe
       link: https://spiffe.io
+      name: Learn SPIFFE
+    - icon: fontawesome/solid/book
+      link: https://spiffe.io/docs/
+      name: SPIFFE Documentation
+    - icon: fontawesome/brands/slack
+      link: https://spiffe.io/community/
+      name: Join Community
 
-extra_css:
-  - stylesheets/extra.css
-
-extra_javascript:
-  - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

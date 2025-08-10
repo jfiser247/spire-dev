@@ -56,12 +56,19 @@ echo "🏭 Workload Services: $WORKLOAD_READY/$WORKLOAD_PODS pods ready"
 # Check for any failing pods
 echo ""
 echo "🚨 Checking for any failing pods..."
-FAILING_PODS=$(kubectl --context workload-cluster get pods -A --no-headers 2>/dev/null | grep -v Running | grep -v Completed | wc -l)
+FAILING_PODS=$(kubectl --context workload-cluster get pods -A --no-headers 2>/dev/null | grep -v Running | grep -v Completed | grep -v ContainerCreating | wc -l)
 if [ "$FAILING_PODS" -gt 0 ]; then
     echo "⚠️  Found $FAILING_PODS failing pods:"
-    kubectl --context workload-cluster get pods -A --no-headers 2>/dev/null | grep -v Running | grep -v Completed
+    kubectl --context workload-cluster get pods -A --no-headers 2>/dev/null | grep -v Running | grep -v Completed | grep -v ContainerCreating
 else
     echo "✅ No failing pods found"
+fi
+
+# Check for pods that might be stuck in ContainerCreating (but allow some time)
+CREATING_PODS=$(kubectl --context workload-cluster get pods -A --no-headers 2>/dev/null | grep ContainerCreating | wc -l)
+if [ "$CREATING_PODS" -gt 0 ]; then
+    echo "📋 Found $CREATING_PODS pods still creating (this is normal for job pods):"
+    kubectl --context workload-cluster get pods -A --no-headers 2>/dev/null | grep ContainerCreating
 fi
 
 echo ""

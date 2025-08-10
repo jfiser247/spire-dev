@@ -520,8 +520,8 @@
                         <p id="server-context">spire-server-cluster</p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
-                    <div class="status-card clickable" onclick="navigateToTab('database')" title="Click to view PostgreSQL Database details">
-                        <h3>PostgreSQL DB</h3>
+                    <div class="status-card clickable" onclick="navigateToTab('database')" title="Click to view MySQL Database details">
+                        <h3>MySQL DB</h3>
                         <div class="status-value status-online" id="database-status">●</div>
                         <p id="database-context">Storage: <span id="db-storage">1Gi</span></p>
                         <div class="clickable-hint">Click for details</div>
@@ -578,7 +578,7 @@
             </div>
             
             <div id="database" class="tab-pane">
-                <h2>PostgreSQL Database</h2>
+                <h2>MySQL Database</h2>
                 <button class="refresh-btn" onclick="refreshDatabaseStatus()">🔄 Refresh Database Status</button>
                 <button class="refresh-btn" onclick="toggleAutoRefreshTab('database')" id="database-auto-btn">🟢 Auto-refresh: ON</button>
                 
@@ -905,11 +905,11 @@
                 <h3>Check SPIRE Server Status</h3>
                 <div class="command-box">kubectl --context spire-server-cluster -n spire get pods -l app=spire-server</div>
                 
-                <h3>Check PostgreSQL Database</h3>
+                <h3>Check MySQL Database</h3>
                 <div class="command-box">kubectl --context spire-server-cluster -n spire get pods -l app=spire-db</div>
                 
                 <h3>Check Database Storage</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire get pvc postgres-pvc</div>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire get pvc mysql-pvc</div>
                 
                 <h3>Check Database Service</h3>
                 <div class="command-box">kubectl --context spire-server-cluster -n spire get svc spire-db</div>
@@ -927,7 +927,7 @@
                 <div class="command-box">kubectl --context spire-server-cluster -n spire logs -l app=spire-db</div>
                 
                 <h3>Connect to Database (Internal)</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire exec -it spire-server-0 -- psql -h spire-db -U postgres</div>
+                <div class="command-box">kubectl --context spire-server-cluster -n spire exec -it spire-server-0 -- mysql -h spire-db -u root -p</div>
                 
                 <h3>View Agent Logs</h3>
                 <div class="command-box">kubectl --context workload-cluster -n spire logs -l app=spire-agent</div>
@@ -1356,13 +1356,13 @@ curl http://localhost:9988/metrics</div>
                         ready: true,
                         restarts: 0,
                         node: "spire-server-cluster",
-                        image: "postgres:14",
+                        image: "mysql:8.0",
                         age: dbCreated
                     }
                 ],
                 storage: [
                     {
-                        name: "postgres-pvc",
+                        name: "mysql-pvc",
                         status: "Bound",
                         capacity: "1Gi",
                         accessModes: "ReadWriteOnce",
@@ -2323,7 +2323,7 @@ curl http://localhost:9988/metrics</div>
                     <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">📋 Database Query Commands</h4>
                         <p style="margin: 0; font-size: 14px; color: #666;">
-                            Use these commands to query the PostgreSQL database directly for real-time policy data:
+                            Use these commands to query the MySQL database directly for real-time policy data:
                         </p>
                     </div>
 
@@ -2398,12 +2398,12 @@ curl http://localhost:9988/metrics</div>
 
                     <h4>🛠️ Database Query Commands</h4>
                     <div style="background: #f1f3f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                        <h5>Connect to PostgreSQL Database:</h5>
+                        <h5>Connect to MySQL Database:</h5>
                         <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code># Get database pod name
 DB_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-db -o jsonpath='{.items[0].metadata.name}')
 
-# Connect to PostgreSQL
-kubectl --context spire-server-cluster -n spire exec -it $DB_POD -- psql -U postgres -d spire</code></pre>
+# Connect to MySQL
+kubectl --context spire-server-cluster -n spire exec -it $DB_POD -- mysql -u root -p spire</code></pre>
 
                         <h5>Query Registration Entries:</h5>
                         <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code>-- List all registration entries
@@ -2543,7 +2543,7 @@ kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/b
         
         // Helper function to determine resource context and namespace
         function getResourceContext(resourceName) {
-            if (resourceName.startsWith('spire-server') || resourceName.startsWith('spire-db') || resourceName.startsWith('postgres')) {
+            if (resourceName.startsWith('spire-server') || resourceName.startsWith('spire-db') || resourceName.startsWith('mysql')) {
                 return { context: 'spire-server-cluster', namespace: 'spire-server' };
             } else if (resourceName.startsWith('spire-agent')) {
                 return { context: 'workload-cluster', namespace: 'spire-system' };

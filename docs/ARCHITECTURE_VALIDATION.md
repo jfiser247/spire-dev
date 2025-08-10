@@ -68,25 +68,25 @@ federation {
 ### ⚠️ PARTIAL: Database High Availability
 
 **Current Implementation:**
-- PostgreSQL database per cluster
+- MySQL database per cluster
 - Single database instance (development setup)
 
 **Production Enhancement Required:**
 ```yaml
 # Current (Development)
-database_type = "postgres"
-connection_string = "postgres://postgres:postgres@spire-db:5432/spire?sslmode=disable"
+database_type = "mysql"
+connection_string = "mysql://root:mysql@spire-db:3306/spire"
 
 # Recommended (Production)
-database_type = "postgres"
-connection_string = "postgres://spire_user:secure_password@postgres-ha-cluster:5432/spire?sslmode=require"
-# + PostgreSQL clustering (Primary/Replica)
+database_type = "mysql"
+connection_string = "mysql://spire_user:secure_password@mysql-ha-cluster:3306/spire"
+# + MySQL clustering (Primary/Replica)
 # + Connection pooling
 # + SSL/TLS encryption
 ```
 
 **Recommendation:**
-- Implement PostgreSQL High Availability cluster
+- Implement MySQL High Availability cluster
 - Add connection pooling (PgBouncer)
 - Enable SSL/TLS for database connections
 - Configure automatic failover
@@ -324,8 +324,8 @@ UpstreamAuthority "spiffe" {
 
 1. **Database High Availability**
    ```bash
-   # Implement PostgreSQL clustering
-   helm install postgresql-ha bitnami/postgresql-ha \
+   # Implement MySQL clustering
+   helm install mysql-ha bitnami/mysql \
      --set persistence.enabled=true \
      --set metrics.enabled=true
    ```

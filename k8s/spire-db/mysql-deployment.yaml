@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spire-db
+  namespace: spire-server
+  labels:
+    app: spire-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-db
+  template:
+    metadata:
+      labels:
+        app: spire-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "mysql"
+        - name: MYSQL_DATABASE
+          value: "spire"
+        - name: MYSQL_USER
+          value: "spire"
+        - name: MYSQL_PASSWORD
+          value: "spire"
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        readinessProbe:
+          exec:
+            command:
+            - mysql
+            - -u
+            - root
+            - -pmysql
+            - -e
+            - "SELECT 1"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - mysql
+            - -u
+            - root
+            - -pmysql
+            - -e
+            - "SELECT 1"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: mysql-pvc

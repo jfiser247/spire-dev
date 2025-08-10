@@ -31,7 +31,7 @@ This guide provides comprehensive instructions for deploying, managing, and upgr
 ### **Helm Chart Advantages**
 - ✅ **Templating** - Single source with environment-specific values
 - ✅ **Version control** - Track, rollback, and manage releases
-- ✅ **Dependencies** - Automatic PostgreSQL deployment and management
+- ✅ **Dependencies** - Automatic MySQL deployment and management
 - ✅ **Validation** - Built-in configuration validation
 - ✅ **Atomic operations** - All-or-nothing deployments
 - ✅ **Environment consistency** - Identical structure across environments
@@ -137,9 +137,9 @@ spireAgent:
   config:
     logLevel: "INFO"
 
-postgresql:
+mysql:
   auth:
-    postgresPassword: "postgres"  # Use your current password
+    mysqlRootPassword: "mysql"  # Use your current password
     database: "spire"  # Match current database name
 
 # Copy your existing registration entries
@@ -209,9 +209,9 @@ spireServer:
     size: 10Gi
     storageClass: "fast-ssd"
 
-postgresql:
+mysql:
   auth:
-    existingSecret: "postgresql-credentials"
+    existingSecret: "mysql-credentials"
   primary:
     persistence:
       size: 50Gi
@@ -275,7 +275,7 @@ spireServer:
   persistence:
     size: 1Gi
 
-postgresql:
+mysql:
   primary:
     persistence:
       size: 2Gi
@@ -297,7 +297,7 @@ spireServer:
   persistence:
     size: 5Gi
 
-postgresql:
+mysql:
   primary:
     persistence:
       size: 10Gi
@@ -321,7 +321,7 @@ spireServer:
     size: 20Gi
     storageClass: "fast-ssd"
 
-postgresql:
+mysql:
   primary:
     persistence:
       size: 100Gi
@@ -503,9 +503,9 @@ helm upgrade spire-prod ./helm-charts/spire \
 #### **Database Upgrade**
 
 ```bash
-# PostgreSQL major version upgrade
+# MySQL major version upgrade
 cat > db-upgrade-values.yaml <<EOF
-postgresql:
+mysql:
   image:
     tag: "14.0.0"
   primary:
@@ -514,8 +514,8 @@ postgresql:
 EOF
 
 # Backup database first
-kubectl exec -n spire-prod spire-prod-postgresql-0 -- \
-  pg_dumpall -U postgres > db-backup-$(date +%Y%m%d).sql
+kubectl exec -n spire-prod spire-prod-mysql-0 -- \
+  mysqldump --all-databases -u root -p > db-backup-$(date +%Y%m%d).sql
 
 # Apply upgrade with extended timeout
 helm upgrade spire-prod ./helm-charts/spire \
@@ -671,8 +671,8 @@ echo "=== Storage Usage ==="
 kubectl exec -n $NAMESPACE spire-prod-server-0 -- df -h /run/spire/data
 
 echo "=== Database Size ==="
-kubectl exec -n $NAMESPACE spire-prod-postgresql-0 -- \
-  psql -U postgres -d spire -c "SELECT pg_size_pretty(pg_database_size('spire'));"
+kubectl exec -n $NAMESPACE spire-prod-mysql-0 -- \
+  mysql -u root -p -e "SELECT table_schema 'Database Name', ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) 'Database Size (MB)' FROM information_schema.tables WHERE table_schema='spire' GROUP BY table_schema;"
 
 echo "=== Network Connectivity ==="
 kubectl exec -n $NAMESPACE spire-prod-agent-$(kubectl get pods -n $NAMESPACE -l app.kubernetes.io/component=spire-agent -o jsonpath='{.items[0].metadata.name}' | cut -d'-' -f4-) -- \
@@ -703,16 +703,16 @@ values/
 
 ```bash
 # Use Kubernetes secrets for sensitive data
-kubectl create secret generic postgresql-credentials \
-  --from-literal=postgres-password=super-secret-password \
+kubectl create secret generic mysql-credentials \
+  --from-literal=mysql-root-password=super-secret-password \
   -n spire-prod
 
 # Reference in values.yaml
-postgresql:
+mysql:
   auth:
-    existingSecret: "postgresql-credentials"
+    existingSecret: "mysql-credentials"
     secretKeys:
-      adminPasswordKey: "postgres-password"
+      adminPasswordKey: "mysql-root-password"
 ```
 
 #### **Version Pinning**
@@ -723,13 +723,13 @@ spireServer:
   image:
     tag: "1.6.3"  # Exact version, not "latest"
 
-postgresql:
+mysql:
   image:
-    tag: "13.8.0"  # Exact PostgreSQL version
+    tag: "8.0.35"  # Exact MySQL version
 
 # Use chart version constraints
 dependencies:
-  - name: postgresql
+  - name: mysql
     version: "~12.1.0"  # Allow patch updates only
 ```
 
@@ -876,8 +876,8 @@ kubectl exec -n $NAMESPACE spire-prod-server-0 -- \
   tar czf - /run/spire/data > $BACKUP_DIR/spire-data.tar.gz
 
 # Backup database
-kubectl exec -n $NAMESPACE spire-prod-postgresql-0 -- \
-  pg_dumpall -U postgres | gzip > $BACKUP_DIR/database.sql.gz
+kubectl exec -n $NAMESPACE spire-prod-mysql-0 -- \
+  mysqldump --all-databases -u root -p | gzip > $BACKUP_DIR/database.sql.gz
 
 # Backup Kubernetes manifests
 kubectl get all,configmap,secret,pvc -n $NAMESPACE -o yaml > $BACKUP_DIR/k8s-manifests.yaml
@@ -909,8 +909,8 @@ kubectl exec -n $NAMESPACE spire-prod-server-0 -i -- \
 
 # Restore database
 gunzip -c $BACKUP_DIR/database.sql.gz | \
-kubectl exec -n $NAMESPACE spire-prod-postgresql-0 -i -- \
-  psql -U postgres
+kubectl exec -n $NAMESPACE spire-prod-mysql-0 -i -- \
+  mysql -u root -p
 
 echo "Restore completed from: $BACKUP_DIR"
 ```
@@ -922,7 +922,7 @@ echo "Restore completed from: $BACKUP_DIR"
 ### **Documentation Links**
 - [Helm Documentation](https://helm.sh/docs/)
 - [SPIRE Helm Chart README](./helm-charts/spire/README.md)
-- [SPIFFE Service Integration Guide](./SPIFFE_SERVICE_INTEGRATION_GUIDE.md)
+- [SPIFFE Service Integration Guide](./spiffe_service_integration_guide.md)
 
 ### **Useful Helm Plugins**
 

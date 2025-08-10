@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spire-upstream-db
+  namespace: spire-upstream
+  labels:
+    app: spire-upstream-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-upstream-db
+  template:
+    metadata:
+      labels:
+        app: spire-upstream-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: mysql
+        - name: MYSQL_DATABASE
+          value: spire
+        - name: MYSQL_USER
+          value: spire
+        - name: MYSQL_PASSWORD
+          value: spire
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: spire-upstream-db-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: spire-upstream-db-pvc
+  namespace: spire-upstream
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-upstream-db
+  namespace: spire-upstream
+spec:
+  selector:
+    app: spire-upstream-db
+  ports:
+  - port: 3306
+    targetPort: 3306
+    protocol: TCP

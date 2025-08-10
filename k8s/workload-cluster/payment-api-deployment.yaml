@@ -39,7 +39,7 @@ spec:
         - name: SERVICE_PORT
           value: "9090"
         - name: DATABASE_URL
-          value: "postgresql://payments:payments@payment-db:5432/payments"
+          value: "mysql://payments:payments@payment-db:3306/payments"
         resources:
           requests:
             cpu: 100m

@@ -304,7 +304,7 @@ For enterprises with strict CRD restrictions, the **External Service Pattern** p
 ```bash
 # Implementation Steps
 1. Deploy SPIRE Servers outside Kubernetes (VMs/Bare Metal)
-2. Configure enterprise-grade database (PostgreSQL HA)
+2. Configure enterprise-grade database (MySQL HA)
 3. Deploy SPIRE Agents as DaemonSet in Kubernetes (no CRDs)
 4. Use external registration service for workload management
 5. Implement federation at the external server level

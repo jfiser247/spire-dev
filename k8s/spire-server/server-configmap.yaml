@@ -18,8 +18,8 @@ data:
     plugins {
       DataStore "sql" {
         plugin_data {
-          database_type = "postgres"
-          connection_string = "postgres://postgres:postgres@spire-db:5432/spire?sslmode=disable"
+          database_type = "mysql"
+          connection_string = "mysql://root:mysql@spire-db:3306/spire"
         }
       }
 
@@ -47,3 +47,11 @@ data:
       live_path = "/live"
       ready_path = "/ready"
     }
+
+    telemetry {
+      prometheus {
+        host = "0.0.0.0"
+        port = 9988
+      }
+    }
+

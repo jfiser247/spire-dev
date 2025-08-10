@@ -11,7 +11,24 @@ echo "======================================="
 # Check if MkDocs is installed
 if ! command -v mkdocs &> /dev/null; then
     echo "❌ MkDocs not found. Installing MkDocs..."
-    pip3 install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+    
+    # Try using pipx first (recommended for macOS Homebrew Python)
+    if command -v pipx &> /dev/null; then
+        echo "📦 Using pipx to install MkDocs..."
+        pipx install mkdocs
+        pipx inject mkdocs mkdocs-material mkdocs-mermaid2-plugin
+    # Try using brew if available
+    elif command -v brew &> /dev/null; then
+        echo "🍺 Using brew to install MkDocs..."
+        brew install mkdocs
+        # Install required plugins via pip for proper functionality
+        echo "📦 Installing required MkDocs plugins..."
+        pip3 install --break-system-packages mkdocs-material mkdocs-mermaid2-plugin pymdown-extensions
+    # Fall back to pip with --break-system-packages for Homebrew Python
+    else
+        echo "🐍 Using pip with system packages override..."
+        pip3 install --break-system-packages mkdocs mkdocs-material mkdocs-mermaid2-plugin
+    fi
 fi
 
 # Check if documentation server is already running

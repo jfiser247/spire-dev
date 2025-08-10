@@ -31,10 +31,15 @@ spec:
               echo "SPIRE server should be ready!"
       containers:
         - name: spire-agent
-          image: ghcr.io/spiffe/spire-agent:1.6.3
+          image: ghcr.io/spiffe/spire-agent:1.12.4
           args:
             - -config
             - /run/spire/config/agent.conf
+          ports:
+            - containerPort: 8080
+              name: health
+            - containerPort: 9988
+              name: metrics
           volumeMounts:
             - name: spire-config
               mountPath: /run/spire/config

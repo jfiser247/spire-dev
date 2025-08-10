@@ -1,6 +1,8 @@
-# Fresh Install Script Fixes Summary
+# Script Fixes Reference
 
-This document summarizes the fixes applied to the fresh-install script and related components to resolve reliability issues.
+This technical reference documents improvements made to the fresh-install script and deployment components. This information is primarily useful for developers working on the deployment scripts or troubleshooting advanced setup issues.
+
+> 💡 **Looking for setup help?** Check out the [Fresh Install Setup Guide](fresh_install_guide.md) for step-by-step instructions.
 
 ## Issues Resolved
 
@@ -88,7 +90,7 @@ This document summarizes the fixes applied to the fresh-install script and relat
    - Added Issue 11 in Historical Issues section
    - Updated success metrics
 
-2. **docs/TROUBLESHOOTING.md**
+2. **docs/troubleshooting.md**
    - Updated timing expectations 
    - Added new section 7 for fresh install script failures
    - Updated performance troubleshooting thresholds

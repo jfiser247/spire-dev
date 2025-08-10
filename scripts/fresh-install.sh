@@ -80,6 +80,12 @@ check_prerequisites() {
     echo "   - kubectl: $(kubectl version --client --short 2>/dev/null | cut -d' ' -f3)"
     echo "   - node: $(node --version)"
     echo "   - jq: $(jq --version)"
+    
+    # Check if Docker is running (required for minikube)
+    if ! docker info >/dev/null 2>&1; then
+        echo "⚠️  Docker appears not to be running - this may cause minikube issues"
+        echo "   💡 Please ensure Docker Desktop or Rancher Desktop is running"
+    fi
 }
 
 # Function to completely tear down existing environment
@@ -94,14 +100,14 @@ teardown_environment() {
     echo "🗑️  Deleting all SPIRE minikube clusters..."
     
     # Get list of all profiles and delete SPIRE-related ones
-    local profiles=$(minikube profile list -o json 2>/dev/null | jq -r '.valid[]?.Name // empty' 2>/dev/null || echo "")
-    
-    for profile in $profiles; do
-        if [[ "$profile" =~ spire.*cluster$ ]] || [[ "$profile" =~ workload.*cluster$ ]] || [[ "$profile" =~ upstream.*cluster$ ]] || [[ "$profile" =~ downstream.*cluster$ ]]; then
-            echo "   Deleting cluster: $profile"
-            minikube delete --profile "$profile" >/dev/null 2>&1 || echo "   Warning: Could not delete $profile"
+    while IFS= read -r profile; do
+        if [[ -n "$profile" ]]; then
+            if [[ "$profile" =~ spire.*cluster$ ]] || [[ "$profile" =~ workload.*cluster$ ]] || [[ "$profile" =~ upstream.*cluster$ ]] || [[ "$profile" =~ downstream.*cluster$ ]]; then
+                echo "   Deleting cluster: $profile"
+                minikube delete --profile "$profile" >/dev/null 2>&1 || echo "   Warning: Could not delete $profile"
+            fi
         fi
-    done
+    done < <(minikube profile list -o json 2>/dev/null | jq -r '.valid[]?.Name // empty' 2>/dev/null || echo "")
     
     # Clean up kubectl contexts
     echo "🧹 Cleaning kubectl contexts..."
@@ -139,12 +145,15 @@ setup_fresh_environment() {
     # Run the appropriate setup script based on deployment type
     if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
         echo "📦 Running enterprise cluster setup script..."
+        echo "⏱️  This may take 8-12 minutes for cluster creation and pod deployment..."
         ./scripts/setup-enterprise-clusters.sh
     elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
         echo "📦 Running CRD-free deployment script..."
+        echo "⏱️  This may take 6-10 minutes for cluster creation and pod deployment..."
         ./scripts/setup-crd-free-deployment.sh
     else
         echo "📦 Running basic cluster setup script..."
+        echo "⏱️  This may take 5-8 minutes for cluster creation and pod deployment..."
         ./scripts/setup-clusters.sh
     fi
     
@@ -255,6 +264,10 @@ validate_installation() {
         else
             echo "   ⏳ Documentation starting... (attempt $i/3)"
             sleep 3
+            if [ $i -eq 3 ]; then
+                echo "   ⚠️  Documentation server failed to start (MkDocs installation issue)"
+                echo "   💡 Try: brew install mkdocs or pipx install mkdocs"
+            fi
         fi
     done
 }

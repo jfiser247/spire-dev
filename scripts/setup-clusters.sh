@@ -32,9 +32,9 @@ metadata:
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
 EOF
-kubectl apply -f k8s/spire-db/postgres-pvc.yaml -n spire-server
-kubectl apply -f k8s/spire-db/postgres-deployment.yaml -n spire-server
-kubectl apply -f k8s/spire-db/postgres-service.yaml -n spire-server
+kubectl apply -f k8s/spire-db/mysql-pvc.yaml -n spire-server
+kubectl apply -f k8s/spire-db/mysql-deployment.yaml -n spire-server
+kubectl apply -f k8s/spire-db/mysql-service.yaml -n spire-server
 kubectl apply -f k8s/spire-server/server-configmap.yaml -n spire-server
 kubectl apply -f k8s/spire-server/server-rbac.yaml -n spire-server
 kubectl apply -f k8s/spire-server/server-service.yaml -n spire-server

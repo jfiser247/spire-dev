@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: register-multi-service
+  namespace: spire-server
+  labels:
+    app: spire-registration
+    workload: multi-service
+data:
+  register.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "=== SPIRE Multi-Service Registration ==="
+    echo "Registering multiple enterprise services"
+    echo "Timestamp: $(date)"
+    echo ""
+    
+    # Wait for SPIRE server to be ready
+    echo "Waiting for SPIRE server to be ready..."
+    sleep 10
+    
+    # Check if SPIRE server is responding
+    if ! /opt/spire/bin/spire-server agent list &>/dev/null; then
+        echo "SPIRE server is not ready. Waiting..."
+        sleep 30
+    fi
+    
+    # Function to create registration entry
+    create_entry() {
+        local service_name="$1"
+        local service_type="$2"
+        local namespace="$3"
+        local ttl="$4"
+        local dns_name="$5"
+        
+        echo "Creating registration entry for $service_name..."
+        /opt/spire/bin/spire-server entry create \
+          -spiffeID spiffe://example.org/workload/$service_name \
+          -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
+          -selector k8s:ns:$namespace \
+          -selector k8s:sa:$service_name \
+          -selector k8s:pod-label:app:$service_name \
+          -selector k8s:pod-label:service:$service_type \
+          -dnsName $dns_name \
+          -ttl $ttl
+        
+        echo "✓ Registered $service_name"
+        echo ""
+    }
+    
+    # Register API Gateway
+    create_entry \
+      "api-gateway" \
+      "gateway" \
+      "production" \
+      "3600" \
+      "api-gateway.production.svc.cluster.local"
+    
+    # Register User Service
+    create_entry \
+      "user-service" \
+      "user-management" \
+      "production" \
+      "1800" \
+      "user-service.production.svc.cluster.local"
+    
+    # Register Payment API
+    create_entry \
+      "payment-api" \
+      "payment-processing" \
+      "production" \
+      "900" \
+      "payment-api.production.svc.cluster.local"
+    
+    # Register Notification Service
+    create_entry \
+      "notification-service" \
+      "messaging" \
+      "production" \
+      "1800" \
+      "notification-service.production.svc.cluster.local"
+    
+    # Register Analytics Service
+    create_entry \
+      "analytics-service" \
+      "analytics" \
+      "production" \
+      "3600" \
+      "analytics-service.production.svc.cluster.local"
+    
+    # Register Database Proxy
+    create_entry \
+      "database-proxy" \
+      "database" \
+      "infrastructure" \
+      "7200" \
+      "database-proxy.infrastructure.svc.cluster.local"
+    
+    echo "=== Registration Summary ==="
+    echo "Successfully registered the following services:"
+    echo "✓ api-gateway (gateway, TTL: 3600s)"
+    echo "✓ user-service (user-management, TTL: 1800s)"
+    echo "✓ payment-api (payment-processing, TTL: 900s)"
+    echo "✓ notification-service (messaging, TTL: 1800s)"
+    echo "✓ analytics-service (analytics, TTL: 3600s)"
+    echo "✓ database-proxy (database, TTL: 7200s)"
+    echo ""
+    
+    # Verify all entries were created
+    echo "Verifying all registration entries:"
+    /opt/spire/bin/spire-server entry show
+    
+    echo ""
+    echo "=== Deployment Instructions ==="
+    echo "For each service, ensure your Kubernetes deployment includes:"
+    echo ""
+    echo "1. Correct namespace (production or infrastructure)"
+    echo "2. Matching ServiceAccount name"
+    echo "3. Required pod labels:"
+    echo "   - app: <service-name>"
+    echo "   - service: <service-type>"
+    echo "4. SPIRE agent socket mount:"
+    echo "   volumeMounts:"
+    echo "   - name: spire-agent-socket"
+    echo "     mountPath: /run/spire/sockets"
+    echo "     readOnly: true"
+    echo ""
+    echo "5. SPIFFE endpoint environment variable:"
+    echo "   env:"
+    echo "   - name: SPIFFE_ENDPOINT_SOCKET"
+    echo "     value: unix:///run/spire/sockets/agent.sock"
+    echo ""
+    echo "Registration completed successfully!"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: register-multi-service
+  namespace: spire-server
+  labels:
+    app: spire-registration
+    workload: multi-service
+spec:
+  template:
+    metadata:
+      labels:
+        app: spire-registration
+        workload: multi-service
+    spec:
+      serviceAccountName: spire-server
+      restartPolicy: Never
+      containers:
+      - name: registrar
+        image: ghcr.io/spiffe/spire-server:1.12.4
+        command: ["/bin/sh"]
+        args: ["/config/register.sh"]
+        volumeMounts:
+        - name: spire-config-volume
+          mountPath: /run/spire/config
+          readOnly: true
+        - name: spire-data-volume
+          mountPath: /run/spire/data
+        - name: registration-script
+          mountPath: /config
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: spire-config-volume
+        configMap:
+          name: spire-server
+      - name: spire-data-volume
+        persistentVolumeClaim:
+          claimName: spire-server-data
+      - name: registration-script
+        configMap:
+          name: register-multi-service
+          defaultMode: 0755
+  backoffLimit: 3

@@ -447,7 +447,7 @@ kubectl exec -n spire spire-server-0 -- tar xzf - -C / < spire-backup.tar.gz
 ## 📖 **Additional Resources**
 
 ### Related Documentation
-- [SPIFFE Service Integration Guide](../../SPIFFE_SERVICE_INTEGRATION_GUIDE.md)
+- [SPIFFE Service Integration Guide](../../docs/spiffe_service_integration_guide.md)
 - [SPIRE Documentation](https://spiffe.io/docs/latest/spire-about/)
 - [Helm Documentation](https://helm.sh/docs/)
 

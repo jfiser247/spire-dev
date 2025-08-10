@@ -20,8 +20,8 @@ data:
     plugins {
       DataStore "sql" {
         plugin_data {
-          database_type = "postgres"
-          connection_string = "postgres://postgres:postgres@spire-upstream-db:5432/spire?sslmode=disable"
+          database_type = "mysql"
+          connection_string = "mysql://root:mysql@spire-upstream-db:3306/spire"
         }
       }
 

@@ -39,7 +39,7 @@ spec:
         - name: SERVICE_PORT
           value: "8080"
         - name: DATABASE_URL
-          value: "postgresql://users:users@user-db:5432/users"
+          value: "mysql://users:users@user-db:3306/users"
         resources:
           requests:
             cpu: 100m

@@ -13,7 +13,7 @@ graph TB
             subgraph "upstream-spire-cluster"
                 subgraph "spire-upstream namespace"
                     US[🔐 SPIRE Server<br/>Trust Domain: enterprise-root.org<br/>Root CA]
-                    UDB[(🗃️ PostgreSQL Database)]
+                    UDB[(🗃️ MySQL Database)]
                     UCM[⚙️ SPIRE Controller Manager]
                     UFE[🌐 Federation Bundle Endpoint]
                     
@@ -28,7 +28,7 @@ graph TB
             subgraph "downstream-spire-cluster"
                 subgraph "spire-downstream namespace"
                     DS[🔐 SPIRE Server<br/>Trust Domain: downstream.example.org<br/>Regional Authority]
-                    DDB[(🗃️ PostgreSQL Database)]
+                    DDB[(🗃️ MySQL Database)]
                     DCM[⚙️ SPIRE Controller Manager]
                     DA[🤖 SPIRE Agents<br/>DaemonSet]
                     
@@ -149,7 +149,7 @@ kubectl --context upstream-spire-cluster apply -f k8s/upstream-cluster/
 
 **Upstream Components:**
 - `spire-upstream-server`: Root SPIRE server
-- `spire-upstream-db`: PostgreSQL database
+- `spire-upstream-db`: MySQL database
 - `spire-upstream-controller-manager`: Kubernetes integration
 
 ### 2. Deploy Downstream Cluster (Regional)
@@ -166,7 +166,7 @@ kubectl --context downstream-spire-cluster apply -f k8s/downstream-cluster/
 
 **Downstream Components:**
 - `spire-downstream-server`: Regional SPIRE server
-- `spire-downstream-db`: PostgreSQL database
+- `spire-downstream-db`: MySQL database
 - `spire-downstream-agent`: SPIRE agents (DaemonSet)
 - Enterprise workload services
 
@@ -356,7 +356,7 @@ graph TB
     subgraph "🏢 CRD-FREE ARCHITECTURE"
         subgraph "🏢 EXTERNAL INFRASTRUCTURE (Outside Kubernetes)"
             ES[🔐 SPIRE Servers<br/>VMs/Bare Metal]
-            EDB[(🗄️ PostgreSQL HA Database)]
+            EDB[(🗄️ MySQL HA Database)]
             FE[🌐 Federation Endpoints]
             CA[🔒 Certificate Authority Chain]
             
@@ -419,7 +419,7 @@ docker run -d --name spire-server \
   ghcr.io/spiffe/spire-server:1.9.0 \
   -config /opt/spire/conf/server.conf
 
-# Configure with external PostgreSQL
+# Configure with external MySQL
 # Set up federation endpoints
 # Configure trust domain hierarchy
 ```
@@ -530,7 +530,7 @@ Organizations can start with CRD-free deployment and migrate:
 
 1. **High Availability**
    - Multiple SPIRE server replicas
-   - Database clustering (PostgreSQL HA)
+   - Database clustering (MySQL HA)
    - Load balancer configuration
 
 2. **Geographic Distribution**

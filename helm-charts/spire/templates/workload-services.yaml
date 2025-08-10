@@ -19,6 +19,7 @@ spec:
     metadata:
       labels:
         app: user-service
+      annotations:
         spiffe.io/spiffe-id: {{ .Values.workloadServices.userService.spiffeId | quote }}
     spec:
       serviceAccountName: user-service
@@ -67,6 +68,7 @@ spec:
     metadata:
       labels:
         app: payment-api
+      annotations:
         spiffe.io/spiffe-id: {{ .Values.workloadServices.paymentApi.spiffeId | quote }}
     spec:
       serviceAccountName: payment-api
@@ -115,6 +117,7 @@ spec:
     metadata:
       labels:
         app: inventory-service
+      annotations:
         spiffe.io/spiffe-id: {{ .Values.workloadServices.inventoryService.spiffeId | quote }}
     spec:
       serviceAccountName: inventory-service

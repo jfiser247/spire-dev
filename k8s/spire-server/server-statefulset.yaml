@@ -19,7 +19,7 @@ spec:
       serviceAccountName: spire-server
       containers:
         - name: spire-server
-          image: ghcr.io/spiffe/spire-server:1.6.3
+          image: ghcr.io/spiffe/spire-server:1.12.4
           args:
             - -config
             - /run/spire/config/server.conf
@@ -28,6 +28,8 @@ spec:
               name: server
             - containerPort: 8080
               name: health
+            - containerPort: 9988
+              name: metrics
           volumeMounts:
             - name: spire-config
               mountPath: /run/spire/config

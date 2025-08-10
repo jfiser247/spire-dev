@@ -41,7 +41,7 @@ spec:
         - name: REDIS_URL
           value: "redis://inventory-cache:6379"
         - name: DATABASE_URL
-          value: "postgresql://inventory:inventory@inventory-db:5432/inventory"
+          value: "mysql://inventory:inventory@inventory-db:3306/inventory"
         resources:
           requests:
             cpu: 50m

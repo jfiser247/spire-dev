@@ -38,7 +38,7 @@ kubectl config use-context upstream-spire-cluster
 # Deploy upstream cluster components
 echo "🔹 Deploying upstream SPIRE server and database..."
 kubectl apply -f k8s/upstream-cluster/namespace.yaml
-kubectl apply -f k8s/upstream-cluster/postgres-deployment.yaml
+kubectl apply -f k8s/upstream-cluster/mysql-deployment.yaml
 kubectl apply -f k8s/upstream-cluster/bundle-configmap.yaml
 kubectl apply -f k8s/upstream-cluster/server-configmap.yaml
 kubectl apply -f k8s/upstream-cluster/controller-manager-config.yaml
@@ -77,7 +77,7 @@ kubectl config use-context downstream-spire-cluster
 # Deploy downstream cluster components
 echo "🔹 Deploying downstream SPIRE server and workload services..."
 kubectl apply -f k8s/downstream-cluster/namespace.yaml
-kubectl apply -f k8s/downstream-cluster/postgres-deployment.yaml
+kubectl apply -f k8s/downstream-cluster/mysql-deployment.yaml
 kubectl apply -f k8s/downstream-cluster/bundle-configmap.yaml
 kubectl apply -f k8s/downstream-cluster/server-configmap.yaml
 kubectl apply -f k8s/downstream-cluster/controller-manager-config.yaml

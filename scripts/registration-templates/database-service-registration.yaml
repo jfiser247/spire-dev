@@ -1,0 +1,168 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: register-database-service
+  namespace: spire-server
+  labels:
+    app: spire-registration
+    workload: database-service
+data:
+  register.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "=== SPIRE Database Service Registration ==="
+    echo "Registering database client service with secure database connections"
+    echo "Timestamp: $(date)"
+    echo ""
+    
+    # Wait for SPIRE server to be ready
+    echo "Waiting for SPIRE server to be ready..."
+    sleep 10
+    
+    # Check if SPIRE server is responding
+    if ! /opt/spire/bin/spire-server agent list &>/dev/null; then
+        echo "SPIRE server is not ready. Waiting..."
+        sleep 30
+    fi
+    
+    # Create registration entry for database client service
+    echo "Creating registration entry for database-client-service..."
+    /opt/spire/bin/spire-server entry create \
+      -spiffeID spiffe://example.org/workload/database-client-service \
+      -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
+      -selector k8s:ns:workload \
+      -selector k8s:sa:database-client-service \
+      -selector k8s:pod-label:app:database-client-service \
+      -selector k8s:pod-label:service:database-client \
+      -selector k8s:pod-label:tier:backend \
+      -dnsName database-client-service.workload.svc.cluster.local \
+      -ttl 3600
+    
+    # Create registration entry for PostgreSQL database proxy (if using SPIRE for DB connections)
+    echo "Creating registration entry for postgres-proxy..."
+    /opt/spire/bin/spire-server entry create \
+      -spiffeID spiffe://example.org/workload/postgres-proxy \
+      -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
+      -selector k8s:ns:database \
+      -selector k8s:sa:postgres-proxy \
+      -selector k8s:pod-label:app:postgres-proxy \
+      -selector k8s:pod-label:service:database-proxy \
+      -selector k8s:pod-label:database:postgresql \
+      -dnsName postgres-proxy.database.svc.cluster.local \
+      -ttl 7200
+    
+    # Create registration entry for Redis cache client
+    echo "Creating registration entry for redis-client..."
+    /opt/spire/bin/spire-server entry create \
+      -spiffeID spiffe://example.org/workload/redis-client \
+      -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
+      -selector k8s:ns:workload \
+      -selector k8s:sa:redis-client \
+      -selector k8s:pod-label:app:redis-client \
+      -selector k8s:pod-label:service:cache-client \
+      -selector k8s:pod-label:tier:backend \
+      -dnsName redis-client.workload.svc.cluster.local \
+      -ttl 1800
+    
+    echo ""
+    echo "Database service registration completed successfully!"
+    echo ""
+    
+    # Verify the entries were created
+    echo "Verifying registration entries:"
+    echo ""
+    echo "1. Database Client Service:"
+    /opt/spire/bin/spire-server entry show -spiffeID spiffe://example.org/workload/database-client-service
+    echo ""
+    echo "2. PostgreSQL Proxy:"
+    /opt/spire/bin/spire-server entry show -spiffeID spiffe://example.org/workload/postgres-proxy
+    echo ""
+    echo "3. Redis Client:"
+    /opt/spire/bin/spire-server entry show -spiffeID spiffe://example.org/workload/redis-client
+    
+    echo ""
+    echo "=== Database Registration Summary ==="
+    echo "✓ database-client-service (SPIFFE ID: spiffe://example.org/workload/database-client-service)"
+    echo "  - Namespace: workload"
+    echo "  - ServiceAccount: database-client-service"
+    echo "  - Labels: app=database-client-service, service=database-client, tier=backend"
+    echo "  - DNS: database-client-service.workload.svc.cluster.local"
+    echo "  - TTL: 3600 seconds"
+    echo ""
+    echo "✓ postgres-proxy (SPIFFE ID: spiffe://example.org/workload/postgres-proxy)"
+    echo "  - Namespace: database"
+    echo "  - ServiceAccount: postgres-proxy"
+    echo "  - Labels: app=postgres-proxy, service=database-proxy, database=postgresql"
+    echo "  - DNS: postgres-proxy.database.svc.cluster.local"
+    echo "  - TTL: 7200 seconds"
+    echo ""
+    echo "✓ redis-client (SPIFFE ID: spiffe://example.org/workload/redis-client)"
+    echo "  - Namespace: workload"
+    echo "  - ServiceAccount: redis-client"
+    echo "  - Labels: app=redis-client, service=cache-client, tier=backend"
+    echo "  - DNS: redis-client.workload.svc.cluster.local"
+    echo "  - TTL: 1800 seconds"
+    echo ""
+    echo "=== Next Steps ==="
+    echo "1. Deploy your database client applications with the registered SPIFFE IDs"
+    echo "2. Configure PostgreSQL to accept SPIFFE-based authentication (if using postgres-proxy)"
+    echo "3. Update connection strings to use SPIFFE mutual TLS"
+    echo "4. Ensure workloads mount the SPIRE agent socket"
+    echo "5. Test secure database connections"
+    echo ""
+    echo "Example PostgreSQL connection with SPIFFE (pseudo-code):"
+    echo "  conn := spiffe.ConnectToDatabase("
+    echo "    \"postgres://postgres-proxy.database.svc.cluster.local:5432/mydb\","
+    echo "    \"spiffe://example.org/workload/postgres-proxy\""
+    echo "  )"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: register-database-service
+  namespace: spire-server
+  labels:
+    app: spire-registration
+    workload: database-service
+spec:
+  template:
+    metadata:
+      labels:
+        app: spire-registration
+        workload: database-service
+    spec:
+      serviceAccountName: spire-server
+      restartPolicy: Never
+      containers:
+      - name: registrar
+        image: ghcr.io/spiffe/spire-server:1.12.4
+        command: ["/bin/sh"]
+        args: ["/config/register.sh"]
+        volumeMounts:
+        - name: spire-config-volume
+          mountPath: /run/spire/config
+          readOnly: true
+        - name: spire-data-volume
+          mountPath: /run/spire/data
+        - name: registration-script
+          mountPath: /config
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: spire-config-volume
+        configMap:
+          name: spire-server
+      - name: spire-data-volume
+        persistentVolumeClaim:
+          claimName: spire-server-data
+      - name: registration-script
+        configMap:
+          name: register-database-service
+          defaultMode: 0755
+  backoffLimit: 3

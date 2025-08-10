@@ -133,8 +133,8 @@ graph TD
     style B fill:#e1f5fe,stroke:#01579b,stroke-width:3px,stroke-dasharray:0
 ```
 
-📖 **[Complete Enterprise Deployment Guide](docs/ENTERPRISE_DEPLOYMENT_GUIDE.md)**  
-🔒 **[CRD Requirements & Alternatives](docs/ENTERPRISE_CRD_REQUIREMENTS.md)**
+📖 **[Complete Enterprise Deployment Guide](docs/enterprise_deployment_guide.md)**  
+🔒 **[CRD Requirements & Alternatives](docs/enterprise_crd_requirements.md)**
 
 ### **Enterprise Production Services**
 Realistic enterprise workload examples:

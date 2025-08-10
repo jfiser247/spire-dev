@@ -11,7 +11,7 @@ graph TB
             subgraph "upstream-spire-cluster"
                 subgraph "spire-upstream namespace"
                     US[🔐 SPIRE Server<br/>enterprise-root.org<br/>Port: 8081]
-                    UDB[(🗃️ PostgreSQL<br/>Database<br/>Port: 5432)]
+                    UDB[(🗃️ MySQL<br/>Database<br/>Port: 3306)]
                     UCM[⚙️ Controller Manager<br/>K8s Integration]
                     UFE[🌐 Federation Endpoint<br/>Port: 8443]
                     
@@ -34,7 +34,7 @@ graph TB
             subgraph "downstream-spire-cluster"
                 subgraph "spire-downstream namespace"
                     DS[🔐 SPIRE Server<br/>downstream.example.org<br/>Port: 8081]
-                    DDB[(🗃️ PostgreSQL<br/>Database<br/>Port: 5432)]
+                    DDB[(🗃️ MySQL<br/>Database<br/>Port: 3306)]
                     DCM[⚙️ Controller Manager<br/>K8s Integration]
                     DFE[🌐 Federation Endpoint<br/>Port: 8443]
                     
@@ -232,7 +232,7 @@ graph LR
     subgraph "🔒 Upstream Cluster"
         US_API[SPIRE Server API<br/>:8081]
         US_FED[Federation API<br/>:8443]
-        US_DB[(PostgreSQL<br/>Registration Data)]
+        US_DB[(MySQL<br/>Registration Data)]
         
         US_API --> US_DB
         US_API --> US_FED
@@ -241,7 +241,7 @@ graph LR
     subgraph "🌐 Downstream Cluster"
         DS_API[SPIRE Server API<br/>:8081]
         DS_FED[Federation API<br/>:8443]
-        DS_DB[(PostgreSQL<br/>Registration Data)]
+        DS_DB[(MySQL<br/>Registration Data)]
         
         DS_API --> DS_DB
         DS_API --> DS_FED

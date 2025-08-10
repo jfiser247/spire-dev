@@ -49,7 +49,7 @@ const server = http.createServer((req, res) => {
             const podData = {
                 server: serverPods.items.filter(pod => pod.metadata.name.startsWith('spire-server')),
                 database: serverPods.items.filter(pod => pod.metadata.name.startsWith('spire-db')),
-                storage: serverPVC.items.filter(pvc => pvc.metadata.name.startsWith('postgres')),
+                storage: serverPVC.items.filter(pvc => pvc.metadata.name.startsWith('mysql')),
                 dbService: serverSVC.items.filter(svc => svc.metadata.name.startsWith('spire-db')),
                 agents: agentPods.items.filter(pod => pod.metadata.name.startsWith('spire-agent')),
                 workloads: workloadPods.items
