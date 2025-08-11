@@ -182,7 +182,45 @@ EOF
     echo "✅ Namespaces created with proper security labels"
 }
 
-# Function to deploy SPIRE server (SQLite-based for reliability)
+# Function to deploy MySQL database
+deploy_mysql_database() {
+    print_section "Deploying MySQL Database"
+    
+    # Apply MySQL database manifests
+    kubectl --context workload-cluster apply -f k8s/spire-db/mysql-pvc.yaml
+    kubectl --context workload-cluster apply -f k8s/spire-db/mysql-deployment.yaml
+    kubectl --context workload-cluster apply -f k8s/spire-db/mysql-service.yaml
+    
+    echo "⏳ Waiting for MySQL database to be ready..."
+    
+    # Wait for database pod to be scheduled
+    for i in {1..24}; do
+        DB_PODS=$(kubectl --context workload-cluster -n spire-server get pods -l app=spire-db --no-headers 2>/dev/null | wc -l)
+        if [ "$DB_PODS" -gt 0 ]; then
+            echo "✅ Database pod scheduled, waiting for readiness..."
+            break
+        fi
+        echo "⏳ Waiting for database pod to be scheduled... (attempt $i/24)"
+        sleep 5
+    done
+    
+    if [ "$DB_PODS" -eq 0 ]; then
+        echo "❌ Database pod failed to be scheduled"
+        kubectl --context workload-cluster -n spire-server get pods
+        exit 1
+    fi
+    
+    # Wait for database to be ready
+    if kubectl --context workload-cluster -n spire-server wait --for=condition=ready pod -l app=spire-db --timeout=600s; then
+        echo "✅ MySQL database is ready"
+    else
+        echo "❌ MySQL database failed to become ready"
+        kubectl --context workload-cluster -n spire-server describe pods -l app=spire-db
+        exit 1
+    fi
+}
+
+# Function to deploy SPIRE server (MySQL-based for persistence)
 deploy_spire_server() {
     print_section "Deploying SPIRE Server"
     
@@ -305,6 +343,15 @@ verify_installation() {
     # Check all pods are running
     local all_ready=true
     
+    # Check database
+    local db_ready=$(kubectl --context workload-cluster -n spire-server get pods -l app=spire-db -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || echo "false")
+    if [ "$db_ready" = "true" ]; then
+        echo "✅ MySQL Database: Ready"
+    else
+        echo "❌ MySQL Database: Not Ready"
+        all_ready=false
+    fi
+    
     # Check server
     local server_ready=$(kubectl --context workload-cluster -n spire-server get pods -l app=spire-server -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || echo "false")
     if [ "$server_ready" = "true" ]; then
@@ -377,6 +424,7 @@ main() {
     cleanup_environment
     setup_cluster
     setup_namespaces
+    deploy_mysql_database
     deploy_spire_server
     create_trust_bundle
     deploy_spire_agent
