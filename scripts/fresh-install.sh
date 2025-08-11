@@ -111,18 +111,19 @@ setup_cluster() {
     local memory_gb=$((total_memory / 1024 / 1024 / 1024))
     local cpu_cores=$(sysctl -n hw.ncpu)
     
-    # Calculate Mac-friendly resource allocation
-    local cluster_memory=4096
+    # Calculate Mac-friendly resource allocation (conservative for Docker Desktop)
+    local cluster_memory=3072
     local cluster_cpus=2
     
-    if [ "$memory_gb" -ge 16 ]; then
-        cluster_memory=6144
+    if [ "$memory_gb" -ge 32 ]; then
+        cluster_memory=4096  # Use 4GB only on very high-memory systems
+    elif [ "$memory_gb" -ge 16 ]; then
+        cluster_memory=3584  # Use 3.5GB on high-memory systems
     fi
     
+    # Docker Desktop often limits available resources, so be conservative
     if [ "$cpu_cores" -ge 8 ]; then
-        cluster_cpus=4
-    elif [ "$cpu_cores" -ge 4 ]; then
-        cluster_cpus=2
+        cluster_cpus=2  # Conservative: use 2 CPUs even on high-core systems
     else
         cluster_cpus=2
     fi
