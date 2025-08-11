@@ -65,7 +65,7 @@ Understand how to deploy this in real environments
 ```
 
 **✨ What happens next:**
-- 🏗️ **Complete SPIRE infrastructure** deploys locally (5-8 minutes)
+- 🏗️ **Complete SPIRE infrastructure** deploys locally (3-4 minutes)
 - 📊 **Real-time dashboard** shows identity propagation at http://localhost:3000/web-dashboard.html
 - 🔐 **Three demo services** demonstrate SPIFFE integration patterns
 - 🧪 **Interactive examples** let you experiment with identity-based auth
@@ -88,6 +88,8 @@ brew install minikube kubectl node jq
 - **kubectl**: Manages your identity infrastructure  
 - **node**: Powers the real-time identity dashboard
 - **jq**: Processes identity and certificate data
+
+> **🔒 Security Note**: SPIRE requires specific Kubernetes security policies. See [Security Policy Requirements](docs/spire_security_policies.md) for namespace configuration details.
 
 </details>
 
@@ -139,7 +141,7 @@ open http://localhost:3000/web-dashboard.html
 
 ```bash
 # See how services authenticate to each other
-kubectl --context workload-cluster -n production exec deployment/user-service -- \
+kubectl --context workload-cluster -n spire-workload exec deployment/user-service -- \
   /opt/spire/bin/spire-agent api fetch -socketPath /run/spire/sockets/agent.sock
 
 # This shows the X.509 certificate your service uses - no passwords!
@@ -182,7 +184,7 @@ workload-cluster (Your Testing Ground)
 │   └── 💾 Database (Identity Registry - no secrets!)
 ├── spire-system namespace  
 │   └── 🤖 SPIRE Agent (Identity Provider)
-└── production namespace
+└── spire-workload namespace
     ├── 👤 user-service (proves identity via deployment)
     ├── 💳 payment-api (proves identity via selectors) 
     └── 📦 inventory-service (proves identity via labels)
@@ -237,7 +239,7 @@ kubectl --context workload-cluster -n spire-server exec spire-server-0 -- \
   /opt/spire/bin/spire-server entry show
 
 # Verify workload can fetch its identity
-kubectl --context workload-cluster -n production exec deployment/user-service -- \
+kubectl --context workload-cluster -n spire-workload exec deployment/user-service -- \
   /opt/spire/bin/spire-agent api fetch -socketPath /run/spire/sockets/agent.sock
 ```
 

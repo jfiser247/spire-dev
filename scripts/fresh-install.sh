@@ -171,9 +171,9 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: production
+  name: spire-workload
   labels:
-    name: production
+    name: spire-workload
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
@@ -310,6 +310,120 @@ deploy_spire_agent() {
     fi
 }
 
+# Function to deploy and wait for workload services
+deploy_workload_services() {
+    print_section "Deploying Workload Services"
+    
+    echo "⏳ Waiting for workload deployments to be ready..."
+    
+    # Wait for all workload deployments to be ready
+    local deployments=("inventory-service" "payment-api" "user-service")
+    local all_ready=true
+    
+    for deployment in "${deployments[@]}"; do
+        echo "⏳ Waiting for $deployment deployment..."
+        if kubectl --context workload-cluster -n spire-workload wait --for=condition=available deployment/$deployment --timeout=300s; then
+            echo "✅ $deployment deployment is ready"
+        else
+            echo "❌ $deployment deployment failed to become ready"
+            kubectl --context workload-cluster -n spire-workload describe deployment/$deployment
+            all_ready=false
+        fi
+    done
+    
+    if [ "$all_ready" = true ]; then
+        echo "✅ All workload services are ready"
+    else
+        echo "❌ Some workload services failed to deploy properly"
+        exit 1
+    fi
+}
+
+# Function to start documentation server
+start_documentation_server() {
+    print_section "Starting documentation server"
+    
+    # Check if mkdocs is available and verify dependencies
+    if ! command -v mkdocs &> /dev/null; then
+        echo "⚠️  MkDocs not found, attempting to install..."
+        
+        # Create a simple virtual environment for mkdocs if it doesn't exist
+        if [ ! -d "venv-docs" ]; then
+            echo "🔧 Creating virtual environment for documentation dependencies..."
+            python3 -m venv venv-docs 2>/dev/null || {
+                echo "⚠️  Failed to create virtual environment"
+                echo "ℹ️  Documentation server will be skipped"
+                echo "ℹ️  To enable manually:"
+                echo "     python3 -m venv venv-docs"
+                echo "     source venv-docs/bin/activate"
+                echo "     pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin"
+                return 0
+            }
+        fi
+        
+        # Activate virtual environment and install dependencies
+        source venv-docs/bin/activate 2>/dev/null || {
+            echo "⚠️  Failed to activate virtual environment"
+            return 0
+        }
+        
+        echo "🔧 Installing MkDocs with all required dependencies in virtual environment..."
+        if pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin 2>/dev/null; then
+            echo "✅ MkDocs and dependencies installed successfully"
+        else
+            echo "⚠️  Failed to install mkdocs dependencies"
+            echo "ℹ️  To enable documentation manually:"
+            echo "     source venv-docs/bin/activate"
+            echo "     pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin"
+            return 0
+        fi
+        deactivate 2>/dev/null || true
+    else
+        echo "🔍 MkDocs found, verifying dependencies..."
+        # Check if material theme is available
+        if ! python3 -c "import material" 2>/dev/null; then
+            echo "⚠️  Missing Material theme, may need virtual environment..."
+            if [ -d "venv-docs" ]; then
+                echo "🔧 Installing missing dependencies in existing virtual environment..."
+                source venv-docs/bin/activate 2>/dev/null && {
+                    pip install mkdocs-material mkdocs-mermaid2-plugin 2>/dev/null && {
+                        echo "✅ Dependencies installed"
+                    } || {
+                        echo "⚠️  Failed to install dependencies in virtual environment"
+                    }
+                    deactivate 2>/dev/null || true
+                } || {
+                    echo "⚠️  Could not use virtual environment"
+                }
+            fi
+        fi
+    fi
+    
+    # Start documentation server using the helper script
+    if [ -f "./scripts/start-docs-server.sh" ]; then
+        ./scripts/start-docs-server.sh > /tmp/docs.log 2>&1 &
+        DOCS_PID=$!
+    else
+        # Fallback to direct mkdocs command
+        echo "⚠️  Helper script not found, starting mkdocs directly..."
+        mkdocs serve > /tmp/docs.log 2>&1 &
+        DOCS_PID=$!
+    fi
+    
+    # Wait for documentation server to be ready
+    for i in {1..15}; do
+        if curl -s http://localhost:8000 > /dev/null 2>&1; then
+            echo "✅ Documentation server is ready at http://localhost:8000"
+            return 0
+        fi
+        echo "⏳ Waiting for documentation server... (attempt $i/15)"
+        sleep 2
+    done
+    
+    echo "⚠️  Documentation server may not be fully ready, but it's starting..."
+    echo "📚 Documentation URL: http://localhost:8000"
+}
+
 # Function to start dashboard
 start_dashboard() {
     print_section "Starting dashboard"
@@ -371,11 +485,18 @@ verify_installation() {
     fi
     
     # Check workloads
-    local workload_count=$(kubectl --context workload-cluster -n production get pods --no-headers 2>/dev/null | grep -c "Running" || echo "0")
+    local workload_count=$(kubectl --context workload-cluster -n spire-workload get pods --no-headers 2>/dev/null | grep "Running" | wc -l)
     if [ "$workload_count" -gt 0 ]; then
         echo "✅ Workload Services: $workload_count running"
     else
         echo "⚠️  Workload Services: None running (this is OK for basic setup)"
+    fi
+    
+    # Check documentation server
+    if curl -s http://localhost:8000 > /dev/null 2>&1; then
+        echo "✅ Documentation Server: Ready"
+    else
+        echo "⚠️  Documentation Server: Not responding (may need a moment to start)"
     fi
     
     # Check dashboard
@@ -404,15 +525,23 @@ show_final_info() {
     echo "   URL: http://localhost:3000/web-dashboard.html"
     echo "   Command: open http://localhost:3000/web-dashboard.html"
     echo ""
+    echo "📚 Documentation Available:"
+    echo "   - Click '📚 Project Overview' tab in dashboard"
+    echo "   - Click '📖 Documentation' tab in dashboard"
+    echo "   - Direct URL: http://localhost:8000"
+    echo ""
     echo "🔧 Common Commands:"
     echo "   kubectl --context workload-cluster -n spire-server get pods"
     echo "   kubectl --context workload-cluster -n spire-system get pods"
-    echo "   kubectl --context workload-cluster -n production get pods"
+    echo "   kubectl --context workload-cluster -n spire-workload get pods"
     echo ""
     echo "🔍 SPIRE Operations:"
     echo "   ./scripts/verify-setup.sh"
     echo ""
-    echo "⏱️  Total setup time: ~5-8 minutes"
+    echo "🔒 Security Information:"
+    echo "   Security Policy Guide: docs/spire_security_policies.md"
+    echo ""
+    echo "⏱️  Total setup time: ~3-4 minutes"
     echo "🔄 To reset: ./scripts/fresh-install.sh"
 }
 
@@ -428,6 +557,8 @@ main() {
     deploy_spire_server
     create_trust_bundle
     deploy_spire_agent
+    deploy_workload_services
+    start_documentation_server
     start_dashboard
     verify_installation
     show_final_info

@@ -77,8 +77,8 @@ nav:
   - 🔧 Local Development:
     - Project Structure: project_structure.md
     - Architecture Validation: architecture_validation.md
-    - Namespace Configuration: namespace_labeling_fix.md
-    - Script Fixes Reference: script_fixes_summary.md
+    - Security Policy Requirements: spire_security_policies.md
+    - Documentation Server Guide: mkdocs_server_guide.md
   - 🏢 Advanced Enterprise:
     - Enterprise Architecture: enterprise_architecture_diagram.md
     - Production Deployment: enterprise_deployment_guide.md

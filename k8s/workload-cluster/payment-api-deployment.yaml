@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-api
-  namespace: production
+  namespace: spire-workload
   labels:
     app: payment-api
     service: payment-processing
@@ -20,6 +20,13 @@ spec:
         tier: api
     spec:
       serviceAccountName: payment-api
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: payment-api
         image: alpine/curl:latest
@@ -27,6 +34,15 @@ spec:
         ports:
         - containerPort: 9090
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - name: spire-agent-socket
           mountPath: /run/spire/sockets
@@ -57,7 +73,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: payment-api
-  namespace: production
+  namespace: spire-workload
   labels:
     app: payment-api
     service: payment-processing
@@ -74,7 +90,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: payment-api
-  namespace: production
+  namespace: spire-workload
   labels:
     app: payment-api
     service: payment-processing

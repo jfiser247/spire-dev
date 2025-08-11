@@ -8,27 +8,52 @@ set -e
 echo "📚 Starting SPIRE Documentation Server"
 echo "======================================="
 
-# Check if MkDocs is installed
-if ! command -v mkdocs &> /dev/null; then
-    echo "❌ MkDocs not found. Installing MkDocs..."
-    
-    # Try using pipx first (recommended for macOS Homebrew Python)
-    if command -v pipx &> /dev/null; then
-        echo "📦 Using pipx to install MkDocs..."
-        pipx install mkdocs
-        pipx inject mkdocs mkdocs-material mkdocs-mermaid2-plugin
-    # Try using brew if available
-    elif command -v brew &> /dev/null; then
-        echo "🍺 Using brew to install MkDocs..."
-        brew install mkdocs
-        # Install required plugins via pip for proper functionality
-        echo "📦 Installing required MkDocs plugins..."
-        pip3 install --break-system-packages mkdocs-material mkdocs-mermaid2-plugin pymdown-extensions
-    # Fall back to pip with --break-system-packages for Homebrew Python
-    else
-        echo "🐍 Using pip with system packages override..."
-        pip3 install --break-system-packages mkdocs mkdocs-material mkdocs-mermaid2-plugin
+# Check if MkDocs is available (global or virtual environment)
+MKDOCS_CMD=""
+
+# Check if we have a virtual environment with mkdocs
+if [ -d "venv-docs" ] && [ -f "venv-docs/bin/activate" ]; then
+    source venv-docs/bin/activate 2>/dev/null || true
+    if command -v mkdocs &> /dev/null; then
+        MKDOCS_CMD="mkdocs"
+        echo "✅ Using MkDocs from virtual environment"
     fi
+# Check for system mkdocs
+elif command -v mkdocs &> /dev/null; then
+    MKDOCS_CMD="mkdocs"
+    echo "✅ Using system MkDocs installation"
+fi
+
+# If no mkdocs found, create virtual environment and install
+if [ -z "$MKDOCS_CMD" ]; then
+    echo "⚠️  MkDocs not found. Setting up virtual environment..."
+    
+    # Create virtual environment if it doesn't exist
+    if [ ! -d "venv-docs" ]; then
+        echo "🔧 Creating virtual environment for documentation..."
+        python3 -m venv venv-docs || {
+            echo "❌ Failed to create virtual environment"
+            echo "ℹ️  Please install Python 3.7+ and try again"
+            exit 1
+        }
+    fi
+    
+    # Activate and install dependencies
+    source venv-docs/bin/activate || {
+        echo "❌ Failed to activate virtual environment"
+        exit 1
+    }
+    
+    echo "📦 Installing MkDocs and dependencies..."
+    pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin pymdown-extensions || {
+        echo "❌ Failed to install MkDocs dependencies"
+        echo "ℹ️  Check your internet connection and try again"
+        deactivate 2>/dev/null || true
+        exit 1
+    }
+    
+    MKDOCS_CMD="mkdocs"
+    echo "✅ MkDocs installed successfully in virtual environment"
 fi
 
 # Check if documentation server is already running

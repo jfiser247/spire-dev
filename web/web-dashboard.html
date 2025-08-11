@@ -51,6 +51,24 @@
             border-bottom-color: #667eea;
             color: #667eea;
         }
+        .docs-tab {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 3px solid #28a745;
+            font-weight: 600;
+            position: relative;
+        }
+        .docs-tab:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            transform: translateY(-1px);
+        }
+        .docs-tab::after {
+            content: '🔗';
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
         .tab-content {
             padding: 30px;
             min-height: 400px;
@@ -114,6 +132,17 @@
             margin-top: 5px;
             opacity: 0.7;
             font-style: italic;
+        }
+        .namespace-label {
+            background: #e7f3ff;
+            color: #0066cc;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 2px 0 8px 0;
+            border: 1px solid #b3d9ff;
         }
         .status-card h3 {
             margin: 0 0 10px 0;
@@ -493,6 +522,8 @@
             <button class="tab" onclick="showTab('workloads')">Workloads</button>
             <button class="tab" onclick="showTab('metrics')">SPIRE Metrics</button>
             <button class="tab" onclick="showTab('commands')">Useful Commands</button>
+            <button class="tab docs-tab" onclick="openMkDocs('overview')">📚 Project Overview</button>
+            <button class="tab docs-tab" onclick="openMkDocs('docs')">📖 Documentation</button>
         </div>
         
         <div class="tab-content">
@@ -516,30 +547,35 @@
                 <div class="status-grid overview">
                     <div class="status-card clickable" onclick="navigateToTab('server')" title="Click to view SPIRE Server details">
                         <h3>SPIRE Server</h3>
+                        <div class="namespace-label">spire-server</div>
                         <div class="status-value status-online" id="server-status">●</div>
                         <p id="server-context">workload-cluster</p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
-                    <div class="status-card clickable" onclick="navigateToTab('database')" title="Click to view SQLite Database details">
-                        <h3>SQLite DB</h3>
+                    <div class="status-card clickable" onclick="navigateToTab('database')" title="Click to view MySQL Database details">
+                        <h3>MySQL DB</h3>
+                        <div class="namespace-label">spire-server</div>
                         <div class="status-value status-online" id="database-status">●</div>
                         <p id="database-context">Storage: <span id="db-storage">1Gi</span></p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
                     <div class="status-card clickable" onclick="navigateToTab('agents')" title="Click to view SPIRE Agents details">
                         <h3>SPIRE Agents</h3>
+                        <div class="namespace-label">spire-system</div>
                         <div class="status-value" id="agent-status">●</div>
                         <p id="agent-context">Active agents: <span id="agent-count">-</span></p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
                     <div class="status-card clickable" onclick="navigateToTab('workloads')" title="Click to view Workload Services details">
                         <h3>Workload Services</h3>
+                        <div class="namespace-label">spire-workload</div>
                         <div class="status-value" id="workload-status">●</div>
                         <p id="workload-context">Running services: <span id="workload-count">-</span></p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
                     <div class="status-card clickable" onclick="navigateToTab('metrics')" title="Click to view SPIRE Metrics & Telemetry">
                         <h3>SPIRE Metrics</h3>
+                        <div class="namespace-label">multiple</div>
                         <div class="status-value" id="metrics-summary">📊</div>
                         <p id="metrics-context">Interactive telemetry</p>
                         <div class="clickable-hint">Click for details</div>
@@ -578,7 +614,7 @@
             </div>
             
             <div id="database" class="tab-pane">
-                <h2>SQLite Database</h2>
+                <h2>MySQL Database</h2>
                 <button class="refresh-btn" onclick="refreshDatabaseStatus()">🔄 Refresh Database Status</button>
                 <button class="refresh-btn" onclick="toggleAutoRefreshTab('database')" id="database-auto-btn">🟢 Auto-refresh: ON</button>
                 
@@ -905,7 +941,7 @@
                 <h3>Check SPIRE Server Status</h3>
                 <div class="command-box">kubectl --context workload-cluster -n spire-server get pods -l app=spire-server</div>
                 
-                <h3>Check SQLite Database</h3>
+                <h3>Check MySQL Database</h3>
                 <div class="command-box">kubectl --context workload-cluster -n spire-server get pods -l app=spire-db</div>
                 
                 <h3>Check Database Storage</h3>
@@ -1076,6 +1112,30 @@ curl http://localhost:9988/metrics</div>
             }, 150);
         }
 
+        function openMkDocs(type) {
+            // Remove active state from all tabs since we're navigating away
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Determine the correct mkdocs URL based on type
+            let mkdocsUrl;
+            if (type === 'overview') {
+                mkdocsUrl = 'http://localhost:8000';  // Main mkdocs index page
+            } else if (type === 'docs') {
+                mkdocsUrl = 'http://localhost:8000/fresh_install_guide/';  // Start with getting started guide
+            }
+            
+            // Use a simple approach: try to open the documentation directly
+            // If the server is down, the browser will show a connection error
+            // If the server is up, the documentation will load
+            const opened = window.open(mkdocsUrl, '_blank');
+            
+            if (!opened) {
+                // Pop-up blocked or other issue
+                alert(`📚 Unable to Open Documentation\n\nTo access the documentation:\n\n1. Allow pop-ups for this site\n2. Or manually navigate to: ${mkdocsUrl}\n\nIf the documentation server isn't running:\n1. Open a terminal in the project directory\n2. Run: ./scripts/start-docs-server.sh\n3. Wait for "Serving at http://localhost:8000"\n\nThe script automatically creates a virtual environment\nand installs dependencies safely.\n\nAlternatively, run a fresh installation:\n./scripts/fresh-install.sh`);
+            }
+        }
+
         function updateRefreshInterval() {
             const select = document.getElementById('refresh-interval');
             refreshIntervalSeconds = parseInt(select.value);
@@ -1235,6 +1295,7 @@ curl http://localhost:9988/metrics</div>
                     ready: pod.status.containerStatuses?.[0]?.ready || false,
                     restarts: pod.status.containerStatuses?.[0]?.restartCount || 0,
                     node: pod.spec.nodeName,
+                    hostIP: pod.status.hostIP, // Preserve hostIP for cluster info
                     age: pod.metadata.creationTimestamp
                 }));
             }
@@ -1520,6 +1581,9 @@ curl http://localhost:9988/metrics</div>
             try {
                 const data = window.currentPodData || await fetchPodData();
                 
+                // Update cluster information section
+                updateClusterInfo(data);
+                
                 if (data && data.server) {
                     let tableHTML = '';
                     data.server.forEach(pod => {
@@ -1547,6 +1611,61 @@ curl http://localhost:9988/metrics</div>
             }
             
             table.classList.remove('loading');
+        }
+        
+        function updateClusterInfo(data) {
+            console.log('updateClusterInfo called with data:', data);
+            
+            // Update server IP from server pod data
+            const serverIpElement = document.getElementById('server-ip');
+            const setupStatusElement = document.getElementById('setup-status');
+            const lastUpdatedElement = document.getElementById('last-updated');
+            
+            if (!serverIpElement) {
+                console.error('Server IP element not found');
+                return;
+            }
+            
+            if (data && data.server && data.server.length > 0) {
+                // Extract server IP from the first server pod
+                const serverPod = data.server[0];
+                console.log('First server pod:', serverPod);
+                
+                // Check if we have enriched pod data with hostIP
+                if (serverPod.hostIP) {
+                    console.log('Using hostIP from enriched data:', serverPod.hostIP);
+                    serverIpElement.textContent = serverPod.hostIP;
+                } else {
+                    // Default minikube IP
+                    console.log('No hostIP found, using default');
+                    serverIpElement.textContent = '192.168.49.2';
+                }
+                
+                // Update setup status based on pod health
+                const healthyPods = data.server.filter(pod => pod.ready).length;
+                const totalPods = data.server.length;
+                
+                if (healthyPods === totalPods) {
+                    setupStatusElement.textContent = 'Ready';
+                    setupStatusElement.style.color = '#4CAF50';
+                } else if (healthyPods > 0) {
+                    setupStatusElement.textContent = 'Partially Ready';
+                    setupStatusElement.style.color = '#FF9800';
+                } else {
+                    setupStatusElement.textContent = 'Not Ready';
+                    setupStatusElement.style.color = '#f44336';
+                }
+            } else {
+                console.log('No server data available');
+                serverIpElement.textContent = 'N/A';
+                setupStatusElement.textContent = 'No Data';
+                setupStatusElement.style.color = '#757575';
+            }
+            
+            // Update last updated timestamp
+            const now = new Date();
+            lastUpdatedElement.textContent = now.toLocaleTimeString();
+            console.log('Cluster info updated successfully');
         }
         
         async function refreshDatabaseStatus() {
@@ -1751,7 +1870,7 @@ curl http://localhost:9988/metrics</div>
             let metricsText = "Interactive telemetry";
             
             if (rpcCalls > 5000 && agentConnections > 5 && svidRate > 50) {
-                metricsIcon = "🟢";
+                metricsIcon = "🔴";
                 metricsText = "High activity";
             } else if (rpcCalls > 1000 && agentConnections > 2 && svidRate > 20) {
                 metricsIcon = "🟡";
@@ -2323,7 +2442,7 @@ curl http://localhost:9988/metrics</div>
                     <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">📋 Database Query Commands</h4>
                         <p style="margin: 0; font-size: 14px; color: #666;">
-                            Use these commands to query the SQLite database directly for real-time policy data:
+                            Use these commands to query the MySQL database directly for real-time policy data:
                         </p>
                     </div>
 
@@ -2398,11 +2517,11 @@ curl http://localhost:9988/metrics</div>
 
                     <h4>🛠️ Database Query Commands</h4>
                     <div style="background: #f1f3f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                        <h5>Connect to SQLite Database:</h5>
+                        <h5>Connect to MySQL Database:</h5>
                         <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code># Get database pod name
 DB_POD=$(kubectl --context workload-cluster -n spire-server get pod -l app=spire-db -o jsonpath='{.items[0].metadata.name}')
 
-# Connect to SQLite
+# Connect to MySQL
 kubectl --context workload-cluster -n spire-server exec -it $DB_POD -- postgres -u root -p spire</code></pre>
 
                         <h5>Query Registration Entries:</h5>
@@ -2549,7 +2668,7 @@ kubectl --context workload-cluster -n spire-server exec $SERVER_POD -- /opt/spir
                 return { context: 'workload-cluster', namespace: 'spire-system' };
             } else {
                 // Workload services
-                return { context: 'workload-cluster', namespace: 'production' };
+                return { context: 'workload-cluster', namespace: 'spire-workload' };
             }
         }
         
@@ -2557,6 +2676,28 @@ kubectl --context workload-cluster -n spire-server exec $SERVER_POD -- /opt/spir
         function createClickablePodName(podName) {
             const context = getResourceContext(podName);
             return `<span class="clickable-pod-name" onclick="showResourceDetails('pod', '${podName}', '${context.namespace}', '${context.context}')" title="Click to view details">${podName}</span>`;
+        }
+        
+        // Initialize dashboard on page load
+        async function initializeDashboard() {
+            console.log('Initializing dashboard...');
+            
+            // Load initial data and update cluster info
+            try {
+                const data = await fetchPodData();
+                window.currentPodData = data;
+                updateClusterInfo(data);
+                console.log('Dashboard initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize dashboard:', error);
+            }
+        }
+        
+        // Initialize when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDashboard);
+        } else {
+            initializeDashboard();
         }
         
     </script>

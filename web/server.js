@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
             'kubectl --context workload-cluster -n spire-server get pvc -o json',
             'kubectl --context workload-cluster -n spire-server get svc -o json',
             'kubectl --context workload-cluster -n spire-system get pods -o json',
-            'kubectl --context workload-cluster -n production get pods -o json'
+            'kubectl --context workload-cluster -n spire-workload get pods -o json'
         ];
         
         Promise.all(kubectlCommands.map(cmd => 
@@ -76,7 +76,7 @@ const server = http.createServer((req, res) => {
             
             // Security check - only allow specific contexts and namespaces
             const allowedContexts = ['spire-server-cluster', 'workload-cluster'];
-            const allowedNamespaces = ['spire-server', 'spire-system', 'production'];
+            const allowedNamespaces = ['spire-server', 'spire-system', 'spire-workload'];
             const allowedResourceTypes = ['pod', 'service', 'pvc', 'deployment', 'daemonset', 'statefulset'];
             
             if (!allowedContexts.includes(context) || 

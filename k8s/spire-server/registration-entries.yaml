@@ -21,25 +21,25 @@ data:
 
     # Register user management service (follows Istio SPIFFE ID pattern)
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/ns/production/sa/user-service \
+      -spiffeID spiffe://example.org/ns/spire-workload/sa/user-service \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
-      -selector k8s:ns:production \
+      -selector k8s:ns:spire-workload \
       -selector k8s:sa:user-service \
       -selector k8s:pod-label:app:user-service
 
     # Register payment processing API (follows Istio SPIFFE ID pattern)
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/ns/production/sa/payment-api \
+      -spiffeID spiffe://example.org/ns/spire-workload/sa/payment-api \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
-      -selector k8s:ns:production \
+      -selector k8s:ns:spire-workload \
       -selector k8s:sa:payment-api \
       -selector k8s:pod-label:app:payment-api
 
     # Register inventory management service (follows Istio SPIFFE ID pattern)
     /opt/spire/bin/spire-server entry create \
-      -spiffeID spiffe://example.org/ns/production/sa/inventory-service \
+      -spiffeID spiffe://example.org/ns/spire-workload/sa/inventory-service \
       -parentID spiffe://example.org/agent/k8s_psat/cluster/spire-agent \
-      -selector k8s:ns:production \
+      -selector k8s:ns:spire-workload \
       -selector k8s:sa:inventory-service \
       -selector k8s:pod-label:app:inventory-service
 

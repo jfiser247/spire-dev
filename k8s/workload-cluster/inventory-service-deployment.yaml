@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: inventory-service
-  namespace: production
+  namespace: spire-workload
   labels:
     app: inventory-service
     service: inventory-management
@@ -20,6 +20,13 @@ spec:
         tier: backend
     spec:
       serviceAccountName: inventory-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: inventory-service
         image: python:3.9-slim
@@ -27,6 +34,15 @@ spec:
         ports:
         - containerPort: 8082
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - name: spire-agent-socket
           mountPath: /run/spire/sockets
@@ -59,7 +75,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: inventory-service
-  namespace: production
+  namespace: spire-workload
   labels:
     app: inventory-service
     service: inventory-management
@@ -76,7 +92,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: inventory-service
-  namespace: production
+  namespace: spire-workload
   labels:
     app: inventory-service
     service: inventory-management
