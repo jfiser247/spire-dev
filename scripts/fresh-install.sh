@@ -33,6 +33,9 @@ else
 fi
 echo ""
 
+echo "Starting fresh Mac laptop install process..."
+echo "📚 Basic development deployment selected"
+
 # Function to print section headers
 print_section() {
     echo ""
@@ -55,324 +58,334 @@ check_prerequisites() {
         missing_tools+=("kubectl")
     fi
     
-    if ! command -v node &> /dev/null; then
-        missing_tools+=("node (Node.js)")
-    fi
-    
     if ! command -v jq &> /dev/null; then
         missing_tools+=("jq")
     fi
     
-    if [ ${#missing_tools[@]} -gt 0 ]; then
-        echo "❌ Missing required tools for Mac laptop SPIRE development:"
-        for tool in "${missing_tools[@]}"; do
-            echo "   - $tool"
-        done
-        echo ""
-        echo "📖 Installation guide:"
-        echo "   brew install minikube kubectl node jq"
-        echo ""
+    if ! command -v node &> /dev/null; then
+        missing_tools+=("node")
+    fi
+    
+    if [ ${#missing_tools[@]} -ne 0 ]; then
+        echo "❌ Missing required tools: ${missing_tools[*]}"
+        echo "📦 Install them with: brew install ${missing_tools[*]}"
         exit 1
     fi
     
-    echo "✅ All Mac laptop prerequisites satisfied"
-    echo "   - minikube: $(minikube version --short 2>/dev/null)"
-    echo "   - kubectl: $(kubectl version --client --short 2>/dev/null | cut -d' ' -f3)"
-    echo "   - node: $(node --version)"
-    echo "   - jq: $(jq --version)"
+    echo "✅ All required tools are available"
     
-    # Check if Docker is running (required for minikube)
-    if ! docker info >/dev/null 2>&1; then
-        echo "⚠️  Docker appears not to be running - this may cause minikube issues"
-        echo "   💡 Please ensure Docker Desktop or Rancher Desktop is running"
+    # Check Docker
+    if ! docker info &> /dev/null; then
+        echo "❌ Docker is not running. Please start Docker Desktop."
+        exit 1
     fi
+    echo "✅ Docker is running"
 }
 
-# Function to completely tear down existing environment
-teardown_environment() {
-    print_section "Tearing down existing environment (simulating fresh laptop)"
+# Function to clean up existing environment
+cleanup_environment() {
+    print_section "Cleaning up existing environment"
     
     # Stop any running dashboard servers
-    echo "🛑 Stopping any running dashboard servers..."
-    pkill -f "node server.js" 2>/dev/null || echo "   No dashboard servers running"
+    pkill -f 'node.*server.js' 2>/dev/null || echo "ℹ️  No dashboard servers to stop"
     
-    # Delete all SPIRE-related minikube clusters
-    echo "🗑️  Deleting all SPIRE minikube clusters..."
+    # Delete existing minikube profiles
+    local profiles=($(minikube profile list -o json 2>/dev/null | jq -r '.valid[]?.Name // empty' 2>/dev/null || echo ""))
     
-    # Get list of all profiles and delete SPIRE-related ones
-    while IFS= read -r profile; do
-        if [[ -n "$profile" ]]; then
-            if [[ "$profile" =~ spire.*cluster$ ]] || [[ "$profile" =~ workload.*cluster$ ]] || [[ "$profile" =~ upstream.*cluster$ ]] || [[ "$profile" =~ downstream.*cluster$ ]]; then
-                echo "   Deleting cluster: $profile"
-                minikube delete --profile "$profile" >/dev/null 2>&1 || echo "   Warning: Could not delete $profile"
-            fi
+    for profile in "${profiles[@]}"; do
+        if [ -n "$profile" ] && [ "$profile" != "null" ]; then
+            echo "🗑️  Deleting profile: $profile"
+            minikube delete -p "$profile" 2>/dev/null || echo "⚠️  Failed to delete $profile"
         fi
-    done < <(minikube profile list -o json 2>/dev/null | jq -r '.valid[]?.Name // empty' 2>/dev/null || echo "")
+    done
     
-    # Clean up kubectl contexts
-    echo "🧹 Cleaning kubectl contexts..."
-    kubectl config delete-context spire-server-cluster 2>/dev/null || echo "   spire-server-cluster context not found"
-    kubectl config delete-context workload-cluster 2>/dev/null || echo "   workload-cluster context not found"
-    kubectl config delete-context upstream-spire-cluster 2>/dev/null || echo "   upstream-spire-cluster context not found"
-    kubectl config delete-context downstream-spire-cluster 2>/dev/null || echo "   downstream-spire-cluster context not found"
-    
-    # Clean up temporary files
-    echo "🗂️  Cleaning temporary files..."
-    rm -f /tmp/bundle.* /tmp/spire-* /tmp/agent-* /tmp/workload-* /tmp/upstream-* /tmp/downstream-* 2>/dev/null || true
-    
-    # Reset Docker (in case of Docker driver issues)
-    echo "🐳 Resetting Docker state..."
-    docker system prune -f >/dev/null 2>&1 || echo "   Docker cleanup skipped"
-    
-    echo "✅ Environment completely torn down (fresh laptop state achieved)"
+    echo "✅ Environment cleaned"
 }
 
-# Function to set up fresh environment
-setup_fresh_environment() {
-    print_section "Setting up fresh SPIRE environment"
+# Function to setup cluster with Mac-friendly resources
+setup_cluster() {
+    print_section "Setting up workload cluster"
     
-    echo "🚀 Starting fresh SPIRE cluster setup..."
+    # Get available system resources
+    local total_memory=$(sysctl -n hw.memsize)
+    local memory_gb=$((total_memory / 1024 / 1024 / 1024))
+    local cpu_cores=$(sysctl -n hw.ncpu)
     
-    # Make scripts executable (fresh laptop might not have this)
-    chmod +x scripts/setup-clusters.sh
-    chmod +x scripts/setup-enterprise-clusters.sh
-    chmod +x scripts/setup-crd-free-deployment.sh
-    chmod +x scripts/verify-setup.sh
-    chmod +x scripts/verify-enterprise-setup.sh
-    chmod +x scripts/start-docs-server.sh
-    chmod +x web/start-dashboard.sh
+    # Calculate Mac-friendly resource allocation
+    local cluster_memory=4096
+    local cluster_cpus=2
     
-    # Run the appropriate setup script based on deployment type
-    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
-        echo "📦 Running enterprise cluster setup script..."
-        echo "⏱️  This may take 8-12 minutes for cluster creation and pod deployment..."
-        ./scripts/setup-enterprise-clusters.sh
-    elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
-        echo "📦 Running CRD-free deployment script..."
-        echo "⏱️  This may take 6-10 minutes for cluster creation and pod deployment..."
-        ./scripts/setup-crd-free-deployment.sh
-    else
-        echo "📦 Running basic cluster setup script..."
-        echo "⏱️  This may take 5-8 minutes for cluster creation and pod deployment..."
-        ./scripts/setup-clusters.sh
+    if [ "$memory_gb" -ge 16 ]; then
+        cluster_memory=6144
     fi
     
-    echo "✅ Fresh SPIRE environment setup completed"
+    if [ "$cpu_cores" -ge 8 ]; then
+        cluster_cpus=4
+    elif [ "$cpu_cores" -ge 4 ]; then
+        cluster_cpus=2
+    else
+        cluster_cpus=2
+    fi
+    
+    echo "💻 System resources: ${memory_gb}GB RAM, ${cpu_cores} CPUs"
+    echo "🎯 Allocating: ${cluster_memory}MB RAM, ${cluster_cpus} CPUs to cluster"
+    
+    # Create cluster with appropriate resources
+    minikube start -p workload-cluster \
+        --cpus="$cluster_cpus" \
+        --memory="$cluster_memory" \
+        --disk-size=5g \
+        --driver=docker \
+        --kubernetes-version=v1.30.0
+    
+    echo "✅ Workload cluster created"
 }
 
-# Function to validate installation
-validate_installation() {
-    print_section "Validating fresh installation"
+# Function to create namespaces with proper security settings
+setup_namespaces() {
+    print_section "Setting up namespaces"
     
-    echo "🔍 Running verification checks..."
-    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
-        ./scripts/verify-enterprise-setup.sh || echo "⚠️  Some components may still be initializing"
-    else
-        ./scripts/verify-setup.sh || echo "⚠️  Some components may still be initializing"
+    # Create namespaces with inline YAML to avoid race conditions
+    cat <<EOF | kubectl --context workload-cluster apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spire-server
+  labels:
+    name: spire-server
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spire-system
+  labels:
+    name: spire-system
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    name: production
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+EOF
+    
+    echo "✅ Namespaces created with proper security labels"
+}
+
+# Function to deploy SPIRE server (SQLite-based for reliability)
+deploy_spire_server() {
+    print_section "Deploying SPIRE Server"
+    
+    # Apply SPIRE server manifests
+    kubectl --context workload-cluster apply -f k8s/spire-server/
+    
+    echo "⏳ Waiting for SPIRE server to be ready..."
+    
+    # Wait for server pod to be scheduled
+    for i in {1..24}; do
+        SERVER_PODS=$(kubectl --context workload-cluster -n spire-server get pods -l app=spire-server --no-headers 2>/dev/null | wc -l)
+        if [ "$SERVER_PODS" -gt 0 ]; then
+            echo "✅ Server pod scheduled, waiting for readiness..."
+            break
+        fi
+        echo "⏳ Waiting for server pod to be scheduled... (attempt $i/24)"
+        sleep 5
+    done
+    
+    if [ "$SERVER_PODS" -eq 0 ]; then
+        echo "❌ Server pod failed to be scheduled"
+        kubectl --context workload-cluster -n spire-server get pods
+        exit 1
     fi
     
-    echo ""
-    echo "📊 Testing real-time dashboard API..."
+    # Wait for server to be ready
+    if kubectl --context workload-cluster -n spire-server wait --for=condition=ready pod -l app=spire-server --timeout=600s; then
+        echo "✅ SPIRE server is ready"
+    else
+        echo "❌ SPIRE server failed to become ready"
+        kubectl --context workload-cluster -n spire-server describe pods -l app=spire-server
+        exit 1
+    fi
+}
+
+# Function to create trust bundle
+create_trust_bundle() {
+    print_section "Creating trust bundle"
     
-    # Start dashboard in background for testing
-    ./web/start-dashboard.sh &
-    DASHBOARD_PID=$!
+    # Get server pod name
+    SERVER_POD=$(kubectl --context workload-cluster -n spire-server get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [ -z "$SERVER_POD" ]; then
+        echo "❌ Failed to get SPIRE server pod name"
+        exit 1
+    fi
     
-    # Wait for dashboard to start
-    sleep 10
-    
-    # Test API endpoint with retries
-    echo "Testing dashboard API..."
+    # Create trust bundle with retry logic
     for i in {1..5}; do
-        if curl -s http://localhost:3000/api/pod-data >/dev/null 2>&1; then
-            echo "✅ Dashboard API responding successfully"
-            echo "   🌐 Dashboard URL: http://localhost:3000/web-dashboard.html"
-            break
-        else
-            echo "   ⏳ Dashboard API attempt $i/5 - waiting..."
-            sleep 5
-        fi
-    done
-    
-    # Stop test dashboard with proper cleanup
-    if [ ! -z "$DASHBOARD_PID" ]; then
-        kill $DASHBOARD_PID 2>/dev/null || true
-        wait $DASHBOARD_PID 2>/dev/null || true
-    fi
-    
-    # Kill any remaining dashboard processes
-    pkill -f "node server.js" 2>/dev/null || true
-    
-    # Wait for port to be released with longer timeout
-    echo "⏳ Waiting for dashboard port to be released..."
-    for i in {1..15}; do
-        if ! lsof -i :3000 >/dev/null 2>&1; then
-            echo "✅ Port 3000 is available"
-            break
-        fi
-        echo "   Waiting for port cleanup... (attempt $i/15)"
-        sleep 3
-        
-        # Force kill any remaining processes on port 3000 after a few attempts
-        if [ $i -eq 5 ]; then
-            echo "   🔧 Force killing processes on port 3000..."
-            pkill -9 -f "node server.js" 2>/dev/null || true
-        fi
-    done
-    
-    echo ""
-    echo "📋 Fresh laptop installation summary:"
-    echo "   ✅ minikube clusters: $(minikube profile list -o json 2>/dev/null | jq -r '.valid | length' 2>/dev/null || echo '0') active"
-    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
-        echo "   ✅ kubectl contexts: configured for enterprise multi-cluster setup"
-        echo "   ✅ SPIRE services: enterprise upstream and downstream clusters deployed"
-    else
-        echo "   ✅ kubectl contexts: configured for basic multi-cluster setup"
-        echo "   ✅ SPIRE services: basic development clusters deployed"
-    fi
-    echo "   🚀 Starting dashboard server..."
-    
-    # Start dashboard server in background
-    ./web/start-dashboard.sh &
-    DASHBOARD_PID=$!
-    
-    # Start documentation server in background
-    ./scripts/start-docs-server.sh &
-    DOCS_PID=$!
-    
-    # Wait for servers to start
-    sleep 5
-    
-    # Test if dashboard is running with retries
-    for i in {1..3}; do
-        if curl -s http://localhost:3000 >/dev/null 2>&1; then
-            echo "   ✅ Dashboard server: running on http://localhost:3000"
-            echo "   📊 Dashboard URL: http://localhost:3000/web-dashboard.html"
-            break
-        else
-            echo "   ⏳ Dashboard starting... (attempt $i/3)"
-            sleep 3
-        fi
-    done
-    
-    # Test if documentation server is running
-    for i in {1..3}; do
-        if curl -s http://localhost:8000 >/dev/null 2>&1; then
-            echo "   ✅ Documentation server: running on http://localhost:8000"
-            echo "   📚 Documentation URL: http://localhost:8000"
-            break
-        else
-            echo "   ⏳ Documentation starting... (attempt $i/3)"
-            sleep 3
-            if [ $i -eq 3 ]; then
-                echo "   ⚠️  Documentation server failed to start (MkDocs installation issue)"
-                echo "   💡 Try: brew install mkdocs or pipx install mkdocs"
+        if kubectl --context workload-cluster -n spire-server exec "$SERVER_POD" -- \
+           /opt/spire/bin/spire-server bundle show -socketPath /run/spire/sockets/server.sock -format pem > /tmp/bundle.pem 2>/dev/null; then
+            if [ -s /tmp/bundle.pem ]; then
+                echo "✅ Trust bundle retrieved successfully"
+                break
             fi
         fi
+        echo "⏳ Waiting for trust bundle... (attempt $i/5)"
+        sleep 15
     done
-}
-
-# Function to display next steps
-show_next_steps() {
-    print_section "Fresh Mac laptop setup complete!"
     
-    echo "🎉 Your fresh SPIRE development environment is ready!"
-    echo ""
-    echo "💻 Your development environment is ready:"
-    echo "   📊 Dashboard: http://localhost:3000/web-dashboard.html"
-    echo "   📚 Documentation: http://localhost:8000"
-    echo "   🌐 Open dashboard: open http://localhost:3000/web-dashboard.html"
-    echo "   📖 Open docs: open http://localhost:8000"
-    echo ""
-    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
-        echo "🏢 Explore your enterprise clusters:"
-        echo "   # Upstream cluster (Root CA)"
-        echo "   kubectl --context upstream-spire-cluster -n spire-upstream get pods"
-        echo ""
-        echo "   # Downstream cluster (Regional/Workload)"
-        echo "   kubectl --context downstream-spire-cluster -n spire-downstream get pods"
-        echo "   kubectl --context downstream-spire-cluster -n downstream-workloads get pods"
-        echo ""
-        echo "🔄 To reset to fresh enterprise state anytime:"
-        echo "   ./scripts/fresh-install.sh enterprise"
-        echo ""
-        echo "🔍 Run enterprise verification:"
-        echo "   ./scripts/verify-enterprise-setup.sh"
-    elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
-        echo "🔒 Explore your CRD-free deployment:"
-        echo "   # SPIRE agents (no CRDs)"
-        echo "   kubectl --context crd-free-cluster -n spire-system get pods"
-        echo ""
-        echo "   # CRD-free workloads"
-        echo "   kubectl --context crd-free-cluster -n crd-free-workloads get pods"
-        echo ""
-        echo "   # Check for CRDs (should be none)"
-        echo "   kubectl get crd | grep spire || echo 'No SPIRE CRDs found (✅ CRD-free confirmed)'"
-        echo ""
-        echo "🔄 To reset to fresh CRD-free state anytime:"
-        echo "   ./scripts/fresh-install.sh crd-free"
-        echo ""
-        echo "🔍 Verify CRD-free deployment:"
-        echo "   ./scripts/setup-crd-free-deployment.sh  # Re-run for verification"
-        echo ""
-        echo "⚠️  Remember: This deployment requires external SPIRE servers"
-        echo "   Configure: external-spire-server.company.com:8081"
-    else
-        echo "🔍 Explore your basic clusters:"
-        echo "   kubectl --context spire-server-cluster -n spire-server get pods"
-        echo "   kubectl --context workload-cluster -n spire-system get pods"
-        echo "   kubectl --context workload-cluster -n production get pods"
-        echo ""
-        echo "🔄 To reset to fresh laptop state anytime:"
-        echo "   ./scripts/fresh-install.sh"
-        echo ""
-        echo "🔍 Run basic verification:"
-        echo "   ./scripts/verify-setup.sh"
+    if [ ! -s /tmp/bundle.pem ]; then
+        echo "❌ Failed to retrieve trust bundle"
+        exit 1
     fi
-    echo ""
-    echo "📖 See README.md for complete documentation"
-    echo ""
-    echo "🏢 Ready for enterprise deployment!"
+    
+    # Create bundle ConfigMap
+    kubectl --context workload-cluster -n spire-system create configmap spire-bundle --from-file=bundle.crt=/tmp/bundle.pem
+    
+    echo "✅ Trust bundle ConfigMap created"
 }
 
-# Main execution flow
+# Function to deploy SPIRE agent
+deploy_spire_agent() {
+    print_section "Deploying SPIRE Agent"
+    
+    # Apply agent manifests
+    kubectl --context workload-cluster apply -f k8s/workload-cluster/
+    
+    echo "⏳ Waiting for SPIRE agent to be ready..."
+    
+    # Wait for agent to be ready
+    if kubectl --context workload-cluster -n spire-system wait --for=condition=ready pod -l app=spire-agent --timeout=300s; then
+        echo "✅ SPIRE agent is ready"
+    else
+        echo "❌ SPIRE agent failed to become ready"
+        kubectl --context workload-cluster -n spire-system describe pods -l app=spire-agent
+        exit 1
+    fi
+}
+
+# Function to start dashboard
+start_dashboard() {
+    print_section "Starting dashboard"
+    
+    # Stop any existing dashboard
+    pkill -f 'node.*server.js' 2>/dev/null || true
+    sleep 2
+    
+    # Start dashboard in background
+    ./web/start-dashboard.sh > /tmp/dashboard.log 2>&1 &
+    DASHBOARD_PID=$!
+    
+    # Wait for dashboard to be ready
+    for i in {1..10}; do
+        if curl -s http://localhost:3000/api/pod-data > /dev/null 2>&1; then
+            echo "✅ Dashboard is ready at http://localhost:3000/web-dashboard.html"
+            return 0
+        fi
+        echo "⏳ Waiting for dashboard... (attempt $i/10)"
+        sleep 2
+    done
+    
+    echo "⚠️  Dashboard may not be fully ready, but it's starting..."
+    echo "📊 Dashboard URL: http://localhost:3000/web-dashboard.html"
+}
+
+# Function to verify installation
+verify_installation() {
+    print_section "Verifying installation"
+    
+    # Check all pods are running
+    local all_ready=true
+    
+    # Check server
+    local server_ready=$(kubectl --context workload-cluster -n spire-server get pods -l app=spire-server -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || echo "false")
+    if [ "$server_ready" = "true" ]; then
+        echo "✅ SPIRE Server: Ready"
+    else
+        echo "❌ SPIRE Server: Not Ready"
+        all_ready=false
+    fi
+    
+    # Check agent
+    local agent_ready=$(kubectl --context workload-cluster -n spire-system get pods -l app=spire-agent -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || echo "false")
+    if [ "$agent_ready" = "true" ]; then
+        echo "✅ SPIRE Agent: Ready"
+    else
+        echo "❌ SPIRE Agent: Not Ready"
+        all_ready=false
+    fi
+    
+    # Check workloads
+    local workload_count=$(kubectl --context workload-cluster -n production get pods --no-headers 2>/dev/null | grep -c "Running" || echo "0")
+    if [ "$workload_count" -gt 0 ]; then
+        echo "✅ Workload Services: $workload_count running"
+    else
+        echo "⚠️  Workload Services: None running (this is OK for basic setup)"
+    fi
+    
+    # Check dashboard
+    if curl -s http://localhost:3000/api/pod-data > /dev/null 2>&1; then
+        echo "✅ Dashboard: Ready"
+    else
+        echo "⚠️  Dashboard: Not responding (may need a moment to start)"
+    fi
+    
+    if [ "$all_ready" = true ]; then
+        echo ""
+        echo "🎉 SPIFFE/SPIRE installation completed successfully!"
+    else
+        echo ""
+        echo "⚠️  Installation completed with some issues. Check pod status above."
+    fi
+}
+
+# Function to display final information
+show_final_info() {
+    print_section "Installation Complete"
+    
+    echo "🎯 Your SPIFFE/SPIRE environment is ready!"
+    echo ""
+    echo "📊 Dashboard Access:"
+    echo "   URL: http://localhost:3000/web-dashboard.html"
+    echo "   Command: open http://localhost:3000/web-dashboard.html"
+    echo ""
+    echo "🔧 Common Commands:"
+    echo "   kubectl --context workload-cluster -n spire-server get pods"
+    echo "   kubectl --context workload-cluster -n spire-system get pods"
+    echo "   kubectl --context workload-cluster -n production get pods"
+    echo ""
+    echo "🔍 SPIRE Operations:"
+    echo "   ./scripts/verify-setup.sh"
+    echo ""
+    echo "⏱️  Total setup time: ~5-8 minutes"
+    echo "🔄 To reset: ./scripts/fresh-install.sh"
+}
+
+# Main installation flow
 main() {
-    echo "Starting fresh Mac laptop install process..."
-    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
-        echo "🏢 Enterprise deployment selected"
-    else
-        echo "📚 Basic development deployment selected"
-    fi
-    echo ""
+    local start_time=$(date +%s)
     
-    # Confirm with user
-    if [ "$DEPLOYMENT_TYPE" = "enterprise" ]; then
-        read -p "🤔 This will completely tear down your current SPIRE environment and set up enterprise clusters. Continue? (y/N): " -n 1 -r
-    elif [ "$DEPLOYMENT_TYPE" = "crd-free" ]; then
-        read -p "🤔 This will completely tear down your current SPIRE environment and set up CRD-free deployment. Continue? (y/N): " -n 1 -r
-    else
-        read -p "🤔 This will completely tear down your current SPIRE environment and set up basic clusters. Continue? (y/N): " -n 1 -r
-    fi
-    echo ""
-    
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "❌ Fresh install cancelled by user"
-        echo ""
-        echo "💡 Usage:"
-        echo "   ./scripts/fresh-install.sh              # Basic development setup"
-        echo "   ./scripts/fresh-install.sh enterprise   # Enterprise setup"
-        echo "   ./scripts/fresh-install.sh crd-free     # CRD-free enterprise setup"
-        exit 0
-    fi
-    
-    # Execute installation steps
     check_prerequisites
-    teardown_environment
-    setup_fresh_environment
-    validate_installation
-    show_next_steps
+    cleanup_environment
+    setup_cluster
+    setup_namespaces
+    deploy_spire_server
+    create_trust_bundle
+    deploy_spire_agent
+    start_dashboard
+    verify_installation
+    show_final_info
     
-    echo "✨ Fresh Mac laptop SPIRE installation completed successfully!"
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+    echo "⏱️  Installation completed in ${duration} seconds"
 }
 
 # Execute main function

@@ -517,11 +517,11 @@
                     <div class="status-card clickable" onclick="navigateToTab('server')" title="Click to view SPIRE Server details">
                         <h3>SPIRE Server</h3>
                         <div class="status-value status-online" id="server-status">●</div>
-                        <p id="server-context">spire-server-cluster</p>
+                        <p id="server-context">workload-cluster</p>
                         <div class="clickable-hint">Click for details</div>
                     </div>
-                    <div class="status-card clickable" onclick="navigateToTab('database')" title="Click to view MySQL Database details">
-                        <h3>MySQL DB</h3>
+                    <div class="status-card clickable" onclick="navigateToTab('database')" title="Click to view SQLite Database details">
+                        <h3>SQLite DB</h3>
                         <div class="status-value status-online" id="database-status">●</div>
                         <p id="database-context">Storage: <span id="db-storage">1Gi</span></p>
                         <div class="clickable-hint">Click for details</div>
@@ -578,7 +578,7 @@
             </div>
             
             <div id="database" class="tab-pane">
-                <h2>MySQL Database</h2>
+                <h2>SQLite Database</h2>
                 <button class="refresh-btn" onclick="refreshDatabaseStatus()">🔄 Refresh Database Status</button>
                 <button class="refresh-btn" onclick="toggleAutoRefreshTab('database')" id="database-auto-btn">🟢 Auto-refresh: ON</button>
                 
@@ -595,7 +595,7 @@
                     </div>
                     <div class="status-card">
                         <h3>Connections</h3>
-                        <div class="status-value" id="db-connections">5432</div>
+                        <div class="status-value" id="db-connections">N/A</div>
                         <p>Port (Internal)</p>
                     </div>
                     <div class="status-card">
@@ -903,34 +903,34 @@
                 <p><em>This script provides the real-time pod data that should be displayed in the dashboard.</em></p>
                 
                 <h3>Check SPIRE Server Status</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire get pods -l app=spire-server</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server get pods -l app=spire-server</div>
                 
-                <h3>Check MySQL Database</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire get pods -l app=spire-db</div>
+                <h3>Check SQLite Database</h3>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server get pods -l app=spire-db</div>
                 
                 <h3>Check Database Storage</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire get pvc mysql-pvc</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server get pvc postgres-pvc</div>
                 
                 <h3>Check Database Service</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire get svc spire-db</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server get svc spire-db</div>
                 
                 <h3>Check SPIRE Agents</h3>
-                <div class="command-box">kubectl --context workload-cluster -n spire get pods</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server get pods</div>
                 
                 <h3>Check Workload Services</h3>
                 <div class="command-box">kubectl --context workload-cluster -n workload get pods</div>
                 
                 <h3>View SPIRE Server Logs</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire logs spire-server-0</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server logs spire-server-0</div>
                 
                 <h3>View Database Logs</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire logs -l app=spire-db</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server logs -l app=spire-db</div>
                 
                 <h3>Connect to Database (Internal)</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire exec -it spire-server-0 -- mysql -h spire-db -u root -p</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server exec -it spire-server-0 -- postgres -h spire-db -u root -p</div>
                 
                 <h3>View Agent Logs</h3>
-                <div class="command-box">kubectl --context workload-cluster -n spire logs -l app=spire-agent</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server logs -l app=spire-agent</div>
                 
                 <h3>Run Verification Script</h3>
                 <div class="command-box">./scripts/verify-setup.sh</div>
@@ -939,11 +939,11 @@
                 <div class="command-box">curl http://localhost:9988/metrics</div>
                 
                 <h3>Check SPIRE Agent Metrics</h3>
-                <div class="command-box">kubectl --context workload-cluster -n spire port-forward spire-agent-<pod-id> 9988:9988 &
+                <div class="command-box">kubectl --context workload-cluster -n spire-server port-forward spire-agent-<pod-id> 9988:9988 &
 curl http://localhost:9988/metrics</div>
                 
                 <h3>View SPIRE Server Telemetry Configuration</h3>
-                <div class="command-box">kubectl --context spire-server-cluster -n spire get configmap spire-server -o yaml | grep -A 20 telemetry</div>
+                <div class="command-box">kubectl --context workload-cluster -n spire-server get configmap spire-server -o yaml | grep -A 20 telemetry</div>
                 
                 <div class="cluster-info">
                     <h4>Age Calculation Debug</h4>
@@ -1345,7 +1345,7 @@ curl http://localhost:9988/metrics</div>
                         status: "Running",
                         ready: true,
                         restarts: 0,
-                        node: "spire-server-cluster",
+                        node: "workload-cluster",
                         age: serverCreated
                     }
                 ],
@@ -1355,14 +1355,14 @@ curl http://localhost:9988/metrics</div>
                         status: "Running",
                         ready: true,
                         restarts: 0,
-                        node: "spire-server-cluster",
-                        image: "mysql:8.0",
+                        node: "workload-cluster",
+                        image: "postgres:8.0",
                         age: dbCreated
                     }
                 ],
                 storage: [
                     {
-                        name: "mysql-pvc",
+                        name: "postgres-pvc",
                         status: "Bound",
                         capacity: "1Gi",
                         accessModes: "ReadWriteOnce",
@@ -2323,7 +2323,7 @@ curl http://localhost:9988/metrics</div>
                     <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">📋 Database Query Commands</h4>
                         <p style="margin: 0; font-size: 14px; color: #666;">
-                            Use these commands to query the MySQL database directly for real-time policy data:
+                            Use these commands to query the SQLite database directly for real-time policy data:
                         </p>
                     </div>
 
@@ -2348,18 +2348,18 @@ curl http://localhost:9988/metrics</div>
                                 </tr>
                             </thead>
                             <tbody id="policies-table-body">
-                                <tr class="policy-row" data-search="spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster/node-1 k8s_psat">
+                                <tr class="policy-row" data-search="spiffe://example.org/spire/agent/k8s_psat/workload-cluster/node-1 k8s_psat">
                                     <td><code>1</code></td>
-                                    <td><strong>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</strong></td>
+                                    <td><strong>spiffe://example.org/spire/agent/k8s_psat/workload-cluster</strong></td>
                                     <td><em>spiffe://example.org/spire/server</em></td>
-                                    <td><span class="selector-tag">k8s_psat:cluster:spire-server-cluster</span></td>
+                                    <td><span class="selector-tag">k8s_psat:cluster:workload-cluster</span></td>
                                     <td>3600s</td>
                                     <td><span class="status-online">●</span> Active</td>
                                 </tr>
                                 <tr class="policy-row" data-search="spiffe://example.org/workload/user-service k8s user-service workload user management">
                                     <td><code>2</code></td>
                                     <td><strong>spiffe://example.org/workload/user-service</strong></td>
-                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/workload-cluster</em></td>
                                     <td>
                                         <span class="selector-tag">k8s:ns:workload</span>
                                         <span class="selector-tag">k8s:sa:user-service</span>
@@ -2371,7 +2371,7 @@ curl http://localhost:9988/metrics</div>
                                 <tr class="policy-row" data-search="spiffe://example.org/workload/payment-api k8s payment-api workload payment processing">
                                     <td><code>3</code></td>
                                     <td><strong>spiffe://example.org/workload/payment-api</strong></td>
-                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/workload-cluster</em></td>
                                     <td>
                                         <span class="selector-tag">k8s:ns:workload</span>
                                         <span class="selector-tag">k8s:sa:payment-api</span>
@@ -2383,7 +2383,7 @@ curl http://localhost:9988/metrics</div>
                                 <tr class="policy-row" data-search="spiffe://example.org/workload/inventory-service k8s inventory-service workload inventory management">
                                     <td><code>4</code></td>
                                     <td><strong>spiffe://example.org/workload/inventory-service</strong></td>
-                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster</em></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/workload-cluster</em></td>
                                     <td>
                                         <span class="selector-tag">k8s:ns:workload</span>
                                         <span class="selector-tag">k8s:sa:inventory-service</span>
@@ -2398,12 +2398,12 @@ curl http://localhost:9988/metrics</div>
 
                     <h4>🛠️ Database Query Commands</h4>
                     <div style="background: #f1f3f4; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                        <h5>Connect to MySQL Database:</h5>
+                        <h5>Connect to SQLite Database:</h5>
                         <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code># Get database pod name
-DB_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-db -o jsonpath='{.items[0].metadata.name}')
+DB_POD=$(kubectl --context workload-cluster -n spire-server get pod -l app=spire-db -o jsonpath='{.items[0].metadata.name}')
 
-# Connect to MySQL
-kubectl --context spire-server-cluster -n spire exec -it $DB_POD -- mysql -u root -p spire</code></pre>
+# Connect to SQLite
+kubectl --context workload-cluster -n spire-server exec -it $DB_POD -- postgres -u root -p spire</code></pre>
 
                         <h5>Query Registration Entries:</h5>
                         <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code>-- List all registration entries
@@ -2434,8 +2434,8 @@ ORDER BY created_at DESC;</code></pre>
 
                         <h5>Live Policy Refresh:</h5>
                         <pre style="background: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 13px; margin: 10px 0;"><code># Get SPIRE server pod and show current entries
-SERVER_POD=$(kubectl --context spire-server-cluster -n spire get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
-kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/bin/spire-server entry show</code></pre>
+SERVER_POD=$(kubectl --context workload-cluster -n spire-server get pod -l app=spire-server -o jsonpath='{.items[0].metadata.name}')
+kubectl --context workload-cluster -n spire-server exec $SERVER_POD -- /opt/spire/bin/spire-server entry show</code></pre>
                     </div>
 
                     <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #2196f3;">
@@ -2543,8 +2543,8 @@ kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- /opt/spire/b
         
         // Helper function to determine resource context and namespace
         function getResourceContext(resourceName) {
-            if (resourceName.startsWith('spire-server') || resourceName.startsWith('spire-db') || resourceName.startsWith('mysql')) {
-                return { context: 'spire-server-cluster', namespace: 'spire-server' };
+            if (resourceName.startsWith('spire-server') || resourceName.startsWith('spire-db') || resourceName.startsWith('postgres')) {
+                return { context: 'workload-cluster', namespace: 'spire-server' };
             } else if (resourceName.startsWith('spire-agent')) {
                 return { context: 'workload-cluster', namespace: 'spire-system' };
             } else {
