@@ -23,8 +23,7 @@ data:
       }
 
       KeyManager "memory" {
-        plugin_data {
-        }
+        plugin_data = {}
       }
 
       WorkloadAttestor "k8s" {
@@ -43,15 +42,8 @@ data:
     }
 
     telemetry {
-      Prometheus {
-        plugin_data {
-          host = "0.0.0.0"
-          port = 9988
-        }
+      prometheus {
+        host = "0.0.0.0"
+        port = 9988
       }
-    }
-
-    # Cache configuration for improved performance
-    cache {
-      x509_svid_cache_max_size = 1000
     }
