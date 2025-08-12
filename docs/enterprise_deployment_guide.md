@@ -8,14 +8,14 @@ This guide demonstrates a production-ready enterprise SPIRE deployment with upst
 
 ```mermaid
 graph TB
-    subgraph "🏢 ENTERPRISE SPIRE ARCHITECTURE"
-        subgraph "🔒 UPSTREAM CLUSTER (Root Certificate Authority)"
+    subgraph "ENTERPRISE SPIRE ARCHITECTURE"
+        subgraph "UPSTREAM CLUSTER (Root Certificate Authority)"
             subgraph "upstream-spire-cluster"
                 subgraph "spire-upstream namespace"
-                    US[🔐 SPIRE Server<br/>Trust Domain: enterprise-root.org<br/>Root CA]
-                    UDB[(🗃️ MySQL Database)]
-                    UCM[⚙️ SPIRE Controller Manager]
-                    UFE[🌐 Federation Bundle Endpoint]
+                    US[SPIRE Server<br/>Trust Domain: enterprise-root.org<br/>Root CA]
+                    UDB[(MySQL Database)]
+                    UCM[SPIRE Controller Manager]
+                    UFE[Federation Bundle Endpoint]
                     
                     US --> UDB
                     US --> UFE
@@ -24,13 +24,13 @@ graph TB
             end
         end
         
-        subgraph "🌐 DOWNSTREAM CLUSTER (Regional/Workload Cluster)"
+        subgraph "DOWNSTREAM CLUSTER (Regional/Workload Cluster)"
             subgraph "downstream-spire-cluster"
                 subgraph "spire-downstream namespace"
-                    DS[🔐 SPIRE Server<br/>Trust Domain: downstream.example.org<br/>Regional Authority]
-                    DDB[(🗃️ MySQL Database)]
-                    DCM[⚙️ SPIRE Controller Manager]
-                    DA[🤖 SPIRE Agents<br/>DaemonSet]
+                    DS[SPIRE Server<br/>Trust Domain: downstream.example.org<br/>Regional Authority]
+                    DDB[(MySQL Database)]
+                    DCM[SPIRE Controller Manager]
+                    DA[SPIRE Agents<br/>DaemonSet]
                     
                     DS --> DDB
                     DCM --> DS
@@ -38,9 +38,9 @@ graph TB
                 end
                 
                 subgraph "downstream-workloads namespace"
-                    EA[🏢 Enterprise API]
-                    DP[📊 Data Processor]
-                    SG[🛡️ Security Gateway]
+                    EA[Enterprise API]
+                    DP[Data Processor]
+                    SG[Security Gateway]
                     
                     DA --> EA
                     DA --> DP
@@ -353,12 +353,12 @@ For enterprises with strict CRD and elevated privilege restrictions, SPIRE can b
 
 ```mermaid
 graph TB
-    subgraph "🏢 CRD-FREE ARCHITECTURE"
-        subgraph "🏢 EXTERNAL INFRASTRUCTURE (Outside Kubernetes)"
-            ES[🔐 SPIRE Servers<br/>VMs/Bare Metal]
-            EDB[(🗄️ MySQL HA Database)]
-            FE[🌐 Federation Endpoints]
-            CA[🔒 Certificate Authority Chain]
+    subgraph "CRD-FREE ARCHITECTURE"
+        subgraph "EXTERNAL INFRASTRUCTURE (Outside Kubernetes)"
+            ES[SPIRE Servers<br/>VMs/Bare Metal]
+            EDB[(MySQL HA Database)]
+            FE[Federation Endpoints]
+            CA[Certificate Authority Chain]
             
             ES --> EDB
             ES --> FE
@@ -367,10 +367,10 @@ graph TB
         
         subgraph "🔧 KUBERNETES CLUSTER (Agents Only)"
             subgraph "spire-system namespace"
-                KA[🤖 SPIRE Agents<br/>DaemonSet]
+                KA[SPIRE Agents<br/>DaemonSet]
                 RS[🔧 Custom Registration Service]
                 AS[📝 Annotation-Based Workload Selection]
-                NS[🔒 Namespace-Scoped Permissions Only]
+                NS[Namespace-Scoped Permissions Only]
                 
                 KA --> RS
                 RS --> AS

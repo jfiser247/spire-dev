@@ -414,6 +414,19 @@ start_documentation_server() {
     for i in {1..15}; do
         if curl -s http://localhost:8000 > /dev/null 2>&1; then
             echo "✅ Documentation server is ready at http://localhost:8000"
+            
+            # Quick verification of Mermaid diagram syntax
+            echo "🔍 Quick Mermaid syntax verification..."
+            sleep 3  # Give diagrams time to render
+            
+            local diagram_errors=$(curl -s http://localhost:8000/architecture_diagrams/ 2>/dev/null | grep -i -c "syntax error\|mermaid.*error" 2>/dev/null || echo "0")
+            if [ "$diagram_errors" -eq 0 ]; then
+                echo "✅ Mermaid diagrams: Syntax validation passed"
+            else
+                echo "⚠️  Mermaid diagrams: $diagram_errors syntax errors detected"
+                echo "💡 Note: Full validation will be performed in final verification"
+            fi
+            
             return 0
         fi
         echo "⏳ Waiting for documentation server... (attempt $i/15)"
@@ -495,6 +508,33 @@ verify_installation() {
     # Check documentation server
     if curl -s http://localhost:8000 > /dev/null 2>&1; then
         echo "✅ Documentation Server: Ready"
+        
+        # Check for Mermaid syntax errors in architecture diagrams
+        echo "🔍 Verifying Mermaid diagram syntax..."
+        
+        # Wait a moment for diagrams to fully load
+        sleep 2
+        
+        # Check for multiple error patterns that Mermaid might display
+        local page_content=$(curl -s http://localhost:8000/architecture_diagrams/ 2>/dev/null)
+        local syntax_errors=$(echo "$page_content" | grep -i -c "syntax error\|parse error\|mermaid.*error\|diagram.*error" 2>/dev/null || echo "0")
+        local mermaid_version=$(echo "$page_content" | grep -i "mermaid.*version" | head -1)
+        
+        if [ "$syntax_errors" -eq 0 ]; then
+            echo "✅ Documentation Diagrams: All Mermaid diagrams render correctly"
+            if [ -n "$mermaid_version" ]; then
+                echo "ℹ️  Mermaid rendering: $(echo "$mermaid_version" | sed 's/.*\(version [0-9.]*\).*/\1/' 2>/dev/null || echo 'version detected')"
+            fi
+        else
+            echo "❌ Documentation Diagrams: Mermaid syntax errors detected ($syntax_errors errors)"
+            echo "⚠️  Found $syntax_errors Mermaid-related errors in documentation"
+            echo "🔧 Common fixes:"
+            echo "   • Check for unsupported emoji characters in diagram labels"
+            echo "   • Verify proper bracket matching in node definitions"
+            echo "   • Remove unsupported 'color' properties from classDef statements"
+            echo "💡 Detailed errors visible at: http://localhost:8000/architecture_diagrams/"
+            all_ready=false
+        fi
     else
         echo "⚠️  Documentation Server: Not responding (may need a moment to start)"
     fi

@@ -103,9 +103,9 @@ Your environment includes three realistic services that demonstrate the SPIFFE i
 
 ```mermaid
 graph TD
-    A["👤 User Service<br/>SPIFFE ID: spiffe://example.org/user-service<br/>🔐 No database passwords needed"]
-    B["💳 Payment API<br/>SPIFFE ID: spiffe://example.org/payment-api<br/>🔐 No API keys needed"]
-    C["📦 Inventory Service<br/>SPIFFE ID: spiffe://example.org/inventory-service<br/>🔐 No service tokens needed"]
+    A["User Service<br/>SPIFFE ID: spiffe://example.org/user-service<br/>No database passwords needed"]
+    B["Payment API<br/>SPIFFE ID: spiffe://example.org/payment-api<br/>No API keys needed"]
+    C["Inventory Service<br/>SPIFFE ID: spiffe://example.org/inventory-service<br/>No service tokens needed"]
     
     A -->|mTLS with SPIFFE| B
     B -->|mTLS with SPIFFE| C

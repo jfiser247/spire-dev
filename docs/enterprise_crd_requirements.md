@@ -221,14 +221,14 @@ func registerWorkload(pod *corev1.Pod) error {
 ```mermaid
 graph TD
     subgraph "Enterprise Data Center"
-        ES[🔐 External SPIRE Servers<br/>VM/Bare Metal Deployment<br/>Root SPIRE Server<br/>Regional SPIRE Servers]
-        EDB[(🗄️ External Database HA)]
+        ES[External SPIRE Servers<br/>VM/Bare Metal Deployment<br/>Root SPIRE Server<br/>Regional SPIRE Servers]
+        EDB[(External Database HA)]
         
         ES --> EDB
     end
     
     subgraph "Kubernetes Cluster"
-        KA[🤖 SPIRE Agents Only<br/>DaemonSet - No CRDs<br/>Agent Pods<br/>External Registration]
+        KA[SPIRE Agents Only<br/>DaemonSet - No CRDs<br/>Agent Pods<br/>External Registration]
     end
     
     ES -.->|Network Connection| KA
