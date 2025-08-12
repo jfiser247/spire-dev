@@ -190,6 +190,8 @@ workload-cluster (Your Testing Ground)
     └── 📦 inventory-service (proves identity via labels)
 ```
 
+> **💡 Learning Environment**: Each service runs as a single pod for clarity and resource efficiency. In production, you'd typically run multiple replicas for high availability.
+
 ### **🔐 How Services Get Identity (No Secrets Required)**
 
 1. **Workload Starts**: Your service deploys to Kubernetes

@@ -197,7 +197,7 @@ global:
   clusterName: "prod-k8s-cluster"
 
 spireServer:
-  replicaCount: 3
+  replicaCount: 3  # Production; learning env uses 1
   resources:
     requests:
       cpu: 1000m
@@ -310,7 +310,7 @@ global:
   trustDomain: "company.internal"
   
 spireServer:
-  replicaCount: 3
+  replicaCount: 3  # Production; learning env uses 1
   config:
     logLevel: "WARN"
   resources:
@@ -768,7 +768,7 @@ kubectl delete namespace spire-$CURRENT_COLOR
 ```yaml
 # Canary deployment with weighted traffic
 spireServer:
-  replicaCount: 3
+  replicaCount: 3  # Production; learning env uses 1
   
   # Label for canary identification
   podLabels:

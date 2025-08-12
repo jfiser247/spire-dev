@@ -343,7 +343,7 @@ metadata:
   labels:
     app: http-service
 spec:
-  replicas: 2
+  replicas: 1  # For learning; use 2+ for production
   selector:
     matchLabels:
       app: http-service

@@ -94,7 +94,7 @@ connection_string = "mysql://spire_user:secure_password@mysql-ha-cluster:3306/sp
 ### ⚠️ PARTIAL: SPIRE Server High Availability
 
 **Current Implementation:**
-- Single SPIRE Server instance per cluster
+- Single SPIRE Server instance per cluster (learning environment)
 - StatefulSet deployment (correct approach)
 
 **Production Enhancement Required:**

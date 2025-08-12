@@ -179,11 +179,11 @@ externalDatabase:
 
 ### High Availability
 
-Configure SPIRE Server for high availability:
+Configure SPIRE Server for high availability (production environments):
 
 ```yaml
 spireServer:
-  replicaCount: 3
+  replicaCount: 3  # For production; default learning env uses 1
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:

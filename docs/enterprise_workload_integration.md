@@ -50,7 +50,7 @@ metadata:
   name: payment-service
   namespace: production
 spec:
-  replicas: 3
+  replicas: 3  # Production scaling; learning env uses 1
   selector:
     matchLabels:
       app: payment-service
