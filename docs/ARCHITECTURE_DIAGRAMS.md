@@ -8,58 +8,62 @@ This document provides visual representations of both basic and enterprise SPIRE
 
 ```mermaid
 graph TB
-    subgraph "BASIC DEVELOPMENT ARCHITECTURE - Single Cluster"
-        subgraph "Local Development - minikube cluster"
-            subgraph "Context: workload-cluster"
-                subgraph "spire-server namespace"
-                    SS[SPIRE Server]
-                    PG[(MySQL Database)]
-                    RE[Registration Entries]
-                    
-                    SS --> PG
-                    SS --> RE
-                end
+    subgraph BASIC["🏗️ BASIC DEVELOPMENT ARCHITECTURE"]
+        subgraph CLUSTER["📦 minikube workload-cluster"]
+            subgraph SERVER_NS["🔐 spire-server namespace"]
+                SS[🖥️ SPIRE Server<br/>Trust Authority]
+                PG[(🗄️ MySQL Database<br/>Persistent Storage)]
+                RE[📋 Registration Entries<br/>Identity Policies]
                 
-                subgraph "spire-system namespace"
-                    SA[SPIRE Agent<br/>DaemonSet]
-                    WA[Workload Attestation]
-                    
-                    SA --> WA
-                end
+                SS --> PG
+                SS --> RE
+            end
+            
+            subgraph SYSTEM_NS["🤖 spire-system namespace"]
+                SA[🔧 SPIRE Agent<br/>DaemonSet<br/>Node Identity]
+                WA[🛡️ Workload Attestation<br/>Process Validation]
                 
-                subgraph "production namespace"
-                    US[User Service]
-                    PA[Payment API]
-                    IS[Inventory Service]
-                    
-                    US --> PA
-                    PA --> IS
-                end
+                SA --> WA
+            end
+            
+            subgraph WORKLOAD_NS["⚡ spire-workload namespace"]
+                US[👤 User Service<br/>User Management API]
+                PA[💳 Payment API<br/>Payment Processing]
+                IS[📦 Inventory Service<br/>Stock Management]
+                
+                US --> PA
+                PA --> IS
             end
         end
     end
     
-    %% Connections
-    SA --> SS
-    US --> SA
-    PA --> SA
-    IS --> SA
+    %% Cross-namespace connections
+    SA -.->|Authenticates| SS
+    US -.->|Gets SVID from| SA
+    PA -.->|Gets SVID from| SA  
+    IS -.->|Gets SVID from| SA
     
-    %% Trust Domain and Role
-    TD["Trust Domain: example.org<br/>Cluster Role: Development and Testing"]
+    %% Trust domain info
+    subgraph INFO["ℹ️ Trust Configuration"]
+        TD[🌐 Trust Domain: example.org<br/>🎯 Role: Development & Testing<br/>🔒 Security: Privileged Pods]
+    end
     
-    %% Styling
-    classDef server fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
-    classDef database fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef workload fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef info fill:#f5f5f5,stroke:#424242,stroke-width:1px
+    %% Styling for better visual separation
+    classDef serverStyle fill:#fff8e1,stroke:#f57f17,stroke-width:3px,color:#e65100
+    classDef databaseStyle fill:#e8f5e8,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
+    classDef agentStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#4a148c
+    classDef workloadStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef infoStyle fill:#fafafa,stroke:#616161,stroke-width:2px,color:#424242
+    classDef namespaceStyle fill:#f5f5f5,stroke:#757575,stroke-width:2px
     
-    class SS server
-    class PG database
-    class SA,WA agent
-    class US,PA,IS workload
-    class TD info
+    class SS serverStyle
+    class PG databaseStyle
+    class SA,WA agentStyle
+    class US,PA,IS workloadStyle
+    class RE,TD infoStyle
+    
+    %% Namespace styling
+    class SERVER_NS,SYSTEM_NS,WORKLOAD_NS namespaceStyle
 ```
 
 ### Component Interaction Flow
@@ -102,86 +106,85 @@ sequenceDiagram
 
 ```mermaid
 graph TB
-    subgraph "🏢 ENTERPRISE MULTI-CLUSTER ARCHITECTURE (Hierarchical Trust Model)"
-        subgraph "🏢 ENTERPRISE ROOT AUTHORITY"
-            subgraph "🔒 Upstream SPIRE Cluster"
-                subgraph "upstream-spire-cluster"
-                    subgraph "Trust Domain: enterprise-root.org"
-                        USS[🔐 SPIRE Server<br/>Root CA]
-                        UDB[(🗃️ MySQL Database)]
-                        UFE[🔗 Federation Endpoint]
-                        UCM[⚙️ Controller Manager]
-                        
-                        USS --> UDB
-                        USS --> UFE
-                        UCM --> USS
-                    end
-                end
+    subgraph ENTERPRISE["🏢 ENTERPRISE MULTI-CLUSTER ARCHITECTURE"]
+        
+        subgraph ROOT_AUTH["🔒 ENTERPRISE ROOT AUTHORITY"]
+            subgraph UPSTREAM_CLUSTER["🔐 upstream-spire-cluster"]
+                USS[🏛️ SPIRE Server<br/>Root Certificate Authority<br/>Trust Domain: enterprise-root.org]
+                UDB[(🗄️ MySQL Database<br/>Root CA Storage<br/>Certificate Policies)]
+                UFE[🌐 Federation Endpoint<br/>Trust Bundle Distribution<br/>Cross-Cluster Auth)]
+                UCM[⚙️ Controller Manager<br/>Policy Enforcement<br/>Lifecycle Management]
+                
+                USS --> UDB
+                USS --> UFE
+                UCM --> USS
             end
         end
         
-        subgraph "🌍 REGIONAL/WORKLOAD AUTHORITY"
-            subgraph "🌐 Downstream SPIRE Cluster"
-                subgraph "downstream-spire-cluster"
-                    subgraph "Trust Domain: downstream.example.org"
-                        DSS[🔐 SPIRE Server<br/>Regional CA]
-                        DDB[(🗃️ MySQL Database)]
-                        DSA[🤖 SPIRE Agents<br/>DaemonSet]
-                        DCM[⚙️ Controller Manager]
-                        
-                        DSS --> DDB
-                        DCM --> DSS
-                        DSA --> DSS
-                    end
-                end
+        subgraph REGIONAL_AUTH["⚡ REGIONAL/WORKLOAD AUTHORITY"]
+            subgraph DOWNSTREAM_CLUSTER["🌐 downstream-spire-cluster"]
+                DSS[🏢 SPIRE Server<br/>Regional Certificate Authority<br/>Trust Domain: downstream.example.org]
+                DDB[(🗄️ MySQL Database<br/>Regional CA Storage<br/>Workload Identities)]
+                DSA[🤖 SPIRE Agents<br/>DaemonSet<br/>Node Attestation]
+                DCM[⚙️ Controller Manager<br/>Regional Policy Management]
                 
-                subgraph "spire-downstream namespace"
-                    CP[🔧 Control Plane Components]
-                    TB[🔗 Trust Bundle Management]
-                end
+                DSS --> DDB
+                DCM --> DSS
+                DSA --> DSS
+            end
+            
+            subgraph CONTROL_PLANE["🔧 spire-downstream namespace"]
+                CP[🔧 Control Plane<br/>Configuration Management]
+                TB[🔗 Trust Bundle Management<br/>Federation State]
+            end
+            
+            subgraph WORKLOADS["⚡ downstream-workloads namespace"] 
+                EA[🏢 Enterprise API<br/>Business Logic Services<br/>Customer Management]
+                DP[📊 Data Processor<br/>Analytics & Reporting<br/>Data Transformation]
+                SG[🛡️ Security Gateway<br/>Access Control<br/>Traffic Management]
+            end
+            
+            subgraph EXTERNAL["🌍 External Access Layer"]
+                SGW[🔒 Security Gateway<br/>NodePort Service<br/>External Load Balancer]
+                EXT[🌍 External Traffic<br/>Internet Ingress<br/>API Gateway]
                 
-                subgraph "downstream-workloads namespace"
-                    EA[🏢 Enterprise API]
-                    DP[📊 Data Processor]
-                    SG[🛡️ Security Gateway]
-                end
-                
-                subgraph "🌐 External Access"
-                    SGW[🔒 Security Gateway<br/>NodePort]
-                    EXT[🌍 External Traffic Ingress]
-                    
-                    SGW --> EXT
-                end
+                SGW --> EXT
             end
         end
     end
     
-    %% Federation relationship
-    UFE -.->|🌐 Federation<br/>Trust Bundle| DSS
-    DSS -.->|🌐 Federation<br/>Trust Bundle| UFE
+    %% Federation relationships
+    UFE -.->|🔐 Trust Bundle Exchange<br/>Certificate Chain Validation| DSS
+    DSS -.->|🔐 Cross-Domain Authentication<br/>Identity Federation| UFE
     
-    %% Workload connections
-    DSA --> EA
-    DSA --> DP
-    DSA --> SG
+    %% Workload identity provisioning
+    DSA -.->|🎟️ Issues SPIFFE SVIDs| EA
+    DSA -.->|🎟️ Issues SPIFFE SVIDs| DP
+    DSA -.->|🎟️ Issues SPIFFE SVIDs| SG
     
-    %% External access
+    %% External access flow
     SG --> SGW
     
-    %% Styling
-    classDef upstream fill:#e1f5fe,stroke:#01579b,stroke-width:3px
-    classDef downstream fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
-    classDef server fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
-    classDef database fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef workload fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef external fill:#f5f5f5,stroke:#424242,stroke-width:2px
+    %% Enhanced styling with better contrast
+    classDef upstreamStyle fill:#e3f2fd,stroke:#0d47a1,stroke-width:4px,color:#01579b
+    classDef downstreamStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:4px,color:#6a1b9a
+    classDef serverStyle fill:#fff8e1,stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef databaseStyle fill:#e8f5e8,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
+    classDef agentStyle fill:#fff3e0,stroke:#ef6c00,stroke-width:3px,color:#bf360c
+    classDef workloadStyle fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#880e4f
+    classDef externalStyle fill:#f5f5f5,stroke:#424242,stroke-width:3px,color:#212121
+    classDef namespaceStyle fill:#fafafa,stroke:#757575,stroke-width:2px
     
-    class USS,DSS server
-    class UDB,DDB database
-    class DSA agent
-    class EA,DP,SG workload
-    class SGW,EXT external
+    class USS,DSS serverStyle
+    class UDB,DDB databaseStyle
+    class DSA,UCM,DCM agentStyle
+    class EA,DP,SG workloadStyle
+    class SGW,EXT,UFE externalStyle
+    class CP,TB workloadStyle
+    
+    %% Cluster and namespace containers
+    class UPSTREAM_CLUSTER upstreamStyle
+    class DOWNSTREAM_CLUSTER,CONTROL_PLANE,WORKLOADS,EXTERNAL downstreamStyle
 ```
 
 ### Trust Hierarchy and Certificate Chain
@@ -238,74 +241,81 @@ graph TD
 
 ```mermaid
 graph TB
-    subgraph "Host Machine (macOS)"
-        subgraph "Docker Desktop/Rancher Desktop"
-            subgraph "upstream-spire-cluster (minikube)"
-                subgraph "spire-upstream namespace"
-                    USS_GRPC[spire-upstream-server:8081<br/>GRPC]
-                    USS_FED[spire-upstream-server:8443<br/>Federation]
-                    USS_DB[spire-upstream-db:5432<br/>Database]
+    subgraph HOST["💻 Host Machine - macOS"]
+        subgraph DOCKER["🐳 Docker Desktop Container Runtime"]
+            
+            subgraph UPSTREAM["🔒 upstream-spire-cluster"]
+                subgraph UP_NS["🔐 spire-upstream namespace"]
+                    USS_GRPC[🖥️ spire-upstream-server<br/>Port: 8081 (gRPC)<br/>Certificate Authority]
+                    USS_FED[🌐 spire-upstream-server<br/>Port: 8443 (Federation)<br/>Trust Bundle Endpoint]  
+                    USS_DB[🗄️ spire-upstream-db<br/>Port: 5432<br/>PostgreSQL Database]
                 end
                 
-                subgraph "NodePort Services - Upstream"
-                    NP_31081[31081 → spire-upstream-server:8081]
-                    NP_31443[31443 → spire-upstream-server:8443]
+                subgraph UP_PORTS["🌍 NodePort Services"]
+                    NP_31081[🔗 31081 → 8081<br/>External gRPC Access]
+                    NP_31443[🔗 31443 → 8443<br/>External Federation]
                 end
-                
-                USS_GRPC --> NP_31081
-                USS_FED --> NP_31443
             end
             
-            subgraph "downstream-spire-cluster (minikube)"
-                subgraph "spire-downstream namespace"
-                    DSS_GRPC[spire-downstream-server:8081<br/>GRPC]
-                    DSS_FED[spire-downstream-server:8443<br/>Federation]
-                    DSS_DB[spire-downstream-db:5432<br/>Database]
+            subgraph DOWNSTREAM["⚡ downstream-spire-cluster"]
+                subgraph DOWN_NS["🔐 spire-downstream namespace"]
+                    DSS_GRPC[🖥️ spire-downstream-server<br/>Port: 8081 (gRPC)<br/>Regional Authority]
+                    DSS_FED[🌐 spire-downstream-server<br/>Port: 8443 (Federation)<br/>Trust Validation]
+                    DSS_DB[🗄️ spire-downstream-db<br/>Port: 5432<br/>PostgreSQL Database]
                 end
                 
-                subgraph "downstream-workloads namespace"
-                    EA_SVC[enterprise-api:80]
-                    DP_SVC[data-processor:80]
-                    SG_SVC[security-gateway:8080]
+                subgraph DOWN_WL["⚡ downstream-workloads namespace"]
+                    EA_SVC[🏢 enterprise-api<br/>Port: 80<br/>Business Logic API]
+                    DP_SVC[📊 data-processor<br/>Port: 80<br/>Data Processing Service]
+                    SG_SVC[🛡️ security-gateway<br/>Port: 8080<br/>Security Gateway]
                 end
                 
-                subgraph "NodePort Services - Downstream"
-                    NP_32081[32081 → spire-downstream-server:8081]
-                    NP_32443[32443 → spire-downstream-server:8443]
-                    NP_30080[30080 → security-gateway:8080]
+                subgraph DOWN_PORTS["🌍 NodePort Services"]
+                    NP_32081[🔗 32081 → 8081<br/>External gRPC Access]
+                    NP_32443[🔗 32443 → 8443<br/>External Federation]
+                    NP_30080[🔗 30080 → 8080<br/>External Gateway Access]
                 end
-                
-                DSS_GRPC --> NP_32081
-                DSS_FED --> NP_32443
-                SG_SVC --> NP_30080
             end
         end
         
-        subgraph "Dashboard Server (Node.js)"
-            DASH[localhost:3000<br/>Enterprise Dashboard]
+        subgraph DASHBOARD["🖥️ Management Interface"]
+            DASH[📊 Dashboard Server<br/>localhost:3000<br/>Enterprise Monitoring<br/>Multi-cluster Management]
         end
     end
     
-    %% Cross-cluster communication
-    USS_FED -.->|Federation| DSS_FED
-    DSS_FED -.->|Federation| USS_FED
+    %% Internal service connections
+    USS_GRPC --> NP_31081
+    USS_FED --> NP_31443
+    DSS_GRPC --> NP_32081
+    DSS_FED --> NP_32443
+    SG_SVC --> NP_30080
     
-    %% Dashboard connections
-    DASH -.->|kubectl API| upstream-spire-cluster
-    DASH -.->|kubectl API| downstream-spire-cluster
+    %% Cross-cluster federation
+    USS_FED -.->|🔐 Trust Bundle Exchange| DSS_FED
+    DSS_FED -.->|🔐 Certificate Validation| USS_FED
     
-    %% Styling
-    classDef server fill:#ffecb3,stroke:#ff8f00,stroke-width:2px
-    classDef database fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef service fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef nodeport fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef dashboard fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    %% Dashboard monitoring connections
+    DASH -.->|📈 kubectl API Monitoring| UPSTREAM
+    DASH -.->|📈 kubectl API Monitoring| DOWNSTREAM
     
-    class USS_GRPC,USS_FED,DSS_GRPC,DSS_FED server
-    class USS_DB,DSS_DB database
-    class EA_SVC,DP_SVC,SG_SVC service
-    class NP_31081,NP_31443,NP_32081,NP_32443,NP_30080 nodeport
-    class DASH dashboard
+    %% Enhanced styling
+    classDef serverStyle fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef databaseStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef serviceStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef nodeportStyle fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#880e4f
+    classDef dashboardStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#4a148c
+    classDef namespaceStyle fill:#f8f9fa,stroke:#6c757d,stroke-width:2px
+    classDef clusterStyle fill:#fff8e1,stroke:#ff8f00,stroke-width:2px
+    
+    class USS_GRPC,USS_FED,DSS_GRPC,DSS_FED serverStyle
+    class USS_DB,DSS_DB databaseStyle
+    class EA_SVC,DP_SVC,SG_SVC serviceStyle
+    class NP_31081,NP_31443,NP_32081,NP_32443,NP_30080 nodeportStyle
+    class DASH dashboardStyle
+    
+    %% Container and namespace styling  
+    class UP_NS,DOWN_NS,DOWN_WL,UP_PORTS,DOWN_PORTS namespaceStyle
+    class UPSTREAM,DOWNSTREAM clusterStyle
 ```
 
 ## Service Mesh Integration Points
@@ -356,38 +366,50 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph "Dashboard Architecture"
-        WB[Web Browser<br/>localhost port 3000]
-        
-        subgraph "Dashboard Server Node.js Express"
-            DS[Dashboard Server<br/>Auto-detects Deployment Type<br/>Real-time Data Fetching<br/>Multi-cluster Support<br/>RESTful API Endpoints]
+    subgraph DASHBOARD_ARCH["📊 Dashboard Architecture Overview"]
+        subgraph CLIENT_LAYER["🌐 Client Access Layer"]
+            WB[🌐 Web Browser<br/>localhost:3000<br/>Real-time Dashboard UI<br/>Multi-tab Interface]
         end
         
-        subgraph "Kubernetes API Servers"
-            UAS[upstream-spire-cluster]
-            DAS[downstream-spire-cluster]
-            WAS[workload-cluster basic]
-            CM[Contexts managed by kubectl]
+        subgraph SERVER_LAYER["🖥️ Backend Server Layer"]
+            DS[🚀 Dashboard Server<br/>Node.js Express Application<br/>• Auto-detects Deployment Type<br/>• Real-time Data Fetching<br/>• Multi-cluster Support<br/>• RESTful API Endpoints<br/>• WebSocket Communication]
+        end
+        
+        subgraph K8S_LAYER["☸️ Kubernetes Integration Layer"]
+            UAS[🔒 upstream-spire-cluster<br/>Enterprise Root Authority<br/>Trust Domain: enterprise-root.org]
+            DAS[⚡ downstream-spire-cluster<br/>Regional Workload Authority<br/>Trust Domain: downstream.example.org]
+            WAS[🛠️ workload-cluster<br/>Basic Development Environment<br/>Trust Domain: example.org]
             
-            UAS --> CM
-            DAS --> CM
-            WAS --> CM
+            subgraph KUBECTL_LAYER["🔧 kubectl Context Management"]
+                CM[📋 kubectl Contexts<br/>• Configuration Management<br/>• Cluster Authentication<br/>• API Server Routing]
+            end
+            
+            UAS -.-> CM
+            DAS -.-> CM  
+            WAS -.-> CM
         end
     end
     
-    WB -->|HTTP WebSocket| DS
-    DS -->|kubectl API| UAS
-    DS -->|kubectl API| DAS
-    DS -->|kubectl API| WAS
+    %% Communication flows
+    WB -->|📡 HTTP/WebSocket<br/>Real-time Updates| DS
+    DS -->|☸️ kubectl API Calls<br/>Pod Data Retrieval| UAS
+    DS -->|☸️ kubectl API Calls<br/>Service Monitoring| DAS
+    DS -->|☸️ kubectl API Calls<br/>Development Data| WAS
     
-    %% Styling
-    classDef browser fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef server fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef k8s fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    %% Enhanced styling
+    classDef browserStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef serverStyle fill:#fff8e1,stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef k8sStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef mgmtStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#4a148c
+    classDef layerStyle fill:#fafafa,stroke:#757575,stroke-width:2px
     
-    class WB browser
-    class DS server
-    class UAS,DAS,WAS,CM k8s
+    class WB browserStyle
+    class DS serverStyle
+    class UAS,DAS,WAS k8sStyle
+    class CM mgmtStyle
+    
+    %% Layer containers
+    class CLIENT_LAYER,SERVER_LAYER,K8S_LAYER,KUBECTL_LAYER layerStyle
 ```
 
 ## Security Architecture
