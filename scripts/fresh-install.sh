@@ -89,6 +89,9 @@ cleanup_environment() {
     # Stop any running dashboard servers
     pkill -f 'node.*server.js' 2>/dev/null || echo "ℹ️  No dashboard servers to stop"
     
+    # Stop any running MkDocs servers
+    pkill -f 'mkdocs serve' 2>/dev/null || echo "ℹ️  No MkDocs servers to stop"
+    
     # Delete existing minikube profiles
     local profiles=($(minikube profile list -o json 2>/dev/null | jq -r '.valid[]?.Name // empty' 2>/dev/null || echo ""))
     
@@ -443,6 +446,9 @@ start_dashboard() {
     
     # Stop any existing dashboard
     pkill -f 'node.*server.js' 2>/dev/null || true
+    
+    # Stop any existing MkDocs servers
+    pkill -f 'mkdocs serve' 2>/dev/null || true
     sleep 2
     
     # Start dashboard in background
