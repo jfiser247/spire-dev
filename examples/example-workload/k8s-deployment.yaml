@@ -8,7 +8,7 @@ metadata:
     service: demonstration
     tier: application
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: example-workload

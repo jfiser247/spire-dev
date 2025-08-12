@@ -20,7 +20,7 @@ metadata:
     app: enterprise-api-crd-free
     spire.io/workload: "enterprise-api"
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: enterprise-api-crd-free

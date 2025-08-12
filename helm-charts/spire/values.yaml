@@ -274,7 +274,7 @@ workloadServices:
     enabled: true
     name: "user-service"
     image: "alpine/curl:latest"
-    replicas: 2
+    replicas: 1
     port: 8080
     spiffeId: "spiffe://example.org/workload/user-service"
     serviceAccount: "user-service"
@@ -292,7 +292,7 @@ workloadServices:
     enabled: true
     name: "payment-api"
     image: "alpine/curl:latest"
-    replicas: 3
+    replicas: 1
     port: 9090
     spiffeId: "spiffe://example.org/workload/payment-api"
     serviceAccount: "payment-api"
@@ -310,7 +310,7 @@ workloadServices:
     enabled: true
     name: "inventory-service"
     image: "python:3.9-slim"
-    replicas: 2
+    replicas: 1
     port: 8082
     spiffeId: "spiffe://example.org/workload/inventory-service"
     serviceAccount: "inventory-service"

@@ -8,7 +8,7 @@ metadata:
     service: inventory-management
     tier: backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: inventory-service
