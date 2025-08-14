@@ -47,7 +47,12 @@ source "$VENV_DIR/bin/activate"
 if ! pip list | grep -q mkdocs-material; then
     echo "📥 Installing MkDocs and dependencies..."
     pip install --upgrade pip
-    pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+    if [[ -f "requirements.txt" ]]; then
+        pip install -r requirements.txt
+    else
+        # Fallback to manual installation
+        pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+    fi
 else
     echo "✅ MkDocs dependencies found"
 fi
