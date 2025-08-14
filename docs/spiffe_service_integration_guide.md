@@ -81,7 +81,7 @@ Selectors identify your workload to SPIRE. Common Kubernetes selectors:
 
 ```yaml
 # Kubernetes namespace and service account
-k8s:ns:production
+k8s:ns:spire-workload
 k8s:sa:user-service
 
 # Pod labels
@@ -94,6 +94,10 @@ k8s:container-image:my-company/user-service:latest
 
 ### Step 3: Create Registration Entry
 
+> **🏢 Enterprise Environment**: Submit a registration request to your SPIRE administrator  
+> **🏠 Local Environment**: You'll run the registration command directly on your local setup
+
+**For Enterprise/Production Environments:**
 Submit a registration request to your SPIRE administrator with:
 
 ```yaml
@@ -102,26 +106,47 @@ service_name: "user-service"
 spiffe_id: "spiffe://example.org/workload/user-service"
 parent_id: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
 selectors:
-  - "k8s:ns:production"
+  - "k8s:ns:spire-workload"
   - "k8s:sa:user-service"
   - "k8s:pod-label:app:user-service"
   - "k8s:pod-label:service:user-management"
 ttl: 1800  # 30 minutes (adjust based on your needs)
 ```
 
-**Registration Command:**
+**Enterprise Registration Command (SPIRE Administrator runs):**
 ```bash
-# SPIRE administrator will run:
 kubectl --context spire-server-cluster -n spire exec spire-server-0 -- \
   /opt/spire/bin/spire-server entry create \
   -spiffeID spiffe://example.org/workload/user-service \
   -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
-  -selector k8s:ns:production \
+  -selector k8s:ns:spire-workload \
   -selector k8s:sa:user-service \
   -selector k8s:pod-label:app:user-service \
   -selector k8s:pod-label:service:user-management \
   -ttl 1800
 ```
+
+**For Local Development Environment:**
+Since you have direct access to your local SPIRE server, you can create the registration entry yourself:
+
+```bash
+# You run this directly on your local setup:
+kubectl --context workload-cluster -n spire-server exec spire-server-0 -- \
+  /opt/spire/bin/spire-server entry create \
+  -spiffeID spiffe://example.org/workload/user-service \
+  -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
+  -selector k8s:ns:spire-workload \
+  -selector k8s:sa:user-service \
+  -selector k8s:pod-label:app:user-service \
+  -selector k8s:pod-label:service:user-management \
+  -ttl 1800
+
+# Verify the registration worked:
+kubectl --context workload-cluster -n spire-server exec spire-server-0 -- \
+  /opt/spire/bin/spire-server entry show
+```
+
+> **💡 Local Development Advantage**: In your local environment, you have full control over SPIRE registration entries. This makes testing and iteration much faster than enterprise approval workflows!
 
 ---
 
@@ -170,7 +195,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: user-service
-  namespace: production
+  namespace: spire-workload
 spec:
   replicas: 3  # Production scaling; learning env uses 1
   selector:
@@ -206,7 +231,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: user-service
-  namespace: production
+  namespace: spire-workload
 ```
 
 #### 3. **Initialize SPIFFE in Your Application**
@@ -551,9 +576,20 @@ kubectl --context spire-server-cluster -n spire exec $SERVER_POD -- \
 # Parent ID        : spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster
 # Revision         : 0
 # TTL              : 1800
-# Selector         : k8s:ns:production
+# Selector         : k8s:ns:spire-workload
 # Selector         : k8s:sa:user-service
 ```
+
+**💡 Dashboard Verification (Local Environment Only):**
+You can also verify your service registration and SPIFFE identity status using the real-time dashboard:
+
+1. **Open the Dashboard**: http://localhost:3000/web-dashboard.html
+2. **Check Service Registration**: Look for your service in the "Workload Services" section
+3. **Verify SPIFFE ID**: Click on your service pod to see detailed SPIFFE identity information
+4. **Monitor Certificate Status**: Watch for certificate rotation and identity updates in real-time
+5. **View Service Connectivity**: See how your service connects to other SPIFFE-enabled services
+
+> **🎯 Dashboard Benefits**: The visual dashboard provides an intuitive way to verify that your service is properly registered, receiving certificates, and communicating with other services - all without running command-line tools!
 
 ### Step 2: Test SVID Retrieval
 
@@ -566,7 +602,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: spiffe-test-user-service
-  namespace: production
+  namespace: spire-workload
   labels:
     app: user-service
 spec:
@@ -609,7 +645,7 @@ Test your service endpoints:
 
 ```bash
 # Port forward to your service
-kubectl port-forward -n production deployment/user-service 8080:8080
+kubectl port-forward -n spire-workload deployment/user-service 8080:8080
 
 # Test health endpoint
 curl http://localhost:8080/health
@@ -641,7 +677,7 @@ kubectl exec spiffe-test-user-service -- \
 kubectl exec spiffe-test-user-service -- \
   curl --cert /tmp/svid.crt --key /tmp/key.pem \
        --cacert /tmp/bundle.crt \
-       https://user-service.production.svc.cluster.local:8443/api/identity
+       https://user-service.spire-workload.svc.cluster.local:8443/api/identity
 ```
 
 ### Step 5: Monitor SPIRE Logs
@@ -797,7 +833,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: spiffe-debug
-  namespace: production
+  namespace: spire-workload
 spec:
   serviceAccountName: user-service
   containers:
@@ -851,10 +887,10 @@ echo "=== Trust Bundle ==="
 ```yaml
 # Use specific selectors
 selectors:
-  - "k8s:ns:production"           # Specific namespace
+  - "k8s:ns:spire-workload"           # Specific namespace
   - "k8s:sa:user-service"          # Specific service account
   - "k8s:pod-label:app:user-service" # Specific application
-  # Avoid overly broad selectors like just "k8s:ns:production"
+  # Avoid overly broad selectors like just "k8s:ns:spire-workload"
 ```
 
 #### 2. **Appropriate TTL Values**
@@ -990,7 +1026,7 @@ func TestWithRealSpiffe(t *testing.T) {
 metadata:
   annotations:
     spiffe.io/spiffe-id: "spiffe://example.org/workload/user-service"
-    spiffe.io/selectors: "k8s:ns:production,k8s:sa:user-service"
+    spiffe.io/selectors: "k8s:ns:spire-workload,k8s:sa:user-service"
     spiffe.io/ttl: "1800"
     spiffe.io/description: "User management service requiring database access"
 ```

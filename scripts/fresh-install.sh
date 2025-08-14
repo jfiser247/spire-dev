@@ -511,46 +511,189 @@ verify_installation() {
         echo "⚠️  Workload Services: None running (this is OK for basic setup)"
     fi
     
-    # Check documentation server
-    if curl -s http://localhost:8000 > /dev/null 2>&1; then
-        echo "✅ Documentation Server: Ready"
+    # Check and auto-fix documentation server
+    check_and_fix_docs_server() {
+        local docs_attempt=1
+        local max_attempts=3
         
-        # Check for Mermaid syntax errors in architecture diagrams
-        echo "🔍 Verifying Mermaid diagram syntax..."
-        
-        # Wait a moment for diagrams to fully load
-        sleep 2
-        
-        # Check for multiple error patterns that Mermaid might display
-        local page_content=$(curl -s http://localhost:8000/architecture_diagrams/ 2>/dev/null)
-        local syntax_errors=$(echo "$page_content" | grep -i -c "syntax error\|parse error\|mermaid.*error\|diagram.*error" 2>/dev/null || echo "0")
-        local mermaid_version=$(echo "$page_content" | grep -i "mermaid.*version" | head -1)
-        
-        if [ "$syntax_errors" -eq 0 ]; then
-            echo "✅ Documentation Diagrams: All Mermaid diagrams render correctly"
-            if [ -n "$mermaid_version" ]; then
-                echo "ℹ️  Mermaid rendering: $(echo "$mermaid_version" | sed 's/.*\(version [0-9.]*\).*/\1/' 2>/dev/null || echo 'version detected')"
+        while [ $docs_attempt -le $max_attempts ]; do
+            echo "🔍 Checking documentation server (attempt $docs_attempt/$max_attempts)..."
+            
+            # Check if server is responding
+            if curl -s http://localhost:8000 > /dev/null 2>&1; then
+                echo "✅ Documentation Server: Ready"
+                
+                # Check for Mermaid syntax errors in architecture diagrams
+                echo "🔍 Verifying Mermaid diagram syntax..."
+                
+                # Wait a moment for diagrams to fully load
+                sleep 2
+                
+                # Check for multiple error patterns that Mermaid might display
+                local page_content=$(curl -s http://localhost:8000/architecture_diagrams/ 2>/dev/null)
+                local syntax_errors=$(echo "$page_content" | grep -i -c "syntax error\|parse error\|mermaid.*error\|diagram.*error" 2>/dev/null || echo "0")
+                local mermaid_version=$(echo "$page_content" | grep -i "mermaid.*version" | head -1)
+                
+                if [ "$syntax_errors" -eq 0 ]; then
+                    echo "✅ Documentation Diagrams: All Mermaid diagrams render correctly"
+                    if [ -n "$mermaid_version" ]; then
+                        echo "ℹ️  Mermaid rendering: $(echo "$mermaid_version" | sed 's/.*\(version [0-9.]*\).*/\1/' 2>/dev/null || echo 'version detected')"
+                    fi
+                else
+                    echo "❌ Documentation Diagrams: Mermaid syntax errors detected ($syntax_errors errors)"
+                    echo "⚠️  Found $syntax_errors Mermaid-related errors in documentation"
+                    echo "🔧 Common fixes:"
+                    echo "   • Check for unsupported emoji characters in diagram labels"
+                    echo "   • Verify proper bracket matching in node definitions"
+                    echo "   • Remove unsupported 'color' properties from classDef statements"
+                    echo "💡 Detailed errors visible at: http://localhost:8000/architecture_diagrams/"
+                    all_ready=false
+                fi
+                return 0
+            else
+                echo "❌ Documentation Server: Not responding"
+                
+                # Check if process is still running
+                if pgrep -f "mkdocs serve" >/dev/null 2>&1; then
+                    echo "🔍 MkDocs process found but not responding on port 8000"
+                    echo "🛠️  Killing existing process and restarting..."
+                    pkill -f "mkdocs serve" 2>/dev/null || true
+                    sleep 2
+                else
+                    echo "🔍 No MkDocs process found"
+                fi
+                
+                # Check if port is occupied by another process
+                if lsof -i :8000 >/dev/null 2>&1; then
+                    echo "⚠️  Port 8000 is occupied by another process"
+                    echo "🛠️  Attempting to free port 8000..."
+                    lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+                    sleep 2
+                fi
+                
+                # Restart the documentation server
+                echo "🔄 Restarting documentation server..."
+                if [ -f "./scripts/start-docs-server.sh" ]; then
+                    echo "📚 Using start-docs-server.sh script..."
+                    ./scripts/start-docs-server.sh > /tmp/docs-fix.log 2>&1 &
+                    DOCS_FIX_PID=$!
+                else
+                    echo "📚 Using direct mkdocs command..."
+                    # Activate virtual environment if it exists
+                    if [ -d "docs/venv" ] && [ -f "docs/venv/bin/activate" ]; then
+                        source docs/venv/bin/activate
+                    fi
+                    mkdocs serve --dev-addr=0.0.0.0:8000 > /tmp/docs-fix.log 2>&1 &
+                    DOCS_FIX_PID=$!
+                fi
+                
+                echo "🔍 Waiting for documentation server to restart..."
+                
+                # Wait for server to start (shorter timeout for restart)
+                local wait_count=0
+                while [ $wait_count -lt 20 ]; do
+                    if curl -s http://localhost:8000 > /dev/null 2>&1; then
+                        echo "✅ Documentation server restarted successfully"
+                        sleep 1  # Brief pause before next check
+                        break
+                    fi
+                    echo "⏳ Waiting for server restart... ($((wait_count + 1))/20)"
+                    sleep 3
+                    wait_count=$((wait_count + 1))
+                done
+                
+                if curl -s http://localhost:8000 > /dev/null 2>&1; then
+                    echo "✅ Auto-fix successful: Documentation server is now responding"
+                    docs_attempt=$((max_attempts + 1))  # Exit loop successfully
+                else
+                    echo "❌ Auto-fix attempt $docs_attempt failed"
+                    if [ $docs_attempt -lt $max_attempts ]; then
+                        echo "🔄 Trying different approach..."
+                        docs_attempt=$((docs_attempt + 1))
+                    else
+                        echo "❌ Documentation server auto-fix failed after $max_attempts attempts"
+                        echo "🔧 Manual troubleshooting:"
+                        echo "   • Check logs: cat /tmp/docs-fix.log"
+                        echo "   • Manual restart: ./scripts/start-docs-server.sh"
+                        echo "   • Check virtual environment: ls -la docs/venv/"
+                        echo "   • Check MkDocs config: mkdocs --version"
+                        all_ready=false
+                        return 1
+                    fi
+                fi
             fi
-        else
-            echo "❌ Documentation Diagrams: Mermaid syntax errors detected ($syntax_errors errors)"
-            echo "⚠️  Found $syntax_errors Mermaid-related errors in documentation"
-            echo "🔧 Common fixes:"
-            echo "   • Check for unsupported emoji characters in diagram labels"
-            echo "   • Verify proper bracket matching in node definitions"
-            echo "   • Remove unsupported 'color' properties from classDef statements"
-            echo "💡 Detailed errors visible at: http://localhost:8000/architecture_diagrams/"
-            all_ready=false
-        fi
-    else
-        echo "⚠️  Documentation Server: Not responding (may need a moment to start)"
-    fi
+        done
+    }
     
-    # Check dashboard
-    if curl -s http://localhost:3000/api/pod-data > /dev/null 2>&1; then
-        echo "✅ Dashboard: Ready"
-    else
-        echo "⚠️  Dashboard: Not responding (may need a moment to start)"
-    fi
+    check_and_fix_docs_server
+    
+    # Check and auto-fix dashboard server
+    check_and_fix_dashboard() {
+        echo "🔍 Checking dashboard server..."
+        
+        if curl -s http://localhost:3000/api/pod-data > /dev/null 2>&1; then
+            echo "✅ Dashboard: Ready"
+            return 0
+        else
+            echo "❌ Dashboard: Not responding"
+            
+            # Check if dashboard process is running
+            if pgrep -f "node.*server.js" >/dev/null 2>&1; then
+                echo "🔍 Dashboard process found but not responding on port 3000"
+                echo "🛠️  Killing existing process and restarting..."
+                pkill -f "node.*server.js" 2>/dev/null || true
+                sleep 2
+            else
+                echo "🔍 No dashboard process found"
+            fi
+            
+            # Check if port is occupied
+            if lsof -i :3000 >/dev/null 2>&1; then
+                echo "⚠️  Port 3000 is occupied by another process"
+                echo "🛠️  Attempting to free port 3000..."
+                lsof -ti :3000 | xargs kill -9 2>/dev/null || true
+                sleep 2
+            fi
+            
+            # Restart dashboard
+            echo "🔄 Restarting dashboard server..."
+            if [ -f "web/server.js" ]; then
+                cd web
+                node server.js > /tmp/dashboard-fix.log 2>&1 &
+                DASHBOARD_FIX_PID=$!
+                cd ..
+                echo "🔍 Waiting for dashboard to restart..."
+                
+                # Wait for dashboard to start
+                local wait_count=0
+                while [ $wait_count -lt 15 ]; do
+                    if curl -s http://localhost:3000/api/pod-data > /dev/null 2>&1; then
+                        echo "✅ Auto-fix successful: Dashboard is now responding"
+                        return 0
+                    fi
+                    echo "⏳ Waiting for dashboard restart... ($((wait_count + 1))/15)"
+                    sleep 2
+                    wait_count=$((wait_count + 1))
+                done
+                
+                echo "❌ Dashboard auto-fix failed"
+                echo "🔧 Manual troubleshooting:"
+                echo "   • Check logs: cat /tmp/dashboard-fix.log"
+                echo "   • Manual restart: cd web && node server.js"
+                echo "   • Check Node.js: node --version"
+                echo "   • Check dependencies: ls -la web/node_modules/"
+                all_ready=false
+                return 1
+            else
+                echo "❌ Dashboard server file not found: web/server.js"
+                echo "🔧 Please ensure the dashboard files are in place"
+                all_ready=false
+                return 1
+            fi
+        fi
+    }
+    
+    check_and_fix_dashboard
     
     if [ "$all_ready" = true ]; then
         echo ""

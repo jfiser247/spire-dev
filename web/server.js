@@ -89,29 +89,116 @@ const server = http.createServer((req, res) => {
             
             const command = `kubectl --context ${context} -n ${namespace} describe ${resourceType} ${resourceName}`;
             
-            exec(command, { timeout: 15000 }, (error, stdout, stderr) => {
-                if (error) {
-                    console.warn(`Describe command failed: ${command}`, error.message);
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ 
-                        error: 'Failed to describe resource', 
-                        details: error.message,
-                        command: command
-                    }));
-                } else {
+            // Enhanced pod details for workload namespace - include SPIFFE information
+            if (resourceType === 'pod' && namespace === 'spire-workload') {
+                // Get enhanced pod details with SPIFFE information
+                const enhancedCommands = [
+                    `kubectl --context ${context} -n ${namespace} describe ${resourceType} ${resourceName}`,
+                    `kubectl --context ${context} -n spire-server exec spire-server-0 -- /opt/spire/bin/spire-server entry show -socketPath /run/spire/sockets/server.sock 2>/dev/null || echo "SPIFFE entries not available"`,
+                    `kubectl --context ${context} -n ${namespace} get pod ${resourceName} -o jsonpath='{.metadata.labels}' 2>/dev/null || echo "{}"`,
+                    `kubectl --context ${context} -n ${namespace} get pod ${resourceName} -o jsonpath='{.spec.serviceAccountName}' 2>/dev/null || echo "default"`
+                ];
+
+                // Execute all commands in parallel
+                Promise.all(enhancedCommands.map(cmd => 
+                    new Promise((resolve) => {
+                        exec(cmd, { timeout: 15000 }, (error, stdout, stderr) => {
+                            resolve({ cmd, stdout: stdout || '', stderr: stderr || '', error: error ? error.message : null });
+                        });
+                    })
+                )).then(results => {
+                    const [describeResult, spiffeResult, labelsResult, saResult] = results;
+                    
+                    if (describeResult.error) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ 
+                            error: 'Failed to describe resource', 
+                            details: describeResult.error,
+                            command: command
+                        }));
+                        return;
+                    }
+
+                    // Parse SPIFFE entries to find matching ones
+                    let spiffeInfo = null;
+                    if (!spiffeResult.error && spiffeResult.stdout) {
+                        const spiffeOutput = spiffeResult.stdout;
+                        const entries = spiffeOutput.split('Entry ID').filter(entry => entry.trim().length > 0);
+                        
+                        // Try to find entry that matches this workload
+                        const serviceAccountName = saResult.stdout.trim();
+                        const matchingEntry = entries.find(entry => {
+                            return entry.includes(`k8s:ns:${namespace}`) && 
+                                   entry.includes(`k8s:sa:${serviceAccountName}`);
+                        });
+
+                        if (matchingEntry) {
+                            // Extract SPIFFE ID
+                            const spiffeIdMatch = matchingEntry.match(/SPIFFE ID\s*:\s*([^\n\r]+)/);
+                            const parentIdMatch = matchingEntry.match(/Parent ID\s*:\s*([^\n\r]+)/);
+                            const ttlMatch = matchingEntry.match(/TTL\s*:\s*([^\n\r]+)/);
+                            const selectorsMatch = matchingEntry.match(/Selector\s*:\s*([^\n\r]+)/g);
+
+                            spiffeInfo = {
+                                spiffeId: spiffeIdMatch ? spiffeIdMatch[1].trim() : null,
+                                parentId: parentIdMatch ? parentIdMatch[1].trim() : null,
+                                ttl: ttlMatch ? ttlMatch[1].trim() : null,
+                                selectors: selectorsMatch ? selectorsMatch.map(s => s.replace('Selector     :', '').trim()) : [],
+                                hasRegistration: true
+                            };
+                        }
+                    }
+
+                    // Parse pod labels for additional context
+                    let podLabels = {};
+                    try {
+                        podLabels = JSON.parse(labelsResult.stdout) || {};
+                    } catch (e) {
+                        podLabels = {};
+                    }
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ 
-                        output: stdout,
+                        output: describeResult.stdout,
                         command: command,
                         resource: {
                             type: resourceType,
                             name: resourceName,
                             namespace: namespace,
                             context: context
-                        }
+                        },
+                        spiffeInfo: spiffeInfo,
+                        podLabels: podLabels,
+                        serviceAccount: saResult.stdout.trim(),
+                        enhanced: true
                     }));
-                }
-            });
+                });
+            } else {
+                // Standard describe for non-workload pods
+                exec(command, { timeout: 15000 }, (error, stdout, stderr) => {
+                    if (error) {
+                        console.warn(`Describe command failed: ${command}`, error.message);
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ 
+                            error: 'Failed to describe resource', 
+                            details: error.message,
+                            command: command
+                        }));
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ 
+                            output: stdout,
+                            command: command,
+                            resource: {
+                                type: resourceType,
+                                name: resourceName,
+                                namespace: namespace,
+                                context: context
+                            }
+                        }));
+                    }
+                });
+            }
         } else {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Invalid describe URL format. Expected: /api/describe/{type}/{namespace}/{context}/{name}' }));

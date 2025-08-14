@@ -25,7 +25,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-test-service
-  namespace: production
+  namespace: spire-workload
 spec:
   replicas: 1
   selector:
@@ -61,7 +61,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: my-test-service
-  namespace: production
+  namespace: spire-workload
 ```
 
 ## Step 2: Install SPIFFE SDK in Your App
@@ -114,7 +114,7 @@ kubectl exec -n spire-server -it deployment/spire-server -- /bin/sh
 /opt/spire/bin/spire-server entry create \
   -spiffeID spiffe://example.org/workload/my-test-service \
   -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
-  -selector k8s:ns:production \
+  -selector k8s:ns:spire-workload \
   -selector k8s:sa:my-test-service \
   -selector k8s:pod-label:app:my-test-service \
   -ttl 1800
@@ -132,13 +132,13 @@ Deploy your workload and see if it can get SPIFFE identities:
 kubectl apply -f your-workload.yaml
 
 # Check that pods are running
-kubectl get pods -n production -l app=my-test-service
+kubectl get pods -n spire-workload -l app=my-test-service
 
 # Look at the logs to see if SPIFFE is working
-kubectl logs -n production -l app=my-test-service
+kubectl logs -n spire-workload -l app=my-test-service
 
 # Test SPIRE agent socket access
-kubectl exec -n production -it deployment/my-test-service -- \
+kubectl exec -n spire-workload -it deployment/my-test-service -- \
   ls -la /run/spire/sockets/
 ```
 
@@ -231,7 +231,7 @@ kubectl exec -n spire-server deployment/spire-server -- \
 ### 🚨 "Permission denied accessing socket"
 **Quick Fix:** Make sure your container can access the socket:
 ```bash
-kubectl exec -n production -it deployment/my-test-service -- \
+kubectl exec -n spire-workload -it deployment/my-test-service -- \
   ls -la /run/spire/sockets/
 ```
 
@@ -259,10 +259,10 @@ kubectl exec -n spire-server deployment/spire-server -- \
 ./scripts/register-workload.sh --name my-app --service-account my-app --workload-ns production
 
 # Check workload logs
-kubectl logs -n production -l app=my-test-service
+kubectl logs -n spire-workload -l app=my-test-service
 
 # Test socket access
-kubectl exec -n production deployment/my-test-service -- ls -la /run/spire/sockets/
+kubectl exec -n spire-workload deployment/my-test-service -- ls -la /run/spire/sockets/
 ```
 
 ## Learn More

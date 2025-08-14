@@ -1,3 +1,9 @@
+---
+layout: page
+title: Fresh Install Setup Guide
+permalink: /fresh-install-guide/
+---
+
 # Fresh Install Setup Guide
 
 Get your local SPIRE development environment up and running in minutes! This guide walks you through the complete setup process from scratch.
@@ -175,8 +181,8 @@ Your local environment includes:
 
 🎯 **Now that your environment is ready:**
 
-1. **Try the Quick Start** - [Integrate your first workload](quick_start_workload_integration.md)
-2. **Understand the Architecture** - [Learn how components work together](architecture_diagrams.md)
+1. **Try the Quick Start** - [Integrate your first workload]({{ "/quick-start-workload-integration/" | relative_url }})
+2. **Understand the Architecture** - [Learn how components work together]({{ "/architecture-diagrams/" | relative_url }})
 3. **Explore Code Examples** - Check out the demo services in the `examples/` directory
 4. **Register New Workloads** - Use `./scripts/register-workload.sh` to add services
 
@@ -243,8 +249,7 @@ pkill -f "kubectl port-forward"
 ## Troubleshooting
 
 For detailed troubleshooting help, see:
-- **[Troubleshooting Guide](troubleshooting.md)** - Common issues and solutions
-- **[Script Fixes Summary](script_fixes_summary.md)** - Known issues and their fixes
+- **[Troubleshooting Guide]({{ "/troubleshooting/" | relative_url }})** - Common issues and solutions
 
 ## Advanced Options
 
@@ -272,7 +277,7 @@ DEBUG=true ./scripts/fresh-install.sh
 ## Support
 
 **Need help?**
-- Check the [Troubleshooting Guide](troubleshooting.md) for common issues
-- Review the [Architecture Diagrams](architecture_diagrams.md) to understand component relationships
+- Check the [Troubleshooting Guide]({{ "/troubleshooting/" | relative_url }}) for common issues
+- Review the [Architecture Diagrams]({{ "/architecture-diagrams/" | relative_url }}) to understand component relationships
 - Look at working examples in the `examples/` directory
 - Join the [SPIFFE Community](https://spiffe.io/community/) for support

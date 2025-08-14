@@ -69,6 +69,13 @@ Understand how to deploy this in real environments
 - 📊 **Real-time dashboard** shows identity propagation at http://localhost:3000/web-dashboard.html
 - 🔐 **Three demo services** demonstrate SPIFFE integration patterns
 - 🧪 **Interactive examples** let you experiment with identity-based auth
+- 🛠️ **Auto-fix verification** ensures all servers are working properly
+
+**🧹 When you're done for the day:**
+```bash
+# Clean shutdown - stops all servers, removes clusters, frees resources
+./scripts/teardown.sh
+```
 
 <details>
 <summary>📋 Prerequisites - Get Ready for Zero-Trust</summary>
@@ -284,6 +291,54 @@ curl http://localhost:3000/api/pod-data
 - Test failure scenarios (agent down, server unavailable)
 
 </details>
+
+---
+
+## 🧹 Environment Management - Clean Up When Done
+
+### **🛑 Complete Environment Teardown**
+
+When you're done testing for the day or need a fresh start:
+
+```bash
+# Clean up everything - clusters, containers, servers, temp files
+./scripts/teardown.sh
+```
+
+**✨ What gets cleaned:**
+- 🗑️ **All Minikube clusters** (workload-cluster)
+- 🗑️ **All running servers** (dashboard at :3000, docs at :8000)
+- 🗑️ **Docker containers and images** (SPIRE-related)
+- 🗑️ **Temporary files and caches** 
+- ⚙️ **kubectl contexts** (reset to default)
+
+**💾 What stays safe:**
+- 📁 **Your project code** and configuration files
+- 🐳 **Base Docker images** (for faster next startup)
+- ⚙️ **System settings** and preferences
+
+### **🎯 When to Use Teardown**
+
+| Situation | Command | Reason |
+|-----------|---------|--------|
+| **End of testing day** | `./scripts/teardown.sh` | Free up system resources |
+| **Need fresh environment** | `./scripts/teardown.sh` + `./scripts/fresh-install.sh` | Start with clean slate |
+| **Something feels broken** | `./scripts/teardown.sh` + `./scripts/fresh-install.sh` | Reset to known good state |
+| **Switching projects** | `./scripts/teardown.sh` | Clean up before other work |
+| **Low disk space** | `./scripts/teardown.sh` | Free Docker volumes and images |
+
+### **🔄 Quick Restart Workflow**
+
+```bash
+# End of day cleanup
+./scripts/teardown.sh
+
+# Next day startup
+./scripts/fresh-install.sh
+
+# Quick verification
+open http://localhost:3000/web-dashboard.html
+```
 
 ---
 

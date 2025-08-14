@@ -80,7 +80,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: your-service-name
-  namespace: workload
+  namespace: spire-workload
 ```
 
 ### Step 5: Implement SPIFFE Client Code
@@ -211,7 +211,7 @@ kubectl exec -n spire-server -it deployment/spire-server -- /bin/sh
 /opt/spire/bin/spire-server entry create \
   -spiffeID spiffe://example.org/workload/your-service \
   -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
-  -selector k8s:ns:workload \
+  -selector k8s:ns:spire-workload \
   -selector k8s:sa:your-service-name \
   -selector k8s:pod-label:app:your-service-name \
   -ttl 1800
@@ -220,10 +220,10 @@ kubectl exec -n spire-server -it deployment/spire-server -- /bin/sh
 /opt/spire/bin/spire-server entry create \
   -spiffeID spiffe://example.org/workload/your-service \
   -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
-  -selector k8s:ns:workload \
+  -selector k8s:ns:spire-workload \
   -selector k8s:sa:your-service-name \
   -selector k8s:pod-label:app:your-service-name \
-  -dnsName your-service.workload.svc.cluster.local \
+  -dnsName your-service.spire-workload.svc.cluster.local \
   -ttl 1800
 ```
 
@@ -257,7 +257,7 @@ data:
     /opt/spire/bin/spire-server entry create \
       -spiffeID spiffe://example.org/workload/your-service \
       -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
-      -selector k8s:ns:workload \
+      -selector k8s:ns:spire-workload \
       -selector k8s:sa:your-service-name \
       -selector k8s:pod-label:app:your-service-name \
       -ttl 1800
@@ -317,13 +317,13 @@ registrationEntries:
     - spiffeId: "spiffe://example.org/workload/your-service"
       parentId: "spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster"
       selectors:
-        - "k8s:ns:workload"
+        - "k8s:ns:spire-workload"
         - "k8s:sa:your-service-name"
         - "k8s:pod-label:app:your-service-name"
         - "k8s:pod-label:service:your-service-type"
       ttl: 1800
       dnsNames:
-        - "your-service.workload.svc.cluster.local"
+        - "your-service.spire-workload.svc.cluster.local"
 ```
 
 ## Complete Working Examples
@@ -339,7 +339,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: http-service
-  namespace: workload
+  namespace: spire-workload
   labels:
     app: http-service
 spec:
@@ -399,13 +399,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: http-service
-  namespace: workload
+  namespace: spire-workload
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: http-service
-  namespace: workload
+  namespace: spire-workload
   labels:
     app: http-service
 spec:
@@ -420,7 +420,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: http-service-config
-  namespace: workload
+  namespace: spire-workload
 data:
   default.conf: |
     server {
@@ -447,11 +447,11 @@ data:
 kubectl exec -n spire-server -it deployment/spire-server -- /opt/spire/bin/spire-server entry create \
   -spiffeID spiffe://example.org/workload/http-service \
   -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
-  -selector k8s:ns:workload \
+  -selector k8s:ns:spire-workload \
   -selector k8s:sa:http-service \
   -selector k8s:pod-label:app:http-service \
   -selector k8s:pod-label:service:web-api \
-  -dnsName http-service.workload.svc.cluster.local \
+  -dnsName http-service.spire-workload.svc.cluster.local \
   -ttl 1800
 ```
 
@@ -466,7 +466,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: db-client-service
-  namespace: workload
+  namespace: spire-workload
   labels:
     app: db-client-service
 spec:
@@ -542,7 +542,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: db-client-service
-  namespace: workload
+  namespace: spire-workload
 ```
 
 #### Registration Entry
@@ -552,7 +552,7 @@ metadata:
 kubectl exec -n spire-server -it deployment/spire-server -- /opt/spire/bin/spire-server entry create \
   -spiffeID spiffe://example.org/workload/db-client-service \
   -parentID spiffe://example.org/spire/agent/k8s_psat/spire-server-cluster \
-  -selector k8s:ns:workload \
+  -selector k8s:ns:spire-workload \
   -selector k8s:sa:db-client-service \
   -selector k8s:pod-label:app:db-client-service \
   -selector k8s:pod-label:service:database-client \
@@ -566,13 +566,13 @@ kubectl exec -n spire-server -it deployment/spire-server -- /opt/spire/bin/spire
 
 ```bash
 # Check pod status
-kubectl get pods -n workload -l app=your-service-name
+kubectl get pods -n spire-workload -l app=your-service-name
 
 # Check pod logs
-kubectl logs -n workload -l app=your-service-name
+kubectl logs -n spire-workload -l app=your-service-name
 
 # Check ServiceAccount
-kubectl get serviceaccount -n workload your-service-name
+kubectl get serviceaccount -n spire-workload your-service-name
 ```
 
 ### 2. Verify SPIRE Registration
@@ -593,11 +593,11 @@ kubectl exec -n spire-server -it deployment/spire-server -- /opt/spire/bin/spire
 
 ```bash
 # Check if workload can fetch SVID
-kubectl exec -n workload -it deployment/your-service -- \
+kubectl exec -n spire-workload -it deployment/your-service -- \
   /bin/sh -c 'ls -la /run/spire/sockets/'
 
 # Test SPIFFE endpoint (if spiffe-helper is available)
-kubectl exec -n workload -it deployment/your-service -- \
+kubectl exec -n spire-workload -it deployment/your-service -- \
   /usr/bin/spiffe-helper -config /opt/spiffe-helper.conf
 ```
 
@@ -610,7 +610,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: spiffe-test
-  namespace: workload
+  namespace: spire-workload
 spec:
   serviceAccountName: your-service-name
   containers:
@@ -703,13 +703,13 @@ kubectl logs -n spire-server deployment/spire-server
 kubectl logs -n spire-system daemonset/spire-agent
 
 # Check workload logs
-kubectl logs -n workload deployment/your-service
+kubectl logs -n spire-workload deployment/your-service
 
 # Describe pod for configuration issues
-kubectl describe pod -n workload -l app=your-service
+kubectl describe pod -n spire-workload -l app=your-service
 
 # Check events
-kubectl get events -n workload --sort-by='.lastTimestamp'
+kubectl get events -n spire-workload --sort-by='.lastTimestamp'
 ```
 
 ## Best Practices

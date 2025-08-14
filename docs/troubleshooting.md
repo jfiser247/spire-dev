@@ -206,7 +206,7 @@ minikube delete --all
 # Check specific component status:
 kubectl --context workload-cluster -n spire-server get pods
 kubectl --context workload-cluster -n spire-system get pods  
-kubectl --context workload-cluster -n production get pods
+kubectl --context workload-cluster -n spire-workload get pods
 ```
 
 ### 8. **"Git or repository issues"**

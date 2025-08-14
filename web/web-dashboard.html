@@ -708,8 +708,8 @@
             <button class="tab" onclick="showTab('workloads')">Workloads</button>
             <button class="tab" onclick="showTab('metrics')">SPIRE Metrics</button>
             <button class="tab" onclick="showTab('commands')">Useful Commands</button>
-            <button class="tab docs-tab" onclick="openMkDocs('overview')">📚 Project Overview</button>
-            <button class="tab docs-tab" onclick="openMkDocs('docs')">📖 Documentation</button>
+            <button class="tab docs-tab" onclick="openJekyllDocs('overview')">📚 Project Overview</button>
+            <button class="tab docs-tab" onclick="openJekyllDocs('docs')">📖 Documentation</button>
         </div>
         
         <div class="tab-content">
@@ -1298,27 +1298,27 @@ curl http://localhost:9988/metrics</div>
             }, 150);
         }
 
-        function openMkDocs(type) {
+        function openJekyllDocs(type) {
             // Remove active state from all tabs since we're navigating away
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => tab.classList.remove('active'));
             
-            // Determine the correct mkdocs URL based on type
-            let mkdocsUrl;
+            // Determine the correct Jekyll URL based on type
+            let docsUrl;
             if (type === 'overview') {
-                mkdocsUrl = 'http://localhost:8000';  // Main mkdocs index page
+                docsUrl = 'http://localhost:4000';  // Main Jekyll index page
             } else if (type === 'docs') {
-                mkdocsUrl = 'http://localhost:8000/fresh_install_guide/';  // Start with getting started guide
+                docsUrl = 'http://localhost:4000/fresh-install-guide/';  // Start with getting started guide
             }
             
             // Use a simple approach: try to open the documentation directly
             // If the server is down, the browser will show a connection error
             // If the server is up, the documentation will load
-            const opened = window.open(mkdocsUrl, '_blank');
+            const opened = window.open(docsUrl, '_blank');
             
             if (!opened) {
                 // Pop-up blocked or other issue
-                alert(`📚 Unable to Open Documentation\n\nTo access the documentation:\n\n1. Allow pop-ups for this site\n2. Or manually navigate to: ${mkdocsUrl}\n\nIf the documentation server isn't running:\n1. Open a terminal in the project directory\n2. Run: ./scripts/start-docs-server.sh\n3. Wait for "Serving at http://localhost:8000"\n\nThe script automatically creates a virtual environment\nand installs dependencies safely.\n\nAlternatively, run a fresh installation:\n./scripts/fresh-install.sh`);
+                alert(`📚 Unable to Open Documentation\n\nTo access the documentation:\n\n1. Allow pop-ups for this site\n2. Or manually navigate to: ${docsUrl}\n\nIf the documentation server isn't running:\n1. Open a terminal in the project directory\n2. Run: ./scripts/start-jekyll-server.sh\n3. Wait for "Server running at http://localhost:4000"\n\nThe script automatically installs Jekyll dependencies safely.\n\nAlternatively, run a fresh installation:\n./scripts/fresh-install.sh`);
             }
         }
 
