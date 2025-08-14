@@ -43,6 +43,8 @@ jobs:
       - name: Build MkDocs site
         run: |
           mkdocs build --verbose --site-dir site
+          # Add .nojekyll to disable Jekyll processing on GitHub Pages
+          touch site/.nojekyll
           
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
