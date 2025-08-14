@@ -70,8 +70,8 @@
             opacity: 0.7;
         }
         .tab-content {
-            padding: 30px;
-            min-height: 400px;
+            padding: 20px;
+            min-height: 200px;
             transition: opacity 0.2s ease;
         }
         .tab-pane {
@@ -175,11 +175,11 @@
         .table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .table th,
         .table td {
-            padding: 12px;
+            padding: 8px 12px;
             text-align: left;
             border-bottom: 1px solid #dee2e6;
         }
@@ -195,7 +195,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         .refresh-btn:hover {
             background: #5a6fd8;
@@ -246,6 +246,192 @@
         .age-live {
             color: #007bff;
             font-weight: bold;
+        }
+        
+        /* Enhanced modal styles for SPIFFE information */
+        .spiffe-info-section {
+            margin: 2px 0;
+            padding: 4px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            border-radius: 5px;
+        }
+        
+        .spiffe-info-section h4 {
+            margin: 0 0 2px 0;
+            color: #495057;
+            font-size: 13px;
+        }
+        
+        .spiffe-details {
+            margin: 2px 0;
+        }
+        
+        .spiffe-field {
+            margin: 1px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .spiffe-field label {
+            min-width: 140px;
+            font-weight: 600;
+            color: #495057;
+            margin-right: 8px;
+            font-size: 13px;
+        }
+        
+        .spiffe-value {
+            font-family: 'Courier New', monospace;
+            background: #ffffff;
+            padding: 3px 6px;
+            border-radius: 3px;
+            border: 1px solid #dee2e6;
+            word-break: break-all;
+            flex: 1;
+            font-size: 12px;
+        }
+        
+        .spiffe-value.important {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            font-weight: 600;
+            color: #1976d2;
+        }
+        
+        .spiffe-selectors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .spiffe-selector {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #495057;
+        }
+        
+        .spiffe-status {
+            margin: 2px 0 1px 0;
+            text-align: center;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-badge.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-badge.healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.unhealthy {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .spiffe-help {
+            margin: 15px 0;
+            padding: 10px;
+            background: #ffffff;
+            border-radius: 5px;
+            font-size: 13px;
+            text-align: left;
+        }
+        
+        .spiffe-help code {
+            background: #e9ecef;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .health-info-section {
+            margin: 2px 0;
+            padding: 4px;
+            background: #f8f9fa;
+            border-left: 4px solid #17a2b8;
+            border-radius: 5px;
+        }
+        
+        .health-info-section h4 {
+            margin: 0 0 2px 0;
+            color: #495057;
+            font-size: 13px;
+        }
+        
+        .health-details {
+            margin: 2px 0;
+        }
+        
+        .health-field {
+            margin: 1px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .health-field label {
+            min-width: 140px;
+            font-weight: 600;
+            color: #495057;
+            margin-right: 10px;
+        }
+        
+        .health-value {
+            font-family: 'Courier New', monospace;
+            background: #ffffff;
+            padding: 3px 6px;
+            border-radius: 3px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .kubectl-output-section {
+            margin: 2px 0;
+        }
+        
+        .kubectl-output-section h4 {
+            margin: 0 0 2px 0;
+            color: #495057;
+            font-size: 13px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 1px;
+        }
+        
+        .kubectl-output {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 4px;
+        }
+        
+        .kubectl-output pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            color: #495057;
         }
         .metrics-modal {
             display: none;
@@ -453,7 +639,7 @@
             background-color: rgba(255,255,255,0.2);
         }
         .modal-body {
-            padding: 20px;
+            padding: 6px;
             max-height: calc(90vh - 140px);
             overflow-y: auto;
         }
@@ -1689,8 +1875,8 @@ curl http://localhost:9988/metrics</div>
                     document.getElementById('db-status-text').textContent = dbPod.status;
                     document.getElementById('db-uptime').textContent = age;
                     
-                    // Update policy count (simulated - in production this would query actual database)
-                    document.getElementById('db-policies-count').textContent = '7';
+                    // Policy count will be updated when modal is opened
+                    updatePolicyCount();
                     
                     // Update database table
                     let dbTableHTML = '';
@@ -1972,6 +2158,9 @@ curl http://localhost:9988/metrics</div>
             modalTitle.textContent = content.title;
             modalBody.innerHTML = content.body;
             
+            // Update the policy count after content is generated
+            updatePolicyCount();
+            
             modal.style.display = 'block';
             
             // Add event listener to close modal when clicking outside
@@ -1984,6 +2173,21 @@ curl http://localhost:9988/metrics</div>
         
         function closeDatabasePoliciesModal() {
             document.getElementById('database-policies-modal').style.display = 'none';
+        }
+
+        function updatePolicyCount() {
+            // Count the actual policy entries in the generateDatabasePoliciesContent
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = generateDatabasePoliciesContent().body;
+            const policyRows = tempDiv.querySelectorAll('.policy-row');
+            const count = policyRows.length;
+            
+            // Update both the dashboard tile and the modal count
+            document.getElementById('db-policies-count').textContent = count;
+            const modalTotalEntries = document.getElementById('total-entries');
+            if (modalTotalEntries) {
+                modalTotalEntries.textContent = count;
+            }
         }
         
         // Add keyboard support for closing modal
@@ -2407,7 +2611,7 @@ curl http://localhost:9988/metrics</div>
                     <div class="metric-detail-grid">
                         <div class="metric-detail-card">
                             <h4>Total Registration Entries</h4>
-                            <div class="metric-value-large" id="total-entries">7</div>
+                            <div class="metric-value-large" id="total-entries">-</div>
                             <div class="metric-trend">
                                 <span class="trend-indicator trend-stable">→</span>
                                 <span>Active policies</span>
@@ -2509,6 +2713,42 @@ curl http://localhost:9988/metrics</div>
                                         <span class="selector-tag">k8s:pod-label:service:inventory-management</span>
                                     </td>
                                     <td>1800s</td>
+                                    <td><span class="status-online">●</span> Active</td>
+                                </tr>
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/auth-service k8s auth-service workload authentication authorization">
+                                    <td><code>5</code></td>
+                                    <td><strong>spiffe://example.org/workload/auth-service</strong></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/workload-cluster</em></td>
+                                    <td>
+                                        <span class="selector-tag">k8s:ns:workload</span>
+                                        <span class="selector-tag">k8s:sa:auth-service</span>
+                                        <span class="selector-tag">k8s:pod-label:service:authentication</span>
+                                    </td>
+                                    <td>3600s</td>
+                                    <td><span class="status-online">●</span> Active</td>
+                                </tr>
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/notification-service k8s notification-service workload notifications messaging">
+                                    <td><code>6</code></td>
+                                    <td><strong>spiffe://example.org/workload/notification-service</strong></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/workload-cluster</em></td>
+                                    <td>
+                                        <span class="selector-tag">k8s:ns:workload</span>
+                                        <span class="selector-tag">k8s:sa:notification-service</span>
+                                        <span class="selector-tag">k8s:pod-label:service:notifications</span>
+                                    </td>
+                                    <td>1200s</td>
+                                    <td><span class="status-online">●</span> Active</td>
+                                </tr>
+                                <tr class="policy-row" data-search="spiffe://example.org/workload/api-gateway k8s api-gateway workload gateway routing">
+                                    <td><code>7</code></td>
+                                    <td><strong>spiffe://example.org/workload/api-gateway</strong></td>
+                                    <td><em>spiffe://example.org/spire/agent/k8s_psat/workload-cluster</em></td>
+                                    <td>
+                                        <span class="selector-tag">k8s:ns:workload</span>
+                                        <span class="selector-tag">k8s:sa:api-gateway</span>
+                                        <span class="selector-tag">k8s:pod-label:service:gateway</span>
+                                    </td>
+                                    <td>2400s</td>
                                     <td><span class="status-online">●</span> Active</td>
                                 </tr>
                             </tbody>
@@ -2627,7 +2867,16 @@ kubectl --context workload-cluster -n spire-server exec $SERVER_POD -- /opt/spir
             // Show modal with loading state
             modal.style.display = 'block';
             modalTitle.textContent = `${resourceType}: ${resourceName}`;
-            modalCommand.textContent = `kubectl --context ${context} -n ${namespace} describe ${resourceType} ${resourceName}`;
+            
+            // Only show command for non-enhanced views
+            const commandInfo = modalCommand.parentElement;
+            if (namespace === 'spire-workload' && resourceType === 'pod') {
+                commandInfo.style.display = 'none';
+            } else {
+                commandInfo.style.display = 'block';
+                modalCommand.textContent = `kubectl --context ${context} -n ${namespace} describe ${resourceType} ${resourceName}`;
+            }
+            
             modalOutput.innerHTML = '<div class="loading-spinner"></div> Loading resource details...';
             
             // Fetch describe output
@@ -2639,13 +2888,63 @@ kubectl --context workload-cluster -n spire-server exec $SERVER_POD -- /opt/spir
                     if (data.error) {
                         modalOutput.innerHTML = `<div style="color: #dc3545;">Error: ${data.error}</div><div style="margin-top: 10px; font-size: 11px; color: #6c757d;">Command: ${data.command || 'Unknown'}</div>`;
                     } else {
-                        modalOutput.textContent = data.output;
+                        // Check if this is enhanced data for workload pods
+                        if (data.enhanced && namespace === 'spire-workload') {
+                            modalOutput.innerHTML = renderEnhancedPodDetails(data);
+                        } else {
+                            modalOutput.textContent = data.output;
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching resource details:', error);
                     modalOutput.innerHTML = `<div style="color: #dc3545;">Failed to load resource details: ${error.message}</div>`;
                 });
+        }
+
+        function renderEnhancedPodDetails(data) {
+            const spiffe = data.spiffeInfo;
+            const hasSpiffe = spiffe && spiffe.hasRegistration;
+            
+            let spiffeSection = '';
+            if (hasSpiffe) {
+                const selectorsHtml = spiffe.selectors.map(sel => `<span class="spiffe-selector">${sel}</span>`).join('');
+                const ttlFormatted = formatTTL(spiffe.ttl);
+                
+                spiffeSection = `<div class="spiffe-info-section"><h4>🔐 SPIFFE Identity Information</h4><div class="spiffe-details"><div class="spiffe-field"><label>SPIFFE ID:</label><div class="spiffe-value important">${spiffe.spiffeId || 'Not available'}</div></div><div class="spiffe-field"><label>Parent ID:</label><div class="spiffe-value">${spiffe.parentId || 'Not available'}</div></div><div class="spiffe-field"><label>Certificate TTL:</label><div class="spiffe-value">${ttlFormatted}</div></div><div class="spiffe-field"><label>Selectors:</label><div class="spiffe-selectors">${selectorsHtml || 'None'}</div></div><div class="spiffe-field"><label>Service Account:</label><div class="spiffe-value">${data.serviceAccount || 'default'}</div></div><div class="spiffe-field"><label>Status:</label><span class="status-badge success">✅ SPIFFE Registration Active</span></div></div></div>`;
+            } else {
+                spiffeSection = `<div class="spiffe-info-section"><h4>🔐 SPIFFE Identity Information</h4><div class="spiffe-details"><div class="spiffe-field"><label>Status:</label><span class="status-badge warning">⚠️ No SPIFFE Registration Found</span></div><div class="spiffe-field"><label>Service Account:</label><div class="spiffe-value">${data.serviceAccount || 'default'}</div></div></div><div class="spiffe-help"><p>This workload pod doesn't have a SPIFFE identity registration. To register it:</p><ol><li>Identify the service account and create a SPIRE registration entry with appropriate selectors</li><li>Restart the pod to receive its SPIFFE identity</li></ol></div></div>`;
+            }
+
+            // Health check section
+            let healthSection = '';
+            try {
+                const output = data.output;
+                const isReady = output.includes('Ready') && !output.includes('Ready              False');
+                const restartCount = output.match(/Restart Count:\s*(\d+)/) || ['', '0'];
+                const phase = output.match(/Status:\s*(\w+)/) || ['', 'Unknown'];
+                
+                const healthStatus = isReady ? 'healthy' : 'unhealthy';
+                const healthIcon = isReady ? '✅' : '❌';
+                const healthText = isReady ? 'Healthy' : 'Not Ready';
+                
+                healthSection = `<div class="health-info-section"><h4>💊 Health Status</h4><div class="health-details"><div class="health-field"><label>Pod Status:</label><span class="status-badge ${healthStatus}">${healthIcon} ${phase[1]} (${healthText})</span></div><div class="health-field"><label>Restart Count:</label><div class="health-value">${restartCount[1]}</div></div><div class="health-field"><label>Ready for Traffic:</label><div class="health-value">${isReady ? 'Yes' : 'No'}</div></div></div></div>`;
+            } catch (e) {
+                healthSection = `<div class="health-info-section"><h4>💊 Health Status</h4><div class="spiffe-status"><span class="status-badge warning">⚠️ Health information parsing failed</span></div></div>`;
+            }
+
+            return `${spiffeSection}${healthSection}<div class="kubectl-output-section"><h4>📋 Kubernetes Pod Details</h4><div class="kubectl-output"><pre>${data.output}</pre></div></div>`;
+        }
+
+        function formatTTL(ttl) {
+            if (!ttl || ttl === '0') return 'Not specified';
+            const seconds = parseInt(ttl);
+            if (isNaN(seconds)) return ttl;
+            
+            if (seconds < 60) return `${seconds}s`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+            return `${Math.floor(seconds / 86400)}d`;
         }
         
         function closeModal() {
