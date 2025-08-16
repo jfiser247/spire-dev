@@ -3,19 +3,24 @@
 {% block libs %}
   {{ super() }}
   <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <!-- CUSTOM TEMPLATE LOADED -->
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script>
+    console.log('Custom Mermaid template loading...');
     document$.subscribe(function() {
+      console.log('Document ready, initializing Mermaid...');
       mermaid.initialize({
         startOnLoad: false,
         theme: document.body.getAttribute("data-md-color-scheme") === "slate" ? "dark" : "default"
       });
+      console.log('Running Mermaid on .mermaid elements...');
       mermaid.run({
         querySelector: ".mermaid"
       });
+      console.log('Mermaid initialization complete');
     })
   </script>
 {% endblock %}
