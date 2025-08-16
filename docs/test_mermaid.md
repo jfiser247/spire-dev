@@ -2,6 +2,8 @@
 
 This is a simple test page to debug Mermaid rendering.
 
+**🔄 Triggering rebuild to test GitHub Pages configuration...**
+
 ## Simple Diagram
 
 ```mermaid
@@ -20,5 +22,9 @@ flowchart LR
     A[Test] --> B[Mermaid]
     B --> C[Rendering]
 ```
+
+## Status Check
+
+If you can see rendered diagrams above (not code blocks), then Mermaid is working! 🎉
 
 End of test.
