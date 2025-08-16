@@ -40,6 +40,10 @@ plugins:
   - search
   - mermaid2:
       version: 10.4.0
+      javascript: https://unpkg.com/mermaid@10.4.0/dist/mermaid.min.js
+      arguments:
+        securityLevel: 'loose'
+        theme: 'default'
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -101,5 +105,3 @@ extra:
       link: https://spiffe.io/community/
       name: Join Community
 
-extra_javascript:
-  - https://unpkg.com/mermaid@10.4.0/dist/mermaid.min.js
