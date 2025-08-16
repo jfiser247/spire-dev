@@ -1,64 +1,41 @@
 {% extends "base.html" %}
 
-{% block scripts %}
+{% block extrahead %}
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({startOnLoad:true});
+  </script>
+{% endblock %}
+
+{% block content %}
   {{ super() }}
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      if (typeof mermaid !== 'undefined') {
-        console.log('Mermaid loaded, initializing...');
-        mermaid.initialize({
-          startOnLoad: true,
-          theme: 'default',
-          securityLevel: 'loose',
-          themeVariables: {
-            primaryColor: '#1976d2',
-            primaryTextColor: '#ffffff',
-            primaryBorderColor: '#1976d2',
-            lineColor: '#1976d2',
-            secondaryColor: '#f5f5f5',
-            tertiaryColor: '#e8f4fd'
-          },
-          flowchart: {
-            useMaxWidth: true,
-            htmlLabels: true
-          }
-        });
-
-        // Find all mermaid code blocks and convert them
-        const mermaidBlocks = document.querySelectorAll('pre.mermaid code, .mermaid');
-        console.log('Found ' + mermaidBlocks.length + ' potential Mermaid blocks');
+    // Convert all mermaid code blocks to divs after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Converting Mermaid blocks...');
+      
+      // Find all pre.mermaid code blocks
+      const mermaidCodeBlocks = document.querySelectorAll('pre.mermaid code');
+      console.log('Found ' + mermaidCodeBlocks.length + ' Mermaid code blocks');
+      
+      mermaidCodeBlocks.forEach(function(codeBlock, index) {
+        // Create new div element
+        const mermaidDiv = document.createElement('div');
+        mermaidDiv.className = 'mermaid';
+        mermaidDiv.textContent = codeBlock.textContent;
         
-        mermaidBlocks.forEach(function(block, index) {
-          if (block.tagName === 'CODE' && block.parentElement.classList.contains('mermaid')) {
-            // Convert code block to div for mermaid processing
-            const mermaidDiv = document.createElement('div');
-            mermaidDiv.className = 'mermaid';
-            mermaidDiv.textContent = block.textContent;
-            mermaidDiv.id = 'mermaid-' + index;
-            block.parentElement.parentNode.replaceChild(mermaidDiv, block.parentElement);
-          } else if (block.classList.contains('mermaid')) {
-            // Already a mermaid div, just ensure it has an ID
-            if (!block.id) {
-              block.id = 'mermaid-' + index;
-            }
-          }
-        });
-
-        // Re-scan for mermaid divs and render
-        const finalMermaidDivs = document.querySelectorAll('.mermaid');
-        console.log('Processing ' + finalMermaidDivs.length + ' Mermaid diagrams');
+        // Replace the entire pre element with the div
+        const preElement = codeBlock.parentElement;
+        preElement.parentNode.replaceChild(mermaidDiv, preElement);
         
-        if (finalMermaidDivs.length > 0) {
-          try {
-            mermaid.init(undefined, '.mermaid');
-            console.log('Mermaid diagrams initialized successfully');
-          } catch (error) {
-            console.error('Mermaid initialization error:', error);
-          }
-        }
-      } else {
-        console.error('Mermaid library not loaded');
-      }
+        console.log('Converted block ' + (index + 1));
+      });
+      
+      // Force mermaid to process the new divs
+      setTimeout(function() {
+        mermaid.init(undefined, '.mermaid');
+        console.log('Mermaid processing complete');
+      }, 100);
     });
   </script>
 {% endblock %}

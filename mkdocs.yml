@@ -66,6 +66,7 @@ markdown_extensions:
 
 nav:
   - 🏠 Home: index.md
+  - 🧪 Mermaid Test: test_mermaid.md
   - 🚀 Getting Started:
     - Fresh Install Setup: fresh_install_guide.md
     - Quick Start Integration: quick_start_workload_integration.md
@@ -100,6 +101,4 @@ extra:
       link: https://spiffe.io/community/
       name: Join Community
 
-extra_javascript:
-  - https://unpkg.com/mermaid@10.4.0/dist/mermaid.min.js
 
