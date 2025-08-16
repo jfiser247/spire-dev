@@ -38,12 +38,6 @@ theme:
 
 plugins:
   - search
-  - mermaid2:
-      version: 10.4.0
-      javascript: https://unpkg.com/mermaid@10.4.0/dist/mermaid.min.js
-      arguments:
-        securityLevel: 'loose'
-        theme: 'default'
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -59,7 +53,7 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: !!python/name:mermaid2.fence_mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.mark
   - attr_list
   - md_in_html
@@ -104,4 +98,8 @@ extra:
     - icon: fontawesome/brands/slack
       link: https://spiffe.io/community/
       name: Join Community
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10.4.0/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
 
