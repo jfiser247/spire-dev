@@ -1,7 +1,7 @@
 site_name: SPIRE Local Development Environment
 site_description: Learn and experiment with SPIFFE/SPIRE on your local machine - perfect for testing, development, and understanding zero-trust identity concepts
 site_author: SPIRE Development Community
-site_url: http://localhost:8000
+site_url: https://jfiser247.github.io/spire-dev
 
 repo_name: spiffe/spire-dev
 repo_url: https://github.com/spiffe/spire
@@ -38,7 +38,8 @@ theme:
 
 plugins:
   - search
-  - mermaid2
+  - mermaid2:
+      version: 10.4.0
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -99,3 +100,6 @@ extra:
     - icon: fontawesome/brands/slack
       link: https://spiffe.io/community/
       name: Join Community
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10.4.0/dist/mermaid.min.js
