@@ -1,6 +1,12 @@
 # Enterprise SPIRE Architecture Diagram
 
-This document provides a detailed Mermaid diagram of the enterprise SPIRE deployment architecture, showing the relationship between SPIRE servers, agents, databases, and workloads across upstream and downstream clusters.
+This document provides detailed diagrams of the enterprise SPIRE deployment architecture, showing the relationship between SPIRE servers, agents, databases, and workloads across upstream and downstream clusters.
+
+> **⚠️ Prerequisites**: This architecture is created by running:
+> ```bash
+> ./scripts/fresh-install.sh enterprise
+> ```
+> **Clusters created**: `upstream-spire-cluster` + `downstream-spire-cluster`
 
 ## Enterprise Multi-Cluster Architecture
 

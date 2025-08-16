@@ -37,13 +37,42 @@ git clone https://github.com/spiffe/spire-dev.git
 cd spire-dev
 ```
 
-## Step 2: Run the Fresh Install
+## Step 2: Choose Your Deployment Type
 
-Execute the fresh install script:
+### Basic Development (Recommended for Learning)
+
+Single cluster deployment - perfect for getting started:
 
 ```bash
 ./scripts/fresh-install.sh
 ```
+
+**Creates**: `workload-cluster` (single minikube cluster)  
+**Best for**: Learning SPIRE, development, testing
+
+### Enterprise Multi-Cluster
+
+Advanced setup with upstream/downstream SPIRE servers:
+
+```bash
+./scripts/fresh-install.sh enterprise  
+```
+
+**Creates**: `upstream-spire-cluster` + `downstream-spire-cluster`  
+**Best for**: Understanding federation, production-like setups
+
+### CRD-Free Enterprise
+
+Enterprise deployment without custom Kubernetes resources:
+
+```bash
+./scripts/fresh-install.sh crd-free
+```
+
+**Creates**: External SPIRE servers with workload clusters  
+**Best for**: Environments with CRD restrictions
+
+> **💡 Start with Basic**: If you're new to SPIRE, use the basic deployment first. You can always run enterprise mode later to explore advanced features.
 
 The script will guide you through the entire process with clear status updates.
 

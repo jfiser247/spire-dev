@@ -1,32 +1,48 @@
 # SPIRE Architecture Diagrams
 
-This document provides visual representations of both basic and enterprise SPIRE deployments available in this project.
+This document provides visual representations of the SPIRE deployments available in this project.
 
-## Basic Development Architecture
+> **📋 Deployment Types Available:**
+> - **Basic** (default): `./scripts/fresh-install.sh` - Single cluster, perfect for learning
+> - **Enterprise**: `./scripts/fresh-install.sh enterprise` - Multi-cluster with upstream/downstream  
+> - **CRD-Free**: `./scripts/fresh-install.sh crd-free` - Enterprise without custom resources
 
-### Minikube Cluster Layout
+## Basic Development Architecture (Default)
+
+**Created by**: `./scripts/fresh-install.sh` (no arguments)  
+**Cluster**: `workload-cluster` (single minikube cluster)
+
+### Single Cluster Layout
 
 ```mermaid
 graph TB
-    SS[SPIRE Server]
-    PG[(MySQL Database)]
-    RE[Registration Entries]
-    SA[SPIRE Agent]
-    WA[Workload Attestation]
-    US[User Service]
-    PA[Payment API]
-    IS[Inventory Service]
+    subgraph WC["workload-cluster (minikube)"]
+        subgraph SS_NS["spire-server namespace"]
+            SS[SPIRE Server]
+            PG[(MySQL Database)]
+        end
+        
+        subgraph SYS_NS["spire-system namespace"]
+            SA[SPIRE Agent DaemonSet]
+        end
+        
+        subgraph WL_NS["spire-workload namespace"]
+            US[User Service]
+            PA[Payment API]
+            IS[Inventory Service]
+        end
+    end
     
     SS --> PG
-    SS --> RE
-    SA --> WA
-    US --> PA
-    PA --> IS
+    SA --> SS
+    US --> SA
+    PA --> SA  
+    IS --> SA
     
-    SA -.-> SS
-    US -.-> SA
-    PA -.-> SA  
-    IS -.-> SA
+    style WC fill:#e1f5fe
+    style SS_NS fill:#f3e5f5
+    style SYS_NS fill:#e8f5e8
+    style WL_NS fill:#fff3e0
 ```
 
 ### Component Interaction Flow
