@@ -1,0 +1,50 @@
+# This file contains the sidecar configuration for Tornjak backend
+# This should be integrated into the SPIRE server StatefulSet as a sidecar container
+# The standalone deployment approach won't work due to socket sharing requirements
+
+# Sidecar container configuration to add to spire-server StatefulSet:
+#
+# - name: tornjak-backend
+#   image: ghcr.io/spiffe/tornjak-backend:v2.2.0
+#   imagePullPolicy: IfNotPresent
+#   args:
+#     - --config=/opt/tornjak/conf/server/tornjak.conf
+#   ports:
+#   - name: backend-port
+#     containerPort: 10000
+#     protocol: TCP
+#   - name: metrics-port
+#     containerPort: 9090
+#     protocol: TCP
+#   volumeMounts:
+#   - name: tornjak-config
+#     mountPath: /opt/tornjak/conf/server
+#     readOnly: true
+#   - name: spire-sockets
+#     mountPath: /run/spire/sockets
+#     readOnly: true
+#   livenessProbe:
+#     httpGet:
+#       path: /api/v1/healthcheck
+#       port: backend-port
+#     initialDelaySeconds: 30
+#     periodSeconds: 30
+#   readinessProbe:
+#     httpGet:
+#       path: /api/v1/healthcheck
+#       port: backend-port
+#     initialDelaySeconds: 15
+#     periodSeconds: 10
+#   resources:
+#     requests:
+#       memory: "128Mi"
+#       cpu: "50m"
+#     limits:
+#       memory: "512Mi"
+#       cpu: "200m"
+#
+# Additional volume to add to spire-server StatefulSet:
+#
+# - name: tornjak-config
+#   configMap:
+#     name: tornjak-configmap

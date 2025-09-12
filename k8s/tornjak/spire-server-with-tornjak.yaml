@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spire-server
+  namespace: spire-server
+  labels:
+    app: spire-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spire-server
+  serviceName: spire-server
+  template:
+    metadata:
+      labels:
+        app: spire-server
+    spec:
+      serviceAccountName: spire-server
+      containers:
+        - name: spire-server
+          image: ghcr.io/spiffe/spire-server:1.12.4
+          args:
+            - -config
+            - /run/spire/config/server.conf
+          ports:
+            - containerPort: 8081
+              name: server
+            - containerPort: 8080
+              name: health
+            - containerPort: 9988
+              name: metrics
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-data
+              mountPath: /run/spire/data
+            - name: spire-sockets
+              mountPath: /run/spire/sockets
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+        - name: tornjak-backend
+          image: ghcr.io/spiffe/tornjak-backend:ubi-v2.2.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --tornjak-config=/opt/tornjak/conf/server/tornjak.conf
+            - http
+          ports:
+          - name: backend-port
+            containerPort: 10000
+            protocol: TCP
+          - name: metrics-port
+            containerPort: 9090
+            protocol: TCP
+          volumeMounts:
+          - name: tornjak-config
+            mountPath: /opt/tornjak/conf/server
+            readOnly: true
+          - name: spire-sockets
+            mountPath: /run/spire/sockets
+            readOnly: true
+          - name: spire-config
+            mountPath: /run/spire/config
+            readOnly: true
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-server-config
+        - name: tornjak-config
+          configMap:
+            name: tornjak-configmap
+        - name: spire-sockets
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: spire-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

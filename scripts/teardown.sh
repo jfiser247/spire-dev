@@ -11,8 +11,8 @@ echo "=============================="
 echo ""
 echo "This will completely remove:"
 echo "  🗑️  All Minikube clusters (workload-cluster)"
-echo "  🗑️  All running servers (dashboard, docs)"
-echo "  🗑️  All container images and volumes"
+echo "  🗑️  All running servers (dashboard, docs, Tornjak)"
+echo "  🗑️  All container images and volumes (SPIRE, Tornjak)"
 echo "  🗑️  All temporary files and caches"
 echo ""
 
@@ -114,6 +114,11 @@ echo "🗑️  Removing SPIRE-related images..."
 docker images --filter "reference=*spire*" --format "table {{.Repository}}:{{.Tag}}" | tail -n +2 | xargs -r docker rmi -f 2>/dev/null || true
 docker images --filter "reference=spiffe/*" --format "table {{.Repository}}:{{.Tag}}" | tail -n +2 | xargs -r docker rmi -f 2>/dev/null || true
 
+# Remove Tornjak-related images
+echo "🗑️  Removing Tornjak-related images..."
+docker images --filter "reference=*tornjak*" --format "table {{.Repository}}:{{.Tag}}" | tail -n +2 | xargs -r docker rmi -f 2>/dev/null || true
+docker images --filter "reference=ghcr.io/spiffe/tornjak*" --format "table {{.Repository}}:{{.Tag}}" | tail -n +2 | xargs -r docker rmi -f 2>/dev/null || true
+
 # Remove dangling images and volumes
 echo "🗑️  Removing dangling Docker resources..."
 docker image prune -f >/dev/null 2>&1 || true
@@ -194,12 +199,12 @@ echo "🔍 Verifying cleanup..."
 echo "======================="
 
 # Check for running processes
-SPIRE_PROCESSES=$(ps aux | grep -E "(spire|mkdocs|node.*server)" | grep -v grep | wc -l)
+SPIRE_PROCESSES=$(ps aux | grep -E "(spire|tornjak|mkdocs|node.*server)" | grep -v grep | wc -l)
 if [ "$SPIRE_PROCESSES" -gt 0 ]; then
-    echo "⚠️  Warning: Some SPIRE-related processes may still be running"
-    ps aux | grep -E "(spire|mkdocs|node.*server)" | grep -v grep
+    echo "⚠️  Warning: Some SPIRE/Tornjak-related processes may still be running"
+    ps aux | grep -E "(spire|tornjak|mkdocs|node.*server)" | grep -v grep
 else
-    echo "✅ No SPIRE-related processes running"
+    echo "✅ No SPIRE/Tornjak-related processes running"
 fi
 
 # Check for open ports
@@ -213,6 +218,19 @@ if lsof -i :8000 >/dev/null 2>&1; then
     echo "⚠️  Warning: Port 8000 still in use"
 else
     echo "✅ Port 8000 is free"
+fi
+
+# Check for Tornjak ports (NodePort services)
+if lsof -i :30000 >/dev/null 2>&1; then
+    echo "⚠️  Warning: Port 30000 (Tornjak backend) still in use"
+else
+    echo "✅ Port 30000 (Tornjak backend) is free"
+fi
+
+if lsof -i :30001 >/dev/null 2>&1; then
+    echo "⚠️  Warning: Port 30001 (Tornjak frontend) still in use"
+else
+    echo "✅ Port 30001 (Tornjak frontend) is free"
 fi
 
 # Check minikube status

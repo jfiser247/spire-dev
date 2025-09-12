@@ -223,14 +223,23 @@ deploy_mysql_database() {
     fi
 }
 
-# Function to deploy SPIRE server (MySQL-based for persistence)
+# Function to deploy SPIRE server with Tornjak (MySQL-based for persistence)
 deploy_spire_server() {
-    print_section "Deploying SPIRE Server"
+    print_section "Deploying SPIRE Server with Tornjak"
     
-    # Apply SPIRE server manifests
-    kubectl --context workload-cluster apply -f k8s/spire-server/
+    # Deploy Tornjak configuration first
+    kubectl --context workload-cluster apply -f k8s/tornjak/tornjak-configmap.yaml
     
-    echo "⏳ Waiting for SPIRE server to be ready..."
+    # Apply SPIRE server manifests (excluding the original StatefulSet)
+    kubectl --context workload-cluster apply -f k8s/spire-server/namespace.yaml
+    kubectl --context workload-cluster apply -f k8s/spire-server/server-rbac.yaml
+    kubectl --context workload-cluster apply -f k8s/spire-server/server-configmap.yaml
+    
+    # Deploy SPIRE server with Tornjak sidecar
+    kubectl --context workload-cluster apply -f k8s/tornjak/spire-server-with-tornjak.yaml
+    kubectl --context workload-cluster apply -f k8s/tornjak/spire-server-with-tornjak-service.yaml
+    
+    echo "⏳ Waiting for SPIRE server with Tornjak to be ready..."
     
     # Wait for server pod to be scheduled
     for i in {1..24}; do
@@ -251,9 +260,9 @@ deploy_spire_server() {
     
     # Wait for server to be ready
     if kubectl --context workload-cluster -n spire-server wait --for=condition=ready pod -l app=spire-server --timeout=600s; then
-        echo "✅ SPIRE server is ready"
+        echo "✅ SPIRE server with Tornjak is ready"
     else
-        echo "❌ SPIRE server failed to become ready"
+        echo "❌ SPIRE server with Tornjak failed to become ready"
         kubectl --context workload-cluster -n spire-server describe pods -l app=spire-server
         exit 1
     fi
@@ -309,6 +318,26 @@ deploy_spire_agent() {
     else
         echo "❌ SPIRE agent failed to become ready"
         kubectl --context workload-cluster -n spire-system describe pods -l app=spire-agent
+        exit 1
+    fi
+}
+
+# Function to deploy Tornjak frontend
+deploy_tornjak_frontend() {
+    print_section "Deploying Tornjak Frontend"
+    
+    # Apply Tornjak frontend manifests
+    kubectl --context workload-cluster apply -f k8s/tornjak/tornjak-frontend-deployment.yaml
+    kubectl --context workload-cluster apply -f k8s/tornjak/tornjak-frontend-service.yaml
+    
+    echo "⏳ Waiting for Tornjak frontend to be ready..."
+    
+    # Wait for frontend to be ready
+    if kubectl --context workload-cluster -n spire-server wait --for=condition=available deployment/tornjak-frontend --timeout=300s; then
+        echo "✅ Tornjak frontend is ready"
+    else
+        echo "❌ Tornjak frontend failed to become ready"
+        kubectl --context workload-cluster -n spire-server describe deployment/tornjak-frontend
         exit 1
     fi
 }
@@ -485,12 +514,22 @@ verify_installation() {
         all_ready=false
     fi
     
-    # Check server
+    # Check server (both SPIRE server and Tornjak backend containers)
     local server_ready=$(kubectl --context workload-cluster -n spire-server get pods -l app=spire-server -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null || echo "false")
-    if [ "$server_ready" = "true" ]; then
-        echo "✅ SPIRE Server: Ready"
+    local tornjak_ready=$(kubectl --context workload-cluster -n spire-server get pods -l app=spire-server -o jsonpath='{.items[0].status.containerStatuses[1].ready}' 2>/dev/null || echo "false")
+    if [ "$server_ready" = "true" ] && [ "$tornjak_ready" = "true" ]; then
+        echo "✅ SPIRE Server with Tornjak Backend: Ready"
     else
-        echo "❌ SPIRE Server: Not Ready"
+        echo "❌ SPIRE Server with Tornjak Backend: Not Ready (Server: $server_ready, Tornjak: $tornjak_ready)"
+        all_ready=false
+    fi
+    
+    # Check Tornjak frontend
+    local frontend_ready=$(kubectl --context workload-cluster -n spire-server get deployment tornjak-frontend -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    if [ "$frontend_ready" -gt 0 ]; then
+        echo "✅ Tornjak Frontend: Ready"
+    else
+        echo "❌ Tornjak Frontend: Not Ready"
         all_ready=false
     fi
     
@@ -714,6 +753,13 @@ show_final_info() {
     echo "   URL: http://localhost:3000/web-dashboard.html"
     echo "   Command: open http://localhost:3000/web-dashboard.html"
     echo ""
+    echo "🎛️  Tornjak Management UI:"
+    echo "   For Docker driver on macOS, use port-forwarding:"
+    echo "   1. Frontend: kubectl --context workload-cluster -n spire-server port-forward service/tornjak-frontend 3001:3000"
+    echo "   2. Backend:  kubectl --context workload-cluster -n spire-server port-forward service/spire-server 10000:10000"
+    echo "   3. Access:   http://localhost:3001"
+    echo "   Alternative: minikube -p workload-cluster service -n spire-server tornjak-frontend-nodeport --url"
+    echo ""
     echo "📚 Documentation Available:"
     echo "   - Click '📚 Project Overview' tab in dashboard"
     echo "   - Click '📖 Documentation' tab in dashboard"
@@ -746,6 +792,7 @@ main() {
     deploy_spire_server
     create_trust_bundle
     deploy_spire_agent
+    deploy_tornjak_frontend
     deploy_workload_services
     start_documentation_server
     start_dashboard
