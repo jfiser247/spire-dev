@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: tornjak-frontend
-        image: ghcr.io/spiffe/tornjak-frontend:v2.2.0
+        image: ghcr.io/spiffe/tornjak-frontend:v2.2.0@sha256:dea70b34e1cf15cdf64b11f9a995b64aee1f1d4ab9def8833b176a1b02599f92
         imagePullPolicy: IfNotPresent
         ports:
         - name: frontend-port

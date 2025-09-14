@@ -51,7 +51,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 10
         - name: tornjak-backend
-          image: ghcr.io/spiffe/tornjak-backend:v2.2.0
+          image: ghcr.io/spiffe/tornjak-backend:v2.2.0@sha256:f97734eae9ce5a8ed4fa03129d1399c814a241e080e1caf29bc2b442edd18d8e
           imagePullPolicy: IfNotPresent
           args:
             - --tornjak-config=/opt/tornjak/conf/server/tornjak.conf
